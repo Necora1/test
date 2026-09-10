@@ -1,0 +1,577 @@
+/* 1. Basic Setup & Colors */
+*, ::before, ::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'NO';
+  src: url('fonts/Escargoth Demo.ttf') format('truetype');
+  /* Note: If the unzipped file ends in .otf, use format('opentype') instead */
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  background-color: #030303; 
+  color: #aaa; 
+  font-family: 'Lato', sans-serif; /* Set readable standard font globally */
+  letter-spacing: 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative; 
+  z-index: 1; 
+  overflow-x: hidden; 
+}
+
+/* Force ALL buttons to use your custom 'NO' font */
+button, .nav-btn, .send-msg-btn, .send-draw-btn {
+  font-family: 'NO', cursive, serif !important;
+  letter-spacing: 1px;
+}
+
+/* Ensure form inputs inherit Lato instead of default system fonts */
+input, textarea {
+  font-family: 'Lato', sans-serif;
+}
+
+/* 2. Parallax Stars Layer */
+#stars, #stars2, #stars3 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: transparent;
+  z-index: -2; 
+  will-change: transform;
+}
+
+#stars::after, #stars2::after, #stars3::after {
+  content: "";
+  position: absolute;
+  top: 2000px;
+}
+
+#stars {
+  width: 1px;
+  height: 1px;
+  box-shadow: var(--shadows-small);
+  animation: animStar 50s linear infinite;
+}
+#stars::after {
+  width: 1px;
+  height: 1px;
+  box-shadow: var(--shadows-small);
+}
+
+#stars2 {
+  width: 2px;
+  height: 2px;
+  box-shadow: var(--shadows-medium);
+  animation: animStar 100s linear infinite;
+}
+#stars2::after {
+  width: 2px;
+  height: 2px;
+  box-shadow: var(--shadows-medium);
+}
+
+#stars3 {
+  width: 3px;
+  height: 3px;
+  box-shadow: var(--shadows-big);
+  animation: animStar 150s linear infinite;
+}
+#stars3::after {
+  width: 3px;
+  height: 3px;
+  box-shadow: var(--shadows-big);
+}
+
+@keyframes animStar {
+  from { transform: translateY(0); }
+  to { transform: translateY(-2000px); }
+}
+
+/* 3. Fog Canvas Container */
+#fogCanvas {
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  filter: contrast(10) brightness(0.4) blur(80px); 
+  pointer-events: none;
+  z-index: -1; 
+}
+
+/* 4. Menu Navigation */
+nav {
+  margin: 50px 0 40px;
+  display: flex;
+  gap: 50px; 
+  flex-wrap: wrap; 
+  justify-content: center;
+}
+
+.nav-btn {
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  padding: 0;
+  font-family: 'NO', monospace;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  position: relative;
+  will-change: transform;
+  /* Removed CSS transform transition so JS lerp remains smooth */
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Inner span wrapper for the border-drawing effect */
+.nav-btn span {
+  position: relative;
+  display: block;
+  padding: 8px 16px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Animated Drawing Borders */
+.nav-btn::before,
+.nav-btn::after {
+  position: absolute;
+  content: "";
+  height: 0%;
+  width: 1px;
+  background: #fff;
+  box-shadow: 0 0 10px 1px rgba(255, 255, 255, 0.6);
+  z-index: 1;
+  opacity: 0;
+  transition: height 300ms ease, opacity 0s 300ms;
+}
+
+.nav-btn::before {
+  right: -1px;
+  top: -1px;
+}
+
+.nav-btn::after {
+  left: -1px;
+  bottom: -1px;
+}
+
+.nav-btn span::before,
+.nav-btn span::after {
+  position: absolute;
+  content: "";
+  width: 0%;
+  height: 1px;
+  background: #fff;
+  box-shadow: 0 0 10px 1px rgba(255, 255, 255, 0.6);
+  z-index: 1;
+  opacity: 0;
+  transition: width 300ms ease, opacity 0s 300ms;
+}
+
+.nav-btn span::before {
+  left: -1px;
+  top: -1px;
+}
+
+.nav-btn span::after {
+  right: -1px;
+  bottom: -1px;
+}
+
+/* Active, Hover, and Proximity States */
+.nav-btn.active-btn, .nav-btn:hover, .nav-btn.near {
+  color: #fff;
+}
+
+.nav-btn:active {
+  transform: scale(0.85) !important; 
+  background-color: rgba(255, 255, 255, 0.1); 
+  transition: transform 0.05s ease, background-color 0.05s ease !important; 
+}
+
+/* Trigger Border Draw Animation */
+.nav-btn:hover::before, .nav-btn.active-btn::before, .nav-btn.near::before,
+.nav-btn:hover::after, .nav-btn.active-btn::after, .nav-btn.near::after {
+  height: calc(100% + 2px);
+  opacity: 1;
+  transition: height 300ms ease, opacity 0s 0s;
+}
+
+.nav-btn:hover span::before, .nav-btn.active-btn span::before, .nav-btn.near span::before,
+.nav-btn:hover span::after, .nav-btn.active-btn span::after, .nav-btn.near span::after {
+  width: calc(100% + 2px);
+  opacity: 1;
+  transition: width 300ms ease, opacity 0s 0s;
+}
+
+/* 5. Layout Container & Sections */
+.content-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px; 
+}
+
+.section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(20px); 
+  visibility: hidden;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.section.active {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  position: relative;
+}
+
+/* 6. Text & Boxes */
+h1 {
+  color: #ddd;
+  font-size: 1.2rem;
+  font-weight: normal;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+p {
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.box-placeholder {
+  width: 100%;
+  height: 150px;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #444;
+  margin-bottom: 20px;
+}
+
+/* 7. Mobile Adjustments */
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  nav { margin-top: 30px; }
+}
+
+.drawing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.drawing-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+
+.tool-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.tool-btn:hover { color: #fff; }
+
+input[type="range"] {
+  width: 80px;
+  accent-color: #888;
+  cursor: pointer;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 1px solid #555; border-radius: 50%; }
+
+#drawCanvas {
+  background: #050505;
+  border: 1px solid #333;
+  border-radius: 4px;
+  touch-action: none;
+  cursor: crosshair;
+  width: 100%;
+  max-width: 550px;
+  height: auto;
+}
+
+.send-draw-btn {
+  background: none;
+  border: 1px solid #333;
+  color: #aaa;
+  padding: 10px 20px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.send-draw-btn:hover {
+  border-color: #fff;
+  color: #fff;
+}
+
+.tool-btn {
+  background: none;
+  border: none;
+  color: #888;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.tool-btn:hover,
+.tool-btn.active {
+  color: #fff;
+}
+
+.tool-btn.active {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+}
+
+/* Message Box spacing */
+.message-container {
+  width: 100%;
+  max-width: 550px;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0 auto; /* Center box with clean margins */
+}
+
+.message-input-wrapper {
+  position: relative;
+  /* Removed border-bottom so it's fully enclosed as its own box */
+}
+
+/* Centered Action Button Containers */
+.action-btn-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 20px 0 50px; /* 20px gap from text box above, 50px gap to drawing section below */
+}
+
+.action-btn-container.last {
+  margin: 20px 0 10px; /* Reduced bottom gap for the final button */
+}
+
+/* Action Button Typography & Internal Padding */
+.action-btn {
+  font-size: 0.95rem;
+  white-space: nowrap; /* Prevents text and emojis from wrapping */
+}
+
+.action-btn span {
+  padding: 10px 24px; /* Generous breathing room inside the animated border */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Drawing Canvas Container Spacing */
+.drawing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+#messageText {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 15px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+}
+
+.message-actions {
+  position: absolute;
+  bottom: 10px;
+  right: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+#openSpotifyBtn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+#openSpotifyBtn:hover, #openSpotifyBtn.attached {
+  color: #1DB954; /* Spotify Green */
+}
+
+.send-msg-btn {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  padding: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.send-msg-btn:hover { background: #111; color: #fff; }
+
+/* Spotify Modal (Bottom Centered & Soft Overlay) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.35); /* Subtle dark layer across full viewport */
+  backdrop-filter: blur(3px); /* Blurs entire viewport including top navigation */
+  display: flex;
+  align-items: flex-end; /* Pins modal box to the bottom edge of screen */
+  justify-content: center; /* Centers modal horizontally */
+  padding-bottom: 20px; /* Gap from screen bottom */
+  z-index: 99999; /* Ensures overlay sits above navigation and fog */
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-container {
+  position: relative;
+  width: 90%;
+  max-width: 550px; /* Matches the text box width for clean vertical alignment */
+}
+
+.modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0; /* Placed cleanly on the right */
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #333; /* Matches site borders */
+  width: 30px; height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: #333;
+  color: #fff;
+}
+
+.modal-content {
+  background: #0a0a0a; /* Matches the text box background */
+  border: 1px solid #333;
+  border-radius: 8px; /* Matches message container radius */
+  padding: 20px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #050505; /* Darker inset for inputs */
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 10px 15px;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+#songSearch {
+  background: transparent;
+  border: none;
+  color: #fff;
+  width: 100%;
+  outline: none;
+}
+
+.search-results {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.track-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.track-item:hover { 
+  background: #111; 
+  border-color: #333; /* Highlights item with void border on hover */
+}
+
+.track-img {
+  width: 45px; height: 45px;
+  border-radius: 4px;
+}
+
+.track-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.track-title { color: #fff; font-weight: bold; font-size: 0.9rem; }
+.track-artist { color: #888; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
