@@ -1,9 +1,3 @@
-let fogUnlockTimeout;
-let currentFogSpeedMultiplier = 1;
-let targetFogSpeedMultiplier = 1;
-let currentFogDensity = 0.4;
-let targetFogDensity = 0.4;
-
 // 1. Parallax Stars Background Box-Shadow Generator
 function generateStarShadows(count) {
   let shadows = '';
@@ -20,7 +14,7 @@ rootStyle.setProperty('--shadows-small', generateStarShadows(700));
 rootStyle.setProperty('--shadows-medium', generateStarShadows(200));
 rootStyle.setProperty('--shadows-big', generateStarShadows(100));
 
-// 2. Optimized Noise Fog Canvas
+// 2. Static Ambient Background Fog Canvas
 const canvas = document.getElementById('fogCanvas');
 const ctx = canvas.getContext('2d');
 const renderScale = 0.25;
@@ -63,12 +57,10 @@ function noise(x, y) {
 
 const fogSpeed = 0.001;
 const noiseScale = 0.01;
+const fogDensity = 0.4;
 let time = 0;
 
 function drawFog() {
-  currentFogSpeedMultiplier += (targetFogSpeedMultiplier - currentFogSpeedMultiplier) * 0.08;
-  currentFogDensity += (targetFogDensity - currentFogDensity) * 0.08;
-
   let pixelIndex = 0;
 
   for (let y = 0; y < height; y++) {
@@ -78,7 +70,7 @@ function drawFog() {
       const noiseValue = noise(nx, ny) * 0.5 + 0.5;
       
       const intensity = (noiseValue * 255) | 0;
-      const alpha = Math.min(255, (intensity * currentFogDensity) | 0);
+      const alpha = Math.min(255, (intensity * fogDensity) | 0);
       const gray = (intensity * 0.5) | 0; 
 
       buf32[pixelIndex++] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
@@ -86,7 +78,7 @@ function drawFog() {
   }
 
   ctx.putImageData(imageData, 0, 0);
-  time += fogSpeed * currentFogSpeedMultiplier * width;
+  time += fogSpeed * width;
   requestAnimationFrame(drawFog);
 }
 
@@ -94,7 +86,12 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 drawFog();
 
-// 7. Warp Canvas Effect
+// 3. Star Blooming Reaction (Disabled as requested)
+function triggerStarBloom() {
+  // No-op: stars stay smooth and steady
+}
+
+// 4. Warp Canvas Effect
 const warpCanvas = document.getElementById('starWarp');
 const warpCtx = warpCanvas.getContext('2d');
 
@@ -158,25 +155,15 @@ function startWarpEffect() {
 
 function stopWarpEffect() {
   targetSpeed = 0; 
-  document.body.classList.remove('warp-bloom'); // Removes your CSS bloom
+  document.body.classList.remove('warp-bloom');
   setTimeout(() => {
     warpCanvas.style.opacity = '0'; 
   }, 1500); 
 }
 
-// 8. Initial Page Load Intro Effect
-document.body.classList.add('fog-transition');
-
-currentFogSpeedMultiplier = 40;
-targetFogSpeedMultiplier = 40;
-currentFogDensity = 3.5;
-targetFogDensity = 3.5;
-
+// 5. Initial Page Load Intro
 startWarpEffect();
 
-fogUnlockTimeout = setTimeout(() => {
-  document.body.classList.remove('fog-transition');
-  targetFogSpeedMultiplier = 1;
-  targetFogDensity = 0.4;
+setTimeout(() => {
   stopWarpEffect();
 }, 700);
