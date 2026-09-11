@@ -4,7 +4,8 @@ function generateStarShadows(count) {
   for (let i = 0; i < count; i++) {
     const x = (Math.random() * 2000) | 0;
     const y = (Math.random() * 2000) | 0;
-    shadows += `${x}px ${y}px #FFF${i === count - 1 ? '' : ', '}`;
+    // Using currentColor allows us to animate thousands of stars smoothly via CSS
+    shadows += `${x}px ${y}px currentColor${i === count - 1 ? '' : ', '}`;
   }
   return shadows;
 }
@@ -14,80 +15,75 @@ rootStyle.setProperty('--shadows-small', generateStarShadows(500));
 rootStyle.setProperty('--shadows-medium', generateStarShadows(150));
 rootStyle.setProperty('--shadows-big', generateStarShadows(75));
 
-// 2. Static Ambient Background Fog Canvas
+// 2. High-Quality Soft Ambient Fog (Drifting Radial Gradients)
 const canvas = document.getElementById('fogCanvas');
 const ctx = canvas.getContext('2d');
-const renderScale = 0.2;
-
-let width = 0;
-let height = 0;
-let imageData = null;
-let buf32 = null;
 
 function resizeCanvas() {
-  width = canvas.width = (window.innerWidth * renderScale) | 0;
-  height = canvas.height = (window.innerHeight * renderScale) | 0;
-  imageData = ctx.createImageData(width, height);
-  buf32 = new Uint32Array(imageData.data.buffer);
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
 
-function lerp(a, b, t) { return a + t * (b - a); }
-function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+// Soft atmospheric fog clouds
+const fogClouds = [
+  { x: 0.2, y: 0.3, r: 0.55, alpha: 0.08 },
+  { x: 0.8, y: 0.7, r: 0.65, alpha: 0.06 },
+  { x: 0.5, y: 0.4, r: 0.50, alpha: 0.07 },
+  { x: 0.3, y: 0.8, r: 0.60, alpha: 0.05 }
+];
 
-function gradient(x, y) {
-  const random = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-  return random - Math.floor(random);
+let fogTime = 0;
+
+// Current and Target Fog Colors for smooth transitions
+let fogC1 = { r: 180, g: 195, b: 220 };
+let fogC2 = { r: 100, g: 115, b: 140 };
+let targetFogC1 = { r: 180, g: 195, b: 220 };
+let targetFogC2 = { r: 100, g: 115, b: 140 };
+
+// Expose a function to update the target colors from navigation.js
+window.updateFogTheme = function(color1, color2) {
+  targetFogC1 = color1;
+  targetFogC2 = color2;
+};
+
+// Smoothly interpolate current color towards target color
+function lerpColor(curr, target, speed = 0.015) {
+  curr.r += (target.r - curr.r) * speed;
+  curr.g += (target.g - curr.g) * speed;
+  curr.b += (target.b - curr.b) * speed;
 }
 
-function noise(x, y) {
-  const x0 = Math.floor(x);
-  const x1 = x0 + 1;
-  const y0 = Math.floor(y);
-  const y1 = y0 + 1;
-  const sx = fade(x - x0);
-  const sy = fade(y - y0);
-  const n0 = gradient(x0, y0);
-  const n1 = gradient(x1, y0);
-  const ix0 = lerp(n0, n1, sx);
-  const n2 = gradient(x0, y1);
-  const n3 = gradient(x1, y1);
-  const ix1 = lerp(n2, n3, sx);
-  return lerp(ix0, ix1, sy);
-}
-
-const fogSpeed = 0.001;
-const noiseScale = 0.01;
-const fogDensity = 0.4;
-let time = 0;
-let lastFogTime = 0;
-const fogFpsInterval = 1000 / 24; // Throttle fog render to 24 FPS for low CPU usage
-
-function drawFog(currentTime = 0) {
+function drawFog() {
   requestAnimationFrame(drawFog);
-  
-  // Pause rendering when tab is inactive
   if (document.hidden) return;
 
-  const elapsed = currentTime - lastFogTime;
-  if (elapsed < fogFpsInterval) return;
-  lastFogTime = currentTime - (elapsed % fogFpsInterval);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  let pixelIndex = 0;
-  for (let y = 0; y < height; y++) {
-    const ny = y * noiseScale;
-    for (let x = 0; x < width; x++) {
-      const nx = (x + time) * noiseScale;
-      const noiseValue = noise(nx, ny) * 0.5 + 0.5;
-      const intensity = (noiseValue * 255) | 0;
-      const alpha = Math.min(255, (intensity * fogDensity) | 0);
-      const gray = (intensity * 0.5) | 0;
+  const w = canvas.width;
+  const h = canvas.height;
+  const maxDim = Math.max(w, h);
 
-      buf32[pixelIndex++] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
-    }
-  }
+  fogTime += 0.002;
 
-  ctx.putImageData(imageData, 0, 0);
-  time += fogSpeed * width;
+  // Gently transition the colors every frame
+  lerpColor(fogC1, targetFogC1);
+  lerpColor(fogC2, targetFogC2);
+
+  fogClouds.forEach((cloud, i) => {
+    const cx = (cloud.x + Math.sin(fogTime + i * 1.5) * 0.12) * w;
+    const cy = (cloud.y + Math.cos(fogTime * 0.8 + i * 2.1) * 0.12) * h;
+    const radius = cloud.r * maxDim;
+
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    grad.addColorStop(0, `rgba(${Math.round(fogC1.r)}, ${Math.round(fogC1.g)}, ${Math.round(fogC1.b)}, ${cloud.alpha})`);
+    grad.addColorStop(0.5, `rgba(${Math.round(fogC2.r)}, ${Math.round(fogC2.g)}, ${Math.round(fogC2.b)}, ${cloud.alpha * 0.4})`);
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
 }
 
 window.addEventListener('resize', resizeCanvas);
@@ -160,14 +156,18 @@ function startWarpEffect() {
   if (!warpAnimId) animateWarp();
 }
 
+
 function stopWarpEffect() {
   targetSpeed = 0; 
   document.body.classList.remove('warp-bloom');
   setTimeout(() => {
     warpCanvas.style.opacity = '0'; 
+    // Trigger the UI materialization after the stars clear
+    document.body.classList.add('ui-reveal');
   }, 1500); 
 }
 
 // Initial Page Load Intro
+document.body.classList.add('intro-active'); // Hides the UI immediately
 startWarpEffect();
 setTimeout(() => { stopWarpEffect(); }, 700);

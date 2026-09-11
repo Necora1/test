@@ -17,18 +17,42 @@
   <canvas id="starWarp"></canvas>
 
   <!-- Navigation Menu -->
-  <nav>
-    <button type="button" class="nav-btn active-btn" aria-current="page" onclick="showSection('about')"><span>about</span></button>
-    <button type="button" class="nav-btn" onclick="showSection('gallery')"><span>gallery</span></button>
-    <button type="button" class="nav-btn" onclick="showSection('interests')"><span>interests</span></button>
-    <button type="button" class="nav-btn gold-glow" onclick="showSection('send')"><span>send me something</span></button>
-  </nav>
+
+   
+
+  <!-- Expandable Mobile-Friendly Navigation Wrapper -->
+  <div class="nav-wrapper">
+
+    <!-- The Main Toggle Button (Also magnetic!) -->
+    <button type="button" id="menuToggleBtn" class="nav-btn glass-pill">
+      <span>✦ MENU ✦</span>
+    </button>
+
+    <nav id="mainNav" class="expandable-nav">
+      <!-- Added HOME tab as the first, active button -->
+      <button type="button" class="nav-btn active-btn" aria-current="page" onclick="showSection('home')"><span>home</span></button>
+      <button type="button" class="nav-btn" onclick="showSection('about')"><span>about</span></button>
+      <button type="button" class="nav-btn" onclick="showSection('gallery')"><span>gallery</span></button>
+      <button type="button" class="nav-btn" onclick="showSection('interests')"><span>interests</span></button>
+      <button type="button" class="nav-btn gold-glow" onclick="showSection('send')"><span>send me something</span></button>
+      <button type="button" class="nav-btn" onclick="showSection('favoomfs')"><span>favoomfs</span></button>
+    </nav>
+    
+    
+  </div>
 
   <!-- Container for the pages -->
   <main class="content-container">
     
-    <!-- 1. ABOUT -->
-    <section id="about" class="section active">
+    <!-- 0. NEW HOME SECTION -->
+    <section id="home" class="section active">
+      <h1>HOME</h1>
+      <p>Welcome to the Void.</p>
+      <div class="box-placeholder">W.I.P</div>
+    </section>
+
+    <!-- 1. ABOUT (Remove the 'active' class from this one) -->
+    <section id="about" class="section">
       <h1>ABOUT</h1>
       <p>im renn! This is my website :3</p>
       <div class="box-placeholder">W.I.P</div>
