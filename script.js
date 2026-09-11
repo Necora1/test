@@ -413,43 +413,45 @@ sendMessageBtn?.addEventListener('click', async () => {
   }
 });
 
-// 7. Dynamic Star Speed (Warp Effect on Load)
+// 7. Clean Start & Warp Speed Intro
 window.addEventListener('load', () => {
-  // Get all the star layers [Die Sterne: German for "the stars". Plural of "der Stern".]
-  const starLayers = document.querySelectorAll('#stars, #stars2, #stars3');
-  
-  // Collect their active CSS animations
-  let animations = [];
+  // Define the layers and their normal loop speeds from your CSS
+  const starLayers = [
+    { id: 'stars', duration: 50000 },
+    { id: 'stars2', duration: 100000 },
+    { id: 'stars3', duration: 150000 }
+  ];
+
+  // Get the exact height of the user's screen to push stars completely out of view
+  const startY = window.innerHeight; 
+
   starLayers.forEach(layer => {
-    animations.push(...layer.getAnimations());
+    const el = document.getElementById(layer.id);
+    if (!el) return;
+
+    // 1. Kill the default CSS animation so the screen starts empty
+    el.style.animation = 'none';
+
+    // 2. Animate them from the bottom [Der Anfang: German noun for "the beginning" or "the start"]
+    const introAnim = el.animate([
+      { transform: `translateY(${startY}px)` }, // Start exactly below the screen
+      { transform: 'translateY(0px)' }          // End at the normal top position
+    ], {
+      duration: 1500, // 1.5 seconds to shoot up [Schnell: German adjective/adverb for "fast"]
+      easing: 'ease-out', // Starts fast, then smoothly decelerates like brakes
+      fill: 'forwards'
+    });
+
+    // 3. Once the intro is done, seamlessly transition into your normal slow loop
+    introAnim.onfinish = () => {
+      el.animate([
+        { transform: 'translateY(0px)' },
+        { transform: 'translateY(-2000px)' }
+      ], {
+        duration: layer.duration,
+        iterations: Infinity,
+        easing: 'linear'
+      });
+    };
   });
-
-  // Set the starting speed [Die Geschwindigkeit: German for "the speed".]
-  let currentSpeed = 40; // 40x normal speed (change this to make it faster/slower)
-  const normalSpeed = 1;
-
-  // Apply the fast speed right away
-  animations.forEach(anim => anim.playbackRate = currentSpeed);
-
-  // Function to smoothly slow them down like hitting the brakes
-  function decelerate() {
-    currentSpeed -= 0.5; // This controls how fast it slows down
-    
-    if (currentSpeed < normalSpeed) {
-      currentSpeed = normalSpeed;
-    }
-
-    // Update the speed for all stars
-    animations.forEach(anim => anim.playbackRate = currentSpeed);
-
-    // Keep looping until we reach normal speed
-    if (currentSpeed > normalSpeed) {
-      requestAnimationFrame(decelerate);
-    }
-  }
-
-  // Stay at max speed for a moment, then start slowing down
-  setTimeout(() => {
-    requestAnimationFrame(decelerate);
-  }, 800); // 800ms (0.8 seconds) of fast movement before slowing
 });
