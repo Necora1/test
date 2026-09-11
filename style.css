@@ -100,20 +100,13 @@ input, textarea {
   to { transform: translateY(0); }
 }
 
-/* Multi-step smooth Gaussian falloff gradient glow */
+/* Multi-step smooth opacity pulse (Replaces heavy drop-shadow filter) */
 @keyframes starPulse {
   0%, 100% {
-    opacity: 0.45;
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)) 
-            drop-shadow(0 0 6px rgba(255, 255, 255, 0.25)) 
-            drop-shadow(0 0 14px rgba(255, 255, 255, 0.12));
+    opacity: 0.35;
   }
   50% {
     opacity: 0.85;
-    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8)) 
-            drop-shadow(0 0 8px rgba(255, 255, 255, 0.5)) 
-            drop-shadow(0 0 18px rgba(255, 255, 255, 0.28))
-            drop-shadow(0 0 32px rgba(255, 255, 255, 0.14));
   }
 }
 

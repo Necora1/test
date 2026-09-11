@@ -10,14 +10,14 @@ function generateStarShadows(count) {
 }
 
 const rootStyle = document.documentElement.style;
-rootStyle.setProperty('--shadows-small', generateStarShadows(700));
-rootStyle.setProperty('--shadows-medium', generateStarShadows(200));
-rootStyle.setProperty('--shadows-big', generateStarShadows(100));
+rootStyle.setProperty('--shadows-small', generateStarShadows(500));
+rootStyle.setProperty('--shadows-medium', generateStarShadows(150));
+rootStyle.setProperty('--shadows-big', generateStarShadows(75));
 
 // 2. Static Ambient Background Fog Canvas
 const canvas = document.getElementById('fogCanvas');
 const ctx = canvas.getContext('2d');
-const renderScale = 0.25;
+const renderScale = 0.2;
 
 let width = 0;
 let height = 0;
@@ -59,19 +59,28 @@ const fogSpeed = 0.001;
 const noiseScale = 0.01;
 const fogDensity = 0.4;
 let time = 0;
+let lastFogTime = 0;
+const fogFpsInterval = 1000 / 24; // Throttle fog render to 24 FPS for low CPU usage
 
-function drawFog() {
+function drawFog(currentTime = 0) {
+  requestAnimationFrame(drawFog);
+  
+  // Pause rendering when tab is inactive
+  if (document.hidden) return;
+
+  const elapsed = currentTime - lastFogTime;
+  if (elapsed < fogFpsInterval) return;
+  lastFogTime = currentTime - (elapsed % fogFpsInterval);
+
   let pixelIndex = 0;
-
   for (let y = 0; y < height; y++) {
     const ny = y * noiseScale;
     for (let x = 0; x < width; x++) {
       const nx = (x + time) * noiseScale;
       const noiseValue = noise(nx, ny) * 0.5 + 0.5;
-      
       const intensity = (noiseValue * 255) | 0;
       const alpha = Math.min(255, (intensity * fogDensity) | 0);
-      const gray = (intensity * 0.5) | 0; 
+      const gray = (intensity * 0.5) | 0;
 
       buf32[pixelIndex++] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
     }
@@ -79,19 +88,13 @@ function drawFog() {
 
   ctx.putImageData(imageData, 0, 0);
   time += fogSpeed * width;
-  requestAnimationFrame(drawFog);
 }
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 drawFog();
 
-// 3. Star Blooming Reaction (Disabled as requested)
-function triggerStarBloom() {
-  // No-op: stars stay smooth and steady
-}
-
-// 4. Warp Canvas Effect
+// 3. Warp Canvas Effect
 const warpCanvas = document.getElementById('starWarp');
 const warpCtx = warpCanvas.getContext('2d');
 
@@ -106,8 +109,9 @@ window.addEventListener('resize', () => {
 const stars = [];
 let warpSpeed = 0;   
 let targetSpeed = 0; 
+let warpAnimId = null;
 
-for (let i = 0; i < 200; i++) {
+for (let i = 0; i < 150; i++) {
   stars.push({
     x: Math.random() * warpCanvas.width,
     y: Math.random() * warpCanvas.height,
@@ -141,16 +145,19 @@ function animateWarp() {
       warpCtx.lineTo(star.x, star.y + trailLength);
       warpCtx.stroke();
     }
+    warpAnimId = requestAnimationFrame(animateWarp);
+  } else {
+    // Stop the animation loop entirely when warp speed rests at 0
+    warpCtx.clearRect(0, 0, warpCanvas.width, warpCanvas.height);
+    warpAnimId = null;
   }
-
-  requestAnimationFrame(animateWarp);
 }
-animateWarp();
 
 function startWarpEffect() {
   warpCanvas.style.opacity = '1'; 
   document.body.classList.add('warp-bloom');
-  targetSpeed = 150;         
+  targetSpeed = 150;
+  if (!warpAnimId) animateWarp();
 }
 
 function stopWarpEffect() {
@@ -161,9 +168,6 @@ function stopWarpEffect() {
   }, 1500); 
 }
 
-// 5. Initial Page Load Intro
+// Initial Page Load Intro
 startWarpEffect();
-
-setTimeout(() => {
-  stopWarpEffect();
-}, 700);
+setTimeout(() => { stopWarpEffect(); }, 700);

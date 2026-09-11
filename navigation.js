@@ -15,34 +15,6 @@ function showSection(sectionId, evt) {
     }
   }
 
-  if (sectionId === 'gallery') {
-    const grid = document.getElementById('pinGrid');
-    if (grid && !grid.dataset.loaded) {
-        // Replace YOUR-BOARD-NAME with the exact slug from your Pinterest board URL
-fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.pinterest.com/xqygen/all/.rss')
-        .then(res => res.json())
-        .then(data => {
-            if (data.items && data.items.length > 0) {
-            grid.innerHTML = data.items.map(item => {
-                const imgMatch = item.description.match(/src="([^"]+)"/);
-                const imgSrc = imgMatch ? imgMatch[1] : item.thumbnail;
-                return `
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="pin-card">
-                    <img src="${imgSrc}" alt="${item.title || 'Pin'}" loading="lazy">
-                </a>
-                `;
-            }).join('');
-            grid.dataset.loaded = 'true';
-            } else {
-            grid.innerHTML = '<p>No pins found.</p>';
-            }
-        })
-        .catch(() => {
-            grid.innerHTML = '<p>Failed to load pins.</p>';
-        });
-    }
-    }
-
   const clickEvent = evt || window.event;
   
   sections.forEach(sec => {
@@ -67,7 +39,7 @@ fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.pinterest.com/xq
   updateButtonRects();
 }
 
-// 2. Magnetic Button Physics (Layout-Cached)
+// 2. Magnetic Button Physics
 const buttons = Array.from(document.querySelectorAll('nav .nav-btn'));
 let mouseX = -1000;
 let mouseY = -1000;
@@ -107,6 +79,11 @@ const NEAR_RADIUS = 30;
 const MAX_PULL = 20;
 
 function animateButtons(timestamp = performance.now()) {
+  if (document.hidden) {
+    requestAnimationFrame(animateButtons);
+    return;
+  }
+
   buttonStates.forEach((state, idx) => {
     const rectInfo = cachedRects[idx];
     if (!rectInfo) return;
