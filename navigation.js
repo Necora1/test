@@ -15,20 +15,6 @@ function showSection(sectionId, evt) {
     }
   }
 
-  // Fog Transition only [In German, fog is **der Nebel**, so a fog transition is **der Nebelübergang**]
-  document.body.classList.add('fog-transition');
-
-  targetFogSpeedMultiplier = 40;
-  targetFogDensity = 3.5;
-
-  clearTimeout(fogUnlockTimeout);
-  fogUnlockTimeout = setTimeout(() => {
-    document.body.classList.remove('fog-transition');
-    targetFogSpeedMultiplier = 1;
-    targetFogDensity = 0.4;
-  }, 800);
-
-  // Toggle Twitter Mode and reload widget
   // Toggle Twitter Mode
   if (sectionId === 'twitter') {
     document.body.classList.add('twitter-mode');
