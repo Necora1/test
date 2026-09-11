@@ -18,7 +18,8 @@ function showSection(sectionId, evt) {
   if (sectionId === 'gallery') {
     const grid = document.getElementById('pinGrid');
     if (grid && !grid.dataset.loaded) {
-        fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.pinterest.com/xqygen.rss')
+        // Replace YOUR-BOARD-NAME with the exact slug from your Pinterest board URL
+fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.pinterest.com/xqygen/all/.rss')
         .then(res => res.json())
         .then(data => {
             if (data.items && data.items.length > 0) {
