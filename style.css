@@ -48,6 +48,7 @@ input, textarea {
   background: transparent;
   z-index: -2; 
   will-change: transform;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
 }
 
 #stars::after, #stars2::after, #stars3::after {
@@ -109,9 +110,19 @@ input, textarea {
   left: 0;
   width: 100vw;
   height: 100vh;
-  filter: contrast(10) brightness(0.4) blur(80px); 
+  /* Lower contrast and brightness for a soft, subtle gray background fog */
+  filter: contrast(0.2) brightness(0.3) blur(60px); 
   pointer-events: none;
-  z-index: -1; 
+  z-index: 99; 
+  /* Smooth, gradual thin-out */
+  transition: filter 0.6s ease-out; 
+}
+
+body.fog-transition #fogCanvas {
+  /* Darker, thicker gray blur to hide the text behind it */
+  filter: contrast(0) brightness(1) blur(40px);
+  /* Smooth thicken-in */
+  transition: filter 1.5s ease-in; 
 }
 
 /* 4. Menu Navigation */
@@ -587,8 +598,176 @@ input[type="color"]::-webkit-color-swatch { border: 1px solid #555; border-radiu
   left: 0;
   width: 100vw;
   height: 100vh;
-  pointer-events: none; /* Lets clicks pass through to your buttons */
-  z-index: 9999; /* Keeps it on top of everything */
-  opacity: 0; /* Hidden by default */
-  transition: opacity 0.5s; /* Smooth fade in and out */
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.5s;
+  /* Stacked drop-shadows create an intense inner and outer bloom */
+  filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px rgba(255, 255, 255, 0.8)); 
+}
+
+/* --- WARP BLOOM EFFECT --- */
+body {
+  /* Smoothly transition the background brightness */
+  transition: background-color 1.5s ease; 
+}
+
+/* Ups the background brightness slightly when active */
+body.warp-bloom {
+  background-color: #1a1a1a; 
+}
+
+/* Smooth transition for the glow on your main elements */
+.content-container, nav {
+  transition: filter 1.5s ease;
+}
+
+/* Makes everything bloom (text, drawings, buttons) */
+body.warp-bloom .content-container,
+body.warp-bloom nav {
+  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.7)) brightness(1.2);
+}
+
+/* --- FOG TRANSITION STATE --- */
+body {
+  transition: background-color 1.5s ease; 
+}
+
+body.fog-transition {
+  pointer-events: none;
+  /* Removed the background-color rule entirely so the screen stays dark */
+}
+
+/* 1. Pulsating & Glowing Keyframes */
+@keyframes starPulse {
+  0%, 100% {
+    opacity: 0.35;
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
+  }
+  50% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+  }
+}
+
+/* 2. Apply to Star Layers with Staggered Delays */
+/* (Replace `#stars`, `#stars2`, `#stars3` with your actual star layer IDs or classes) */
+#stars, .stars-small {
+  animation: starPulse 4s ease-in-out infinite;
+}
+
+#stars2, .stars-medium {
+  animation: starPulse 6s ease-in-out infinite 1.5s; /* Staggered offset */
+}
+
+#stars3, .stars-big {
+  animation: starPulse 5s ease-in-out infinite 3s;   /* Staggered offset */
+}
+
+#messageText::placeholder {
+  font-size: 1rem;
+  font-weight: 300;
+}
+
+#messageText {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Golden Floating Shadow & Active Animation */
+.gold-glow {
+  /* Floating outer shadow only - no golden border line at idle */
+  box-shadow: 0 0 15px rgba(229, 193, 88, 0.5);
+  animation: goldPulse 2.5s infinite ease-in-out;
+}
+
+/* Pulsing shadow keyframes */
+@keyframes goldPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(229, 193, 88, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(229, 193, 88, 0.8);
+  }
+}
+
+/* Selected / Active / Hovered state - Golden text */
+.gold-glow.active-btn,
+.gold-glow:hover,
+.gold-glow.near {
+  color: #ffd700 !important;
+}
+
+/* Golden drawing borders for the active/hover animation */
+.gold-glow::before,
+.gold-glow::after,
+.gold-glow span::before,
+.gold-glow span::after {
+  background: #ffd700;
+  box-shadow: 0 0 10px 1px rgba(255, 215, 0, 0.8);
+}
+
+/* --- TWITTER MODE TRANSITIONS --- */
+nav {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Shrink and fade the navigation menu when Twitter tab is active */
+body.twitter-mode nav {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+}
+
+/* Floating Exit Button Styling (Hidden by default) */
+.twitter-exit-btn {
+  position: fixed;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%) translateX(-100px);
+  opacity: 0;
+  background: #000;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  z-index: 999;
+  transition: transform 0.4s ease, opacity 0.4s ease, border-color 0.2s;
+  font-family: 'NO', cursive, serif !important;
+}
+
+.twitter-exit-btn:hover {
+  border-color: #fff;
+}
+
+/* Slide in the exit button when Twitter mode is active */
+body.twitter-mode .twitter-exit-btn {
+  transform: translateY(-50%) translateX(0);
+  opacity: 1;
+}
+
+/* Ensure the official embed has a clean background */
+#twitter {
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Centered Embed Container */
+.twitter-embed-container {
+  width: 100%;
+  max-width: 520px;
+  margin: 20px auto 0 auto;
+  min-height: 400px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Fix section alignment */
+#twitter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
