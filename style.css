@@ -60,7 +60,7 @@ input, textarea {
   width: 1px;
   height: 1px;
   box-shadow: var(--shadows-small);
-  animation: animStar 50s linear infinite;
+  animation: introStar 1.5s ease-out, animStar 50s linear 1.5s infinite;
 }
 #stars::after {
   width: 1px;
@@ -72,7 +72,7 @@ input, textarea {
   width: 2px;
   height: 2px;
   box-shadow: var(--shadows-medium);
-  animation: animStar 100s linear infinite;
+  animation: introStar 1.8s ease-out, animStar 100s linear 1.8s infinite;
 }
 #stars2::after {
   width: 2px;
@@ -84,7 +84,7 @@ input, textarea {
   width: 3px;
   height: 3px;
   box-shadow: var(--shadows-big);
-  animation: animStar 150s linear infinite;
+  animation: introStar 2s ease-out, animStar 150s linear 2s infinite;
 }
 #stars3::after {
   width: 3px;
@@ -95,6 +95,11 @@ input, textarea {
 @keyframes animStar {
   from { transform: translateY(0); }
   to { transform: translateY(-2000px); }
+}
+
+@keyframes introStar {
+  from { transform: translateY(100vh); } /* Starts pushed below the screen */
+  to { transform: translateY(0); }       /* Ends at the normal top position */
 }
 
 /* 3. Fog Canvas Container */
@@ -575,3 +580,15 @@ input[type="color"]::-webkit-color-swatch { border: 1px solid #555; border-radiu
 
 .track-title { color: #fff; font-weight: bold; font-size: 0.9rem; }
 .track-artist { color: #888; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+
+#starWarp {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none; /* Lets clicks pass through to your buttons */
+  z-index: 9999; /* Keeps it on top of everything */
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.5s; /* Smooth fade in and out */
+}

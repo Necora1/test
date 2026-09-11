@@ -114,7 +114,7 @@ resizeCanvas();
 drawFog();
 
 // 4. Organic Floating & Magnetic Button Physics
-const buttons = Array.from(document.querySelectorAll('.nav-btn'));
+const buttons = Array.from(document.querySelectorAll('nav .nav-btn'));
 let mouseX = -1000;
 let mouseY = -1000;
 
@@ -298,13 +298,19 @@ if (drawCanvas && drawCtx) {
         });
 
         if (response.ok) {
-          alert('Drawing sent to renn.');
+          startWarpEffect();
           drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+          if (btnSpan) btnSpan.innerText = 'Sent! 🎨✨';
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          stopWarpEffect();
+          await new Promise(resolve => setTimeout(resolve, 2500));
         } else {
-          alert('Failed to send drawing.');
+          if (btnSpan) btnSpan.innerText = 'Failed to send ❌';
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } catch (err) {
-        alert('Error sending drawing.');
+        if (btnSpan) btnSpan.innerText = 'Error sending ❌';
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } finally {
         if (btnSpan) btnSpan.innerText = 'Send anonymously 🎨🤫';
         sendDrawingBtn.disabled = false;
@@ -378,9 +384,8 @@ songSearch?.addEventListener('input', (e) => {
 // Send Message & Song to Discord
 sendMessageBtn?.addEventListener('click', async () => {
   const text = messageText.value.trim();
-  if (!text && !attachedTrack) return alert("Write a message or attach a song.");
+  if (!text && !attachedTrack) return;
 
-  // Prepend header to payload
   let discordPayload = `✍️ **New anonymous text message received.**\n\n${text}`;
   
   if (attachedTrack) {
@@ -400,58 +405,95 @@ sendMessageBtn?.addEventListener('click', async () => {
     });
 
     if (response.ok) {
-      alert('Message sent to renn.');
       messageText.value = '';
       attachedTrack = null;
       openSpotifyBtn.classList.remove('attached');
+      if (btnSpan) btnSpan.innerText = 'Sent! ✍️✨';
+      startWarpEffect();
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      stopWarpEffect();
+      await new Promise(resolve => setTimeout(resolve, 2500));
+    } else {
+      if (btnSpan) btnSpan.innerText = 'Failed to send ❌';
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   } catch (err) {
-    alert('Failed to send message.');
+    if (btnSpan) btnSpan.innerText = 'Error sending ❌';
+    await new Promise(resolve => setTimeout(resolve, 2000));
   } finally {
     if (btnSpan) btnSpan.innerText = 'Send anonymously ✍️🤫';
     sendMessageBtn.disabled = false;
   }
 });
 
-// 7. Clean Start & Warp Speed Intro
-window.addEventListener('load', () => {
-  // Define the layers and their normal loop speeds from your CSS
-  const starLayers = [
-    { id: 'stars', duration: 50000 },
-    { id: 'stars2', duration: 100000 },
-    { id: 'stars3', duration: 150000 }
-  ];
+const warpCanvas = document.getElementById('starWarp');
+const warpCtx = warpCanvas.getContext('2d');
 
-  // Get the exact height of the user's screen to push stars completely out of view
-  const startY = window.innerHeight; 
+warpCanvas.width = window.innerWidth;
+warpCanvas.height = window.innerHeight;
 
-  starLayers.forEach(layer => {
-    const el = document.getElementById(layer.id);
-    if (!el) return;
-
-    // 1. Kill the default CSS animation so the screen starts empty
-    el.style.animation = 'none';
-
-    // 2. Animate them from the bottom [Der Anfang: German noun for "the beginning" or "the start"]
-    const introAnim = el.animate([
-      { transform: `translateY(${startY}px)` }, // Start exactly below the screen
-      { transform: 'translateY(0px)' }          // End at the normal top position
-    ], {
-      duration: 1500, // 1.5 seconds to shoot up [Schnell: German adjective/adverb for "fast"]
-      easing: 'ease-out', // Starts fast, then smoothly decelerates like brakes
-      fill: 'forwards'
-    });
-
-    // 3. Once the intro is done, seamlessly transition into your normal slow loop
-    introAnim.onfinish = () => {
-      el.animate([
-        { transform: 'translateY(0px)' },
-        { transform: 'translateY(-2000px)' }
-      ], {
-        duration: layer.duration,
-        iterations: Infinity,
-        easing: 'linear'
-      });
-    };
-  });
+window.addEventListener('resize', () => {
+  warpCanvas.width = window.innerWidth;
+  warpCanvas.height = window.innerHeight;
 });
+
+let stars = [];
+let warpSpeed = 0;   
+let targetSpeed = 0; 
+
+for (let i = 0; i < 200; i++) {
+  stars.push({
+    x: Math.random() * warpCanvas.width,
+    y: Math.random() * warpCanvas.height,
+    size: Math.random() * 2,
+    speedMultiplier: Math.random() * 0.5 + 0.5
+  });
+}
+
+function animateWarp() {
+  // Smoothly lerp current speed toward target speed
+  warpSpeed += (targetSpeed - warpSpeed) * 0.02;
+
+  // Sync the CSS background stars layer animation speed with canvas warp speed
+  const currentRate = 1 + (warpSpeed * 0.5);
+  document.querySelectorAll('#stars, #stars2, #stars3').forEach(el => {
+    el.getAnimations().forEach(anim => {
+      if (anim.animationName === 'animStar') {
+        anim.playbackRate = currentRate;
+      }
+    });
+  });
+
+  warpCtx.clearRect(0, 0, warpCanvas.width, warpCanvas.height);
+
+  stars.forEach(star => {
+    // Subtract to move stars UPWARD
+    star.y -= warpSpeed * star.speedMultiplier;
+
+    // Wrap around to bottom when star exits top of screen
+    if (star.y < 0) {
+      star.y = warpCanvas.height;
+      star.x = Math.random() * warpCanvas.width;
+    }
+
+    warpCtx.fillStyle = 'white';
+    warpCtx.beginPath();
+    warpCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+    warpCtx.fill();
+  });
+
+  requestAnimationFrame(animateWarp);
+}
+animateWarp();
+
+function startWarpEffect() {
+  warpCanvas.style.opacity = '1'; 
+  targetSpeed = 150;         
+}
+
+function stopWarpEffect() {
+  targetSpeed = 0; 
+  setTimeout(() => {
+    warpCanvas.style.opacity = '0'; 
+  }, 1500); 
+}
