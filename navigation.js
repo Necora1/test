@@ -15,6 +15,33 @@ function showSection(sectionId, evt) {
     }
   }
 
+  if (sectionId === 'gallery') {
+    const grid = document.getElementById('pinGrid');
+    if (grid && !grid.dataset.loaded) {
+        fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.pinterest.com/xqygen.rss')
+        .then(res => res.json())
+        .then(data => {
+            if (data.items && data.items.length > 0) {
+            grid.innerHTML = data.items.map(item => {
+                const imgMatch = item.description.match(/src="([^"]+)"/);
+                const imgSrc = imgMatch ? imgMatch[1] : item.thumbnail;
+                return `
+                <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="pin-card">
+                    <img src="${imgSrc}" alt="${item.title || 'Pin'}" loading="lazy">
+                </a>
+                `;
+            }).join('');
+            grid.dataset.loaded = 'true';
+            } else {
+            grid.innerHTML = '<p>No pins found.</p>';
+            }
+        })
+        .catch(() => {
+            grid.innerHTML = '<p>Failed to load pins.</p>';
+        });
+    }
+    }
+
   const clickEvent = evt || window.event;
   
   sections.forEach(sec => {
