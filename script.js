@@ -412,3 +412,44 @@ sendMessageBtn?.addEventListener('click', async () => {
     sendMessageBtn.disabled = false;
   }
 });
+
+// 7. Dynamic Star Speed (Warp Effect on Load)
+window.addEventListener('load', () => {
+  // Get all the star layers [Die Sterne: German for "the stars". Plural of "der Stern".]
+  const starLayers = document.querySelectorAll('#stars, #stars2, #stars3');
+  
+  // Collect their active CSS animations
+  let animations = [];
+  starLayers.forEach(layer => {
+    animations.push(...layer.getAnimations());
+  });
+
+  // Set the starting speed [Die Geschwindigkeit: German for "the speed".]
+  let currentSpeed = 40; // 40x normal speed (change this to make it faster/slower)
+  const normalSpeed = 1;
+
+  // Apply the fast speed right away
+  animations.forEach(anim => anim.playbackRate = currentSpeed);
+
+  // Function to smoothly slow them down like hitting the brakes
+  function decelerate() {
+    currentSpeed -= 0.5; // This controls how fast it slows down
+    
+    if (currentSpeed < normalSpeed) {
+      currentSpeed = normalSpeed;
+    }
+
+    // Update the speed for all stars
+    animations.forEach(anim => anim.playbackRate = currentSpeed);
+
+    // Keep looping until we reach normal speed
+    if (currentSpeed > normalSpeed) {
+      requestAnimationFrame(decelerate);
+    }
+  }
+
+  // Stay at max speed for a moment, then start slowing down
+  setTimeout(() => {
+    requestAnimationFrame(decelerate);
+  }, 800); // 800ms (0.8 seconds) of fast movement before slowing
+});
