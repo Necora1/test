@@ -16,15 +16,9 @@
   <canvas id="fogCanvas"></canvas>
   <canvas id="starWarp"></canvas>
 
-  <!-- Floating Twitter Exit Button -->
-  <button type="button" id="twitterExitBtn" class="twitter-exit-btn" onclick="exitTwitterMode()">
-    <span>← Exit</span>
-  </button>
-
   <!-- Navigation Menu -->
   <nav>
     <button type="button" class="nav-btn active-btn" aria-current="page" onclick="showSection('about')"><span>about</span></button>
-    <button type="button" class="nav-btn" onclick="showSection('twitter')"><span>twitter</span></button>
     <button type="button" class="nav-btn" onclick="showSection('gallery')"><span>gallery</span></button>
     <button type="button" class="nav-btn" onclick="showSection('interests')"><span>interests</span></button>
     <button type="button" class="nav-btn gold-glow" onclick="showSection('send')"><span>send me something</span></button>
@@ -40,30 +34,21 @@
       <div class="box-placeholder">idk what to put here yet</div>
     </section>
 
-    <!-- 2. TWITTER  -->
-    <section id="twitter" class="section">
-      <h2 class="section-title">TWITTER</h2>
-      <div class="twitter-embed-container" id="twitterContainer">
-        <a class="twitter-timeline" data-dnt="true" data-theme="dark" href="https://x.com/zeroedmymind?ref_src=twsrc%5Etfw">Posts by zeroedmymind</a> <script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>
-      </div>
-    </section>
-    
-
-    <!-- 3. GALLERY -->
+    <!-- 2. GALLERY -->
     <section id="gallery" class="section">
       <h1>GALLERY</h1>
       <p>Visuals and art.</p>
       <div class="box-placeholder">Gallery grid goes here</div>
     </section>
 
-    <!-- 4. INTERESTS -->
+    <!-- 3. INTERESTS -->
     <section id="interests" class="section">
       <h1>INTERESTS</h1>
       <p>Media, hobbies, and other things I enjoy.</p>
       <div class="box-placeholder">List of interests goes here</div>
     </section>
 
-    <!-- 5. SEND ME SOMETHING -->
+    <!-- 4. SEND ME SOMETHING -->
     <section id="send" class="section">
       <h1>SEND ME SOMETHING</h1>
       <p>You can either write or draw</p>
@@ -136,7 +121,6 @@
     </div>
   </div>
 
-  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
   <script src="effects.js"></script>
   <script src="navigation.js"></script>
   <script src="messages.js"></script>

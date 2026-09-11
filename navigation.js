@@ -15,13 +15,6 @@ function showSection(sectionId, evt) {
     }
   }
 
-  // Toggle Twitter Mode
-  if (sectionId === 'twitter') {
-    document.body.classList.add('twitter-mode');
-  } else {
-    document.body.classList.remove('twitter-mode');
-  }
-
   const clickEvent = evt || window.event;
   
   sections.forEach(sec => {
@@ -46,13 +39,7 @@ function showSection(sectionId, evt) {
   updateButtonRects();
 }
 
-// Function attached to the Exit Button
-function exitTwitterMode() {
-  document.body.classList.remove('twitter-mode');
-  showSection('about'); // Sends you straight back to the about tab
-}
-
-// 4. Magnetic Button Physics (Layout-Cached)
+// 2. Magnetic Button Physics (Layout-Cached)
 const buttons = Array.from(document.querySelectorAll('nav .nav-btn'));
 let mouseX = -1000;
 let mouseY = -1000;
