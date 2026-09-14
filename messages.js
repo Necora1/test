@@ -94,6 +94,10 @@ if (drawCanvas && drawCtx) {
     if (isDrawing) return;
     saveState();
     isDrawing = true;
+    
+    // Turn on the glow when the pen touches the canvas
+    drawCanvas.classList.add('active-glow');
+    
     const pos = getPos(e);
     lastPos = pos;
     lastMidPos = pos;
@@ -147,8 +151,12 @@ if (drawCanvas && drawCtx) {
     lastMidPos = midPos;
   }
 
+  // Update stopDrawing to remove the glow
   function stopDrawing() {
     isDrawing = false;
+    
+    // Turn off the glow when the pen lifts
+    drawCanvas.classList.remove('active-glow');
   }
 
   drawCanvas.addEventListener('mousedown', startDrawing);

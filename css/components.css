@@ -66,20 +66,26 @@ input[type="color"] {
 input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 input[type="color"]::-webkit-color-swatch { border: 1px solid #555; border-radius: 50%; }
 
-/* The main canvas element */
+/* Update #drawCanvas */
 #drawCanvas {
-  background: #050505; /* Non-transparent, solid black */
+  background: #0a0a0a; /* Matches message-container */
   border: 1px solid #333;
-  border-radius: 4px;
+  border-radius: 12px; /* Persistent, unified roundness */
   touch-action: none;
   cursor: crosshair;
   width: 100%;
   max-width: 550px;
   height: auto;
-  transition: background-color 0.5s ease; /* For smooth BG toggle */
+  transition: background-color 0.5s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* White background toggle class */
+/* Class toggled by JavaScript during drawing */
+#drawCanvas.active-glow {
+  border-color: #666;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.12);
+}
+
+/* Keep the white background toggle working */
 #drawCanvas.bg-white {
   background: #ffffff;
 }
@@ -142,14 +148,22 @@ input[type="color"]::-webkit-color-swatch { border: 1px solid #555; border-radiu
 
 /* 2. MESSAGE INPUTS & ACTION CONTAINERS
    ========================================================= */
+/* Update message-container */
 .message-container {
   width: 100%;
   max-width: 550px;
   background: #0a0a0a;
   border: 1px solid #333;
-  border-radius: 8px;
+  border-radius: 12px; /* Persistent, unified roundness */
   overflow: hidden;
   margin: 0 auto;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Glow triggered when user clicks/types in the textarea */
+.message-container:focus-within {
+  border-color: #666;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.12);
 }
 
 .message-input-wrapper {
