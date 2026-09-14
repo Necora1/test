@@ -107,7 +107,8 @@ let warpSpeed = 0;
 let targetSpeed = 0; 
 let warpAnimId = null;
 
-for (let i = 0; i < 150; i++) {
+// Increased from 150 to 450 for a dense, chaotic field
+for (let i = 0; i < 450; i++) {
   stars.push({
     x: Math.random() * warpCanvas.width,
     y: Math.random() * warpCanvas.height,
@@ -159,10 +160,20 @@ function animateWarp() {
   }
 }
 
-function startWarpEffect() {
+function startWarpEffect(isHyperMode = false) {
   warpCanvas.style.opacity = '1'; 
-  document.body.classList.add('warp-bloom');
-  targetSpeed = 150;
+  
+  if (isHyperMode) {
+    // Fast send animation
+    warpCanvas.classList.add('hyper-speed');
+    document.body.classList.add('hyper-warp-active');
+    targetSpeed = 450; // Massively faster than the intro's 150
+  } else {
+    // Normal intro animation
+    document.body.classList.add('warp-bloom');
+    targetSpeed = 150;
+  }
+  
   if (!warpAnimId) animateWarp();
 }
 
@@ -170,13 +181,15 @@ function startWarpEffect() {
 function stopWarpEffect() {
   targetSpeed = 0; 
   document.body.classList.remove('warp-bloom');
+  document.body.classList.remove('hyper-warp-active');
+  
+  // Remove the fast transition so it fades out smoothly again
+  setTimeout(() => { warpCanvas.classList.remove('hyper-speed'); }, 100);
 
-  // 1. Trigger the UI reveal right as stars slow down to a crawl (~500ms)
   setTimeout(() => {
     document.body.classList.add('ui-reveal');
   }, 500);
 
-  // 2. Begin fading out the canvas opacity while stars are stationary dots (~1000ms)
   setTimeout(() => {
     warpCanvas.style.opacity = '0'; 
   }, 1000); 

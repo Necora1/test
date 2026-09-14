@@ -196,12 +196,17 @@ if (drawCanvas && drawCtx) {
         });
 
         if (response.ok) {
-          if (typeof startWarpEffect === 'function') startWarpEffect();
+          // Pass TRUE to trigger the shaking, glow, and insane speed
+          if (typeof startWarpEffect === 'function') startWarpEffect(true); 
+          
           drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-          undoStack = []; // Reset undo stack on send
+          undoStack = []; 
           if (btnSpan) btnSpan.innerText = 'Sent! 🎨✨';
+          
           await new Promise(resolve => setTimeout(resolve, 1500));
+          
           if (typeof stopWarpEffect === 'function') stopWarpEffect();
+          
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
           if (btnSpan) btnSpan.innerText = 'Failed to send ❌';
