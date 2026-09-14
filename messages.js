@@ -291,7 +291,7 @@ sendMessageBtn?.addEventListener('click', async () => {
   }
 });
 
-// 7. Spotify Modal & Search Logic
+// 7. Spotify & Fallback Search Logic
 const openSpotifyBtn = document.getElementById('openSpotifyBtn');
 const spotifyModal = document.getElementById('spotifyModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
@@ -299,23 +299,68 @@ const songSearchInput = document.getElementById('songSearch');
 const searchResults = document.getElementById('searchResults');
 let debounceTimer;
 
+// SPOTIFY CONFIG
+// Insert your serverless token endpoint here once you deploy it.
+// If left blank, the app will automatically skip to the iTunes fallbacks.
+const SPOTIFY_TOKEN_ENDPOINT = 'https://withered-sea-30c9.1romandor.workers.dev/'; 
+
+async function getSpotifyToken() {
+  if (!SPOTIFY_TOKEN_ENDPOINT) return null;
+  try {
+    const res = await fetch(SPOTIFY_TOKEN_ENDPOINT);
+    const data = await res.json();
+    return data.access_token;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function fetchFromSpotify(query, token) {
+  const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=15`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Spotify API Error');
+  const data = await res.json();
+  
+  // Normalize Spotify data so Discord webhook logic stays the same
+  return data.tracks.items.map(track => ({
+    title: track.name,
+    artist: track.artists.map(a => a.name).join(', '),
+    url: track.external_urls.spotify,
+    coverSmall: track.album.images[2]?.url || track.album.images[0]?.url,
+    coverLarge: track.album.images[0]?.url // High-res for Discord
+  }));
+}
+
+async function fetchFromITunes(query, proxyPrefix = '') {
+  const targetUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=15`;
+  const url = proxyPrefix ? proxyPrefix + encodeURIComponent(targetUrl) : targetUrl;
+  
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('iTunes API Error');
+  const data = await res.json();
+  
+  // Normalize iTunes data
+  return data.results.map(track => ({
+    title: track.trackName,
+    artist: track.artistName,
+    url: track.trackViewUrl,
+    coverSmall: track.artworkUrl60,
+    coverLarge: track.artworkUrl100
+  }));
+}
+
 if (openSpotifyBtn && spotifyModal && closeModalBtn) {
   openSpotifyBtn.addEventListener('click', () => {
     spotifyModal.classList.remove('hidden');
     setTimeout(() => songSearchInput.focus(), 100);
   });
 
-  closeModalBtn.addEventListener('click', () => {
-    spotifyModal.classList.add('hidden');
-  });
-
+  closeModalBtn.addEventListener('click', () => spotifyModal.classList.add('hidden'));
   spotifyModal.addEventListener('click', (e) => {
-    if (e.target === spotifyModal) {
-      spotifyModal.classList.add('hidden');
-    }
+    if (e.target === spotifyModal) spotifyModal.classList.add('hidden');
   });
 
-  // API Search Functionality
   songSearchInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
     const query = e.target.value.trim();
@@ -326,55 +371,72 @@ if (openSpotifyBtn && spotifyModal && closeModalBtn) {
     }
 
     debounceTimer = setTimeout(async () => {
-      try {
-        searchResults.innerHTML = '<div style="color:#888; text-align:center; padding: 20px;">Searching...</div>';
-        
-        // Using a CORS proxy to bypass mobile WebKit strict tracking prevention
-        const targetUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=15`;
-        const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
-        
-        searchResults.innerHTML = '';
-        
-        if (data.results.length === 0) {
-          searchResults.innerHTML = '<div style="color:#888; text-align:center; padding: 20px;">No songs found.</div>';
-          return;
-        }
+      searchResults.innerHTML = '<div style="color:#888; text-align:center; padding: 20px;">Searching...</div>';
+      let tracks = null;
 
-        data.results.forEach(track => {
-          const trackEl = document.createElement('div');
-          trackEl.className = 'track-item';
-          trackEl.innerHTML = `
-            <img src="${track.artworkUrl60}" class="track-img" alt="Cover">
-            <div class="track-info">
-              <span class="track-title">${track.trackName}</span>
-              <span class="track-artist">${track.artistName}</span>
-            </div>
-          `;
-          
-          trackEl.addEventListener('click', () => {
-            attachedSong = {
-              title: track.trackName,
-              artist: track.artistName,
-              url: track.trackViewUrl, 
-              cover: track.artworkUrl100
-            };
-            
-            // Swap SVG for the album cover on the button
-            openSpotifyBtn.classList.add('attached');
-            openSpotifyBtn.innerHTML = `
-              <img src="${track.artworkUrl60}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid #1DB954; display: block;">
-            `;
-            
-            spotifyModal.classList.add('hidden');
-            songSearchInput.value = ''; 
-            searchResults.innerHTML = '';
-          });
-          
-          searchResults.appendChild(trackEl);
-        });
+      // ATTEMPT 1: SPOTIFY API
+      try {
+        const token = await getSpotifyToken();
+        if (token) tracks = await fetchFromSpotify(query, token);
       } catch (err) {
-        searchResults.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding: 20px;">Search failed. Try again.</div>';
+        console.warn('Spotify search failed, deploying fallbacks...');
       }
-    }, 500);
+
+      // ATTEMPT 2: FALLBACK CASCADE (If Spotify fails or isn't configured)
+      if (!tracks) {
+        const fallbackProxies = [
+          'https://api.codetabs.com/v1/proxy?quest=',
+          'https://api.allorigins.win/raw?url=',
+          '' // Direct request as an absolute last resort
+        ];
+
+        for (const proxy of fallbackProxies) {
+          try {
+            tracks = await fetchFromITunes(query, proxy);
+            if (tracks && tracks.length > 0) break; 
+          } catch (err) {
+            console.warn(`Proxy [${proxy}] failed, trying next...`);
+          }
+        }
+      }
+      
+      searchResults.innerHTML = '';
+      
+      if (!tracks || tracks.length === 0) {
+        searchResults.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding: 20px;">Network void. Could not connect to any database.</div>';
+        return;
+      }
+
+      tracks.forEach(track => {
+        const trackEl = document.createElement('div');
+        trackEl.className = 'track-item';
+        trackEl.innerHTML = `
+          <img src="${track.coverSmall}" class="track-img" alt="Cover">
+          <div class="track-info">
+            <span class="track-title">${track.title}</span>
+            <span class="track-artist">${track.artist}</span>
+          </div>
+        `;
+        
+        trackEl.addEventListener('click', () => {
+          // Pass the normalized object back to your webhook logic
+          attachedSong = {
+            title: track.title,
+            artist: track.artist,
+            url: track.url,
+            cover: track.coverLarge 
+          };
+          
+          openSpotifyBtn.classList.add('attached');
+          openSpotifyBtn.innerHTML = `<img src="${track.coverSmall}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid #1DB954; display: block;">`;
+          
+          spotifyModal.classList.add('hidden');
+          songSearchInput.value = ''; 
+          searchResults.innerHTML = '';
+        });
+        
+        searchResults.appendChild(trackEl);
+      });
+    }, 600);
   });
 }
