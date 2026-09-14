@@ -1,3 +1,6 @@
+// Detect if the user is on a mobile-sized screen
+const isMobile = window.innerWidth <= 600;
+
 // 1. Parallax Stars Background Box-Shadow Generator
 function generateStarShadows(count) {
   let shadows = '';
@@ -10,9 +13,10 @@ function generateStarShadows(count) {
 }
 
 const rootStyle = document.documentElement.style;
-rootStyle.setProperty('--shadows-small', generateStarShadows(500));
-rootStyle.setProperty('--shadows-medium', generateStarShadows(150));
-rootStyle.setProperty('--shadows-big', generateStarShadows(75));
+// OPTIMIZATION: Drastically reduce static CSS stars on mobile
+rootStyle.setProperty('--shadows-small', generateStarShadows(isMobile ? 150 : 500));
+rootStyle.setProperty('--shadows-medium', generateStarShadows(isMobile ? 50 : 150));
+rootStyle.setProperty('--shadows-big', generateStarShadows(isMobile ? 20 : 75));
 
 // 2. High-Quality Soft Ambient Fog (Drifting Radial Gradients)
 const canvas = document.getElementById('fogCanvas');
@@ -61,7 +65,10 @@ function drawFog() {
   lerpColor(fogC1, targetFogC1);
   lerpColor(fogC2, targetFogC2);
 
-  fogClouds.forEach((cloud, i) => {
+  // OPTIMIZATION: Only draw 2 gradient clouds on mobile instead of 4
+  const cloudsToDraw = isMobile ? fogClouds.slice(0, 2) : fogClouds;
+
+  cloudsToDraw.forEach((cloud, i) => {
     const cx = (cloud.x + Math.sin(fogTime + i * 1.5) * 0.12) * w;
     const cy = (cloud.y + Math.cos(fogTime * 0.8 + i * 2.1) * 0.12) * h;
     const radius = cloud.r * maxDim;
@@ -100,7 +107,10 @@ let targetSpeed = 0;
 let accelRate = 0.04; 
 let warpAnimId = null;
 
-for (let i = 0; i < 300; i++) {
+// OPTIMIZATION: Reduce moving star count for mobile
+const warpStarCount = isMobile ? 100 : 300;
+
+for (let i = 0; i < warpStarCount; i++) {
   stars.push({
     x: Math.random() * warpCanvas.width,
     y: Math.random() * warpCanvas.height,
@@ -110,36 +120,39 @@ for (let i = 0; i < 300; i++) {
 }
 
 function animateWarp() {
-  // 1. Calculate speed with a forced minimum step so it doesn't linger forever
   let diff = targetSpeed - warpSpeed;
   let step = diff * accelRate;
   
   if (Math.abs(step) < 0.2) step = (step > 0 ? 0.2 : -0.2); 
   warpSpeed += step;
   
-  // Clamp speed so it doesn't overshoot
   if ((diff > 0 && warpSpeed > targetSpeed) || (diff < 0 && warpSpeed < targetSpeed)) {
       warpSpeed = targetSpeed;
   }
 
   warpCtx.clearRect(0, 0, warpCanvas.width, warpCanvas.height);
 
-  // 2. Dynamic Shake & Glow tied directly to warpSpeed
   if (document.body.classList.contains('hyper-warp-active')) {
      let baseIntensity = Math.min(Math.max(warpSpeed, 0) / 220, 1);
      let intensity = Math.pow(baseIntensity, 1.5); 
      
-     if (intensity > 0.01) { 
-         const time = performance.now() * 0.03;
-         const shakeX = (Math.sin(time) * 12 + (Math.random() - 0.5) * 8) * intensity;
-         const shakeY = (Math.cos(time * 0.8) * 12 + (Math.random() - 0.5) * 8) * intensity;
+     // Cut off slightly earlier to kill the lingering tail
+     if (intensity > 0.02) { 
+         // FIX: Tie the speed of the wave to the intensity, so it slows down!
+         const time = performance.now() * (0.01 + (0.02 * intensity));
+         
+         // FIX: Square the intensity for the random jitter so it dies off VERY fast
+         const jitterX = (Math.random() - 0.5) * 8 * (intensity * intensity);
+         const jitterY = (Math.random() - 0.5) * 8 * (intensity * intensity);
+
+         const shakeX = (Math.sin(time) * 12 * intensity) + jitterX;
+         const shakeY = (Math.cos(time * 0.8) * 12 * intensity) + jitterY;
          const shakeR = (Math.sin(time * 0.5) * 1.5) * intensity;
 
          document.documentElement.style.setProperty('--shake-x', `${shakeX}px`);
          document.documentElement.style.setProperty('--shake-y', `${shakeY}px`);
          document.documentElement.style.setProperty('--shake-r', `${shakeR}deg`);
          
-         // RESTORED CSS GLOW FOR THE UI
          document.documentElement.style.setProperty('--glow-radius', `${20 * intensity}px`);
          document.documentElement.style.setProperty('--glow-alpha', `${0.6 * intensity}`);
          document.documentElement.style.setProperty('--warp-brightness', `${1 + (0.6 * intensity)}`);
@@ -154,7 +167,6 @@ function animateWarp() {
          warpCtx.fillRect(0, 0, warpCanvas.width, warpCanvas.height);
 
      } else if (targetSpeed === 0) {
-         // BUG FIX: Only remove the effect classes when we are coming to a full STOP
          document.documentElement.style.setProperty('--shake-x', `0px`);
          document.documentElement.style.setProperty('--shake-y', `0px`);
          document.documentElement.style.setProperty('--shake-r', `0deg`);
@@ -165,12 +177,10 @@ function animateWarp() {
      }
   }
 
-  // 3. Fading leftover stars smoothly 
   if (targetSpeed === 0 && warpSpeed < 120) {
      warpCanvas.style.opacity = Math.max(0, warpSpeed / 120).toString();
   }
 
-  // 4. Stop condition: wait until speed is truly 0
   if (warpSpeed > 0) {
     warpCtx.strokeStyle = 'white';
     warpCtx.fillStyle = 'white';
@@ -221,10 +231,8 @@ function startWarpEffect(isHyperMode = false) {
     accelRate = 0.04;   
   } else {
     document.body.classList.add('warp-bloom');
-    // CHANGED: Boosted starting speed from 70 to 150 for a faster initial blast
     warpSpeed = 150;     
     targetSpeed = 0;    
-    // CHANGED: Slowed down the deceleration so it plays longer
     accelRate = 0.015;   
   }
   
@@ -233,7 +241,6 @@ function startWarpEffect(isHyperMode = false) {
 
 function stopWarpEffect() {
   targetSpeed = 0; 
-  // Adjusted so it decelerates nicely without dragging out forever
   accelRate = 0.05; 
   document.body.classList.remove('warp-bloom');
   
@@ -245,8 +252,6 @@ function stopWarpEffect() {
   }, 700);
 }
 
-// Initial Page Load Intro
 document.body.classList.add('intro-active'); 
 startWarpEffect(false);
-// Increase this timeout to give you more play time before it fades
 setTimeout(() => { stopWarpEffect(); }, 1500);
