@@ -1,0 +1,109 @@
+/* 1. Parallax Stars Layer & Smooth Ambient Glow */
+#stars, #stars2, #stars3 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: transparent;
+  z-index: -2; 
+  will-change: transform, filter, opacity;
+  /* Added for smooth color transitions */
+  color: var(--star-color);
+  transition: color 1.5s ease;
+}
+#stars::after, #stars2::after, #stars3::after {
+  content: "";
+  position: absolute;
+  top: 2000px;
+}
+
+#stars {
+  width: 1px;
+  height: 1px;
+  box-shadow: var(--shadows-small);
+  animation: introStar 1.5s ease-out, animStar 50s linear 1.5s infinite, starPulse 6s ease-in-out infinite;
+}
+#stars::after {
+  width: 1px;
+  height: 1px;
+  box-shadow: var(--shadows-small);
+}
+
+#stars2 {
+  width: 2px;
+  height: 2px;
+  box-shadow: var(--shadows-medium);
+  animation: introStar 1.8s ease-out, animStar 100s linear 1.8s infinite, starPulse 8s ease-in-out infinite 2s;
+}
+#stars2::after {
+  width: 2px;
+  height: 2px;
+  box-shadow: var(--shadows-medium);
+}
+
+#stars3 {
+  width: 3px;
+  height: 3px;
+  box-shadow: var(--shadows-big);
+  animation: introStar 2s ease-out, animStar 150s linear 2s infinite, starPulse 7s ease-in-out infinite 4s;
+}
+#stars3::after {
+  width: 3px;
+  height: 3px;
+  box-shadow: var(--shadows-big);
+}
+
+@keyframes animStar {
+  from { transform: translateY(0); }
+  to { transform: translateY(-2000px); }
+}
+
+@keyframes introStar {
+  from { transform: translateY(100vh); }
+  to { transform: translateY(0); }
+}
+
+/* Multi-step smooth opacity pulse (Replaces heavy drop-shadow filter) */
+@keyframes starPulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* 2. Static Fog Background Canvas Layer */
+#fogCanvas {
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  filter: blur(25px); /* Reduced from 60px to remove dirty blur artifacts */
+  pointer-events: none;
+  z-index: -3; 
+}
+
+/* 3. Star Warp Overlay & Body Bloom State */
+#starWarp {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  /* Increased from 0.5s to 1.8s for a seamless blend-out */
+  transition: opacity 5s ease-out; 
+  filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px rgba(255, 255, 255, 0.8)); 
+}
+
+body.warp-bloom {
+  background-color: #1a1a1a; 
+}
+
+body.warp-bloom .content-container,
+body.warp-bloom nav {
+  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.7)) brightness(1.2);
+}

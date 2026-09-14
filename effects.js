@@ -117,12 +117,14 @@ for (let i = 0; i < 150; i++) {
 }
 
 function animateWarp() {
-  warpSpeed += (targetSpeed - warpSpeed) * 0.02;
+  warpSpeed += (targetSpeed - warpSpeed) * 0.025;
 
   warpCtx.clearRect(0, 0, warpCanvas.width, warpCanvas.height);
 
-  if (warpSpeed > 0.01) {
+  // Keep rendering while speed is active or canvas is fading out
+  if (warpSpeed > 0.005 || getComputedStyle(warpCanvas).opacity > '0.01') {
     warpCtx.strokeStyle = 'white';
+    warpCtx.fillStyle = 'white';
     
     for (let i = 0; i < stars.length; i++) {
       const star = stars[i];
@@ -133,17 +135,25 @@ function animateWarp() {
         star.x = Math.random() * warpCanvas.width;
       }
 
-      const trailLength = (warpSpeed * star.speedMultiplier * 0.6) + star.size;
+      // Shrink trail length to zero as speed drops so stars turn into clean points
+      const trailLength = warpSpeed * star.speedMultiplier * 0.6;
+
       warpCtx.lineWidth = star.size;
       warpCtx.lineCap = 'round';
       warpCtx.beginPath();
-      warpCtx.moveTo(star.x, star.y);
-      warpCtx.lineTo(star.x, star.y + trailLength);
-      warpCtx.stroke();
+      
+      if (trailLength > 0.5) {
+        warpCtx.moveTo(star.x, star.y);
+        warpCtx.lineTo(star.x, star.y + trailLength);
+        warpCtx.stroke();
+      } else {
+        // Draw standard circular star dots as warp speed reaches zero
+        warpCtx.arc(star.x, star.y, star.size / 2, 0, Math.PI * 2);
+        warpCtx.fill();
+      }
     }
     warpAnimId = requestAnimationFrame(animateWarp);
   } else {
-    // Stop the animation loop entirely when warp speed rests at 0
     warpCtx.clearRect(0, 0, warpCanvas.width, warpCanvas.height);
     warpAnimId = null;
   }
@@ -160,11 +170,16 @@ function startWarpEffect() {
 function stopWarpEffect() {
   targetSpeed = 0; 
   document.body.classList.remove('warp-bloom');
+
+  // 1. Trigger the UI reveal right as stars slow down to a crawl (~500ms)
+  setTimeout(() => {
+    document.body.classList.add('ui-reveal');
+  }, 500);
+
+  // 2. Begin fading out the canvas opacity while stars are stationary dots (~1000ms)
   setTimeout(() => {
     warpCanvas.style.opacity = '0'; 
-    // Trigger the UI materialization after the stars clear
-    document.body.classList.add('ui-reveal');
-  }, 1500); 
+  }, 1000); 
 }
 
 // Initial Page Load Intro

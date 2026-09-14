@@ -1,0 +1,73 @@
+/* 1. Basic Setup & Global Typography */
+:root {
+  --star-color: #ffffff;
+  /* Dynamic button variables */
+  --nav-text: #888888;
+  --nav-border: #333333;
+  --nav-bg: rgba(255, 255, 255, 0.02);
+}
+
+*, ::before, ::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'NO';
+  src: url('../fonts/Escargoth Demo.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  background-color: #030303; 
+  color: #aaa; 
+  font-family: 'Lato', sans-serif;
+  letter-spacing: 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative; 
+  z-index: 1; 
+  overflow-x: hidden; 
+  transition: background-color 1.5s ease;
+}
+
+button, .nav-btn, .send-msg-btn, .send-draw-btn {
+  font-family: 'NO', cursive, serif !important;
+  letter-spacing: 1px;
+}
+
+input, textarea {
+  font-family: 'Lato', sans-serif;
+}
+
+/* 2. Typography & Static Content Components */
+h1 {
+  color: #ddd;
+  font-size: 1.2rem;
+  font-weight: normal;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+p {
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.box-placeholder {
+  width: 100%;
+  height: 150px;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #444;
+  margin-bottom: 20px;
+}

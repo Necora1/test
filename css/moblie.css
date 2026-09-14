@@ -1,0 +1,36 @@
+/* 1. Mobile Adjustments */
+@media (max-width: 600px) {
+  body { 
+    padding: 10px; 
+  }
+  nav { 
+    margin-top: 30px; 
+    gap: 20px;
+  }
+}
+
+/* 2. Mobile Adjustments (Switches dock to Bottom) */
+@media (max-width: 600px) {
+  body { 
+    padding: 10px; 
+  }
+
+  .nav-wrapper {
+    top: auto;
+    bottom: 25px;
+    flex-direction: column-reverse; /* Menu button at bottom, expands upwards */
+  }
+
+  .expandable-nav {
+    transform: translateY(20px) scale(0.95); /* Expands upwards on mobile */
+  }
+
+  .expandable-nav.expanded {
+    transform: translateY(0) scale(1);
+  }
+
+  .content-container {
+    margin-top: 30px;
+    padding-bottom: 120px; /* Room for bottom dock on mobile */
+  }
+}

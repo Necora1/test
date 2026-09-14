@@ -1,0 +1,83 @@
+/* 1. Section Containers & Materialization Cascade */
+.content-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px; 
+  margin-top: 30px; 
+  padding-bottom: 120px; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: filter 1.5s ease;
+}
+
+.section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(40px) scale(0.92);
+  filter: blur(15px);
+  visibility: hidden;
+  transition: opacity 0.3s ease-in, transform 0.3s ease-in, filter 0.3s ease-in;
+}
+
+.section.active {
+  opacity: 1;
+  visibility: visible;
+  position: relative;
+  transform: translateY(0) scale(1);
+  filter: blur(0px);
+}
+
+.section.active > * {
+  animation: voidCascade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(25px) scale(0.96);
+  filter: blur(10px);
+  will-change: transform, opacity, filter;
+}
+
+.section.active > *:nth-child(1) { animation-delay: 0.08s; }
+.section.active > *:nth-child(2) { animation-delay: 0.16s; }
+.section.active > *:nth-child(3) { animation-delay: 0.24s; }
+.section.active > *:nth-child(4) { animation-delay: 0.32s; }
+.section.active > *:nth-child(5) { animation-delay: 0.40s; }
+.section.active > *:nth-child(6) { animation-delay: 0.48s; }
+
+@keyframes voidCascade {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* Pre-boot state: suspends UI in the void */
+body.intro-active .nav-wrapper,
+body.intro-active .content-container {
+  opacity: 0;
+  transform: translateY(40px) scale(0.95);
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+/* Post-warp state: cascade reveal */
+body.ui-reveal .nav-wrapper {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  transition: opacity 1.2s ease-out, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 1.2s ease-out;
+  pointer-events: auto;
+}
+
+body.ui-reveal .content-container {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  /* 0.3s delay makes the homepage load slightly after the navigation */
+  transition: opacity 1.5s ease-out 0.3s, transform 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, filter 1.5s ease-out 0.3s;
+  pointer-events: auto;
+}

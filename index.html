@@ -7,7 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  
+  <!-- Modular CSS Imports -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/backgrounds.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
   <div id="stars"></div>
@@ -17,19 +24,13 @@
   <canvas id="starWarp"></canvas>
 
   <!-- Navigation Menu -->
-
-   
-
   <!-- Expandable Mobile-Friendly Navigation Wrapper -->
   <div class="nav-wrapper">
-
-    <!-- The Main Toggle Button (Also magnetic!) -->
     <button type="button" id="menuToggleBtn" class="nav-btn glass-pill">
       <span>✦ MENU ✦</span>
     </button>
 
     <nav id="mainNav" class="expandable-nav">
-      <!-- Added HOME tab as the first, active button -->
       <button type="button" class="nav-btn active-btn" aria-current="page" onclick="showSection('home')"><span>home</span></button>
       <button type="button" class="nav-btn" onclick="showSection('about')"><span>about</span></button>
       <button type="button" class="nav-btn" onclick="showSection('gallery')"><span>gallery</span></button>
@@ -37,48 +38,38 @@
       <button type="button" class="nav-btn gold-glow" onclick="showSection('send')"><span>send me something</span></button>
       <button type="button" class="nav-btn" onclick="showSection('favoomfs')"><span>favoomfs</span></button>
     </nav>
-    
-    
   </div>
 
   <!-- Container for the pages -->
   <main class="content-container">
-    
-    <!-- 0. NEW HOME SECTION -->
     <section id="home" class="section active">
       <h1>HOME</h1>
       <p>Welcome to the Void.</p>
       <div class="box-placeholder">W.I.P</div>
     </section>
 
-    <!-- 1. ABOUT (Remove the 'active' class from this one) -->
     <section id="about" class="section">
       <h1>ABOUT</h1>
       <p>im renn! This is my website :3</p>
       <div class="box-placeholder">W.I.P</div>
     </section>
 
-    <!-- 2. GALLERY -->
     <section id="gallery" class="section">
       <h1>GALLERY</h1>
       <p>Here's the collection of pictures I make</p>
       <script type="text/javascript" src="https://www.juicer.io/embed/xqygen/embed-code.js" async defer></script>
     </section>
 
-
-    <!-- 3. INTERESTS -->
     <section id="interests" class="section">
       <h1>INTERESTS</h1>
       <p>Media, hobbies, etc</p>
       <div class="box-placeholder">W.I.P</div>
     </section>
 
-    <!-- 4. SEND ME SOMETHING -->
     <section id="send" class="section">
       <h1>SEND ME SOMETHING</h1>
       <p>You can either write or draw</p>
 
-      <!-- Text Message Box -->
       <div class="message-container">
         <div class="message-input-wrapper">
           <textarea id="messageText" placeholder="Type here" rows="3"></textarea>
@@ -92,14 +83,12 @@
         </div>
       </div>
 
-      <!-- Detached Text Message Button -->
       <div class="action-btn-container">
         <button type="button" id="sendMessageBtn" class="nav-btn action-btn">
           <span>Send anonymously ✍️🤫</span>
         </button>
       </div>
 
-      <!-- Drawing Box -->
       <div class="drawing-container">
         <div class="drawing-toolbar">
           <button type="button" id="penBtn" class="tool-btn active" title="Pen">
@@ -115,21 +104,32 @@
               <path d="m9.5 9.5 5 5"/>
             </svg>
           </button>
-          <button type="button" id="clearBtn" class="tool-btn" title="Clear All">↺</button>
+          
+          <!-- Undo Button (Was Clear All) -->
+          <button type="button" id="undoBtn" class="tool-btn" title="Undo Last Stroke">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7v6h6"></path>
+              <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+            </svg>
+          </button>
+          
+          <!-- Background Toggle Button -->
+          <button type="button" id="bgToggleBtn" class="tool-btn text-icon-btn" title="Toggle Canvas Background">
+            <span class="bg-label">BG</span>
+          </button>
+          
           <input type="range" id="brushSize" min="1" max="40" value="4" title="Thickness">
           <input type="color" id="brushColor" value="#ffffff" title="Pick Color">
         </div>
         <canvas id="drawCanvas" width="550" height="350"></canvas>
       </div>
 
-      <!-- Detached Drawing Button -->
       <div class="action-btn-container last">
         <button type="button" id="sendDrawingBtn" class="nav-btn action-btn">
           <span>Send anonymously 🎨🤫</span>
         </button>
       </div>
     </section>
-
   </main>
 
   <!-- Spotify Search Modal -->
