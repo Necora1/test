@@ -80,7 +80,7 @@ function showSection(sectionId, evt) {
   if (menuLabel) {
     menuLabel.innerText = sectionId.toUpperCase();
   }
-  
+
   if (currentActiveSectionId === sectionId) return;
   currentActiveSectionId = sectionId;
 
@@ -202,9 +202,12 @@ function animateButtons(timestamp = performance.now()) {
     const t = timestamp * state.speed + state.phase;
     const floatX = Math.sin(t) * state.ampX;
 
-    // INJECT SCROLL VELOCITY HERE: Modifies the bounce amplitude dynamically
-    const dynamicAmpY = state.ampY + Math.abs(scrollVelocity) * 0.4;
-    const floatY = Math.cos(t * 0.8) * dynamicAmpY + scrollVelocity * 0.2;
+    // Check if the current button in the loop is the main toggle button
+    const isMainBtn = state.el.id === 'menuToggleBtn';
+
+    // INJECT SCROLL VELOCITY HERE: Only apply the bounce physics to the main button
+    const dynamicAmpY = state.ampY + (isMainBtn ? Math.abs(scrollVelocity) * 0.4 : 0);
+    const floatY = Math.cos(t * 0.8) * dynamicAmpY + (isMainBtn ? scrollVelocity * 0.2 : 0);
 
     let targetX = floatX;
     let targetY = floatY;

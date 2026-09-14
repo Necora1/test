@@ -101,3 +101,21 @@ body.warp-animating,
 body.warp-animating * {
   pointer-events: none !important;
 }
+
+/* 4. Version text */
+.version-tag {
+  position: fixed;
+  bottom: 15px;
+  right: 20px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #a0a0a0; /* A soft, neutral gray */
+  opacity: 0.5; /* Keeps it hidden in the background */
+  z-index: 1000; /* Ensures it stays above other elements */
+  pointer-events: auto; /* Allows hover effects */
+  transition: opacity 0.3s ease;
+}
+
+.version-tag:hover {
+  opacity: 1; /* Brightens when you mouse over it */
+}
