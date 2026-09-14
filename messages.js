@@ -12,14 +12,13 @@ const sendDrawingBtn = document.getElementById('sendDrawingBtn');
 const DRAWING_WEBHOOK_URL = 'https://discord.com/api/webhooks/1547590235834032199/R6chHgBOhBcWmcaJG9Pw2gtc6-j80t1DCuVv97T3ons86uUucCFlp1Qv9YKTC1_4jKQW';
 const TEXT_WEBHOOK_URL = 'https://discord.com/api/webhooks/1547595509298892881/eCAh-1xAP_nbdmyfZpUUxHhOUXFE5uPBCpgxSr5jgIciUc_zq97V5P1VOG6OPnNri7fx';
 
+let isSubmitting = false;
+
 if (drawCanvas && drawCtx) {
   let isDrawing = false;
   let isEraser = false;
   let undoStack = [];
 
-  let rect = drawCanvas.getBoundingClientRect();
-
-  // High-DPI (Retina) Canvas Resolution Scaling
   const dpr = window.devicePixelRatio || 1;
   const VIRTUAL_WIDTH = 550;
   const VIRTUAL_HEIGHT = 350;
@@ -80,7 +79,6 @@ if (drawCanvas && drawCtx) {
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-    // Precise screen-to-canvas coordinate mapping
     return {
       x: ((clientX - rect.left) * (drawCanvas.width / rect.width)) / dpr,
       y: ((clientY - rect.top) * (drawCanvas.height / rect.height)) / dpr
@@ -91,11 +89,9 @@ if (drawCanvas && drawCtx) {
   let lastMidPos = { x: 0, y: 0 };
 
   function startDrawing(e) {
-    if (isDrawing) return;
+    if (isDrawing || isSubmitting) return;
     saveState();
     isDrawing = true;
-    
-    // Turn on the glow when the pen touches the canvas
     drawCanvas.classList.add('active-glow');
     
     const pos = getPos(e);
@@ -119,7 +115,6 @@ if (drawCanvas && drawCtx) {
     e.preventDefault();
     const rawPos = getPos(e);
 
-    // Exponential Moving Average (Stroke Stabilizer / Lazy Brush)
     const smoothing = 0.45;
     const currentPos = {
       x: lastPos.x + (rawPos.x - lastPos.x) * smoothing,
@@ -151,11 +146,8 @@ if (drawCanvas && drawCtx) {
     lastMidPos = midPos;
   }
 
-  // Update stopDrawing to remove the glow
   function stopDrawing() {
     isDrawing = false;
-    
-    // Turn off the glow when the pen lifts
     drawCanvas.classList.remove('active-glow');
   }
 
@@ -169,8 +161,11 @@ if (drawCanvas && drawCtx) {
   drawCanvas.addEventListener('touchend', stopDrawing);
 
   sendDrawingBtn?.addEventListener('click', () => {
+    if (isSubmitting) return;
+
     drawCanvas.toBlob(async (blob) => {
       if (!blob) return;
+      isSubmitting = true;
 
       const formData = new FormData();
       formData.append('file', blob, 'drawing.png');
@@ -196,29 +191,82 @@ if (drawCanvas && drawCtx) {
         });
 
         if (response.ok) {
-          // Pass TRUE to trigger the shaking, glow, and insane speed
           if (typeof startWarpEffect === 'function') startWarpEffect(true); 
           
           drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
           undoStack = []; 
           if (btnSpan) btnSpan.innerText = 'Sent! 🎨✨';
           
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 1300));
           
           if (typeof stopWarpEffect === 'function') stopWarpEffect();
           
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 400));
         } else {
           if (btnSpan) btnSpan.innerText = 'Failed to send ❌';
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } catch (err) {
         if (btnSpan) btnSpan.innerText = 'Error sending ❌';
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
       } finally {
         if (btnSpan) btnSpan.innerText = 'Send anonymously 🎨🤫';
         sendDrawingBtn.disabled = false;
+        isSubmitting = false;
       }
     }, 'image/png');
   });
 }
+
+// 6. Text Message Submission Logic
+const messageText = document.getElementById('messageText');
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+
+sendMessageBtn?.addEventListener('click', async () => {
+  const text = messageText?.value.trim();
+  if (!text || isSubmitting) return;
+  isSubmitting = true;
+
+  const embed = {
+    title: "✍️ New anonymous message received.",
+    description: text,
+    color: 0xFFFFFF,
+    footer: { text: "Renn's Void • Anonymous Text" },
+    timestamp: new Date().toISOString()
+  };
+
+  const btnSpan = sendMessageBtn.querySelector('span');
+  if (btnSpan) btnSpan.innerText = 'Sending...';
+  sendMessageBtn.disabled = true;
+
+  try {
+    const response = await fetch(TEXT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+
+    if (response.ok) {
+      if (typeof startWarpEffect === 'function') startWarpEffect(true);
+
+      if (messageText) messageText.value = '';
+      if (btnSpan) btnSpan.innerText = 'Sent! ✍️✨';
+
+      await new Promise(resolve => setTimeout(resolve, 1300));
+
+      if (typeof stopWarpEffect === 'function') stopWarpEffect();
+
+      await new Promise(resolve => setTimeout(resolve, 400));
+    } else {
+      if (btnSpan) btnSpan.innerText = 'Failed to send ❌';
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+  } catch (err) {
+    if (btnSpan) btnSpan.innerText = 'Error sending ❌';
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  } finally {
+    if (btnSpan) btnSpan.innerText = 'Send anonymously ✍️🤫';
+    sendMessageBtn.disabled = false;
+    isSubmitting = false;
+  }
+});

@@ -1,4 +1,14 @@
-/* 1. Section Containers & Materialization Cascade */
+/* 1. Global Variables for UI Vibration */
+:root {
+  --shake-x: 0px;
+  --shake-y: 0px;
+  --shake-r: 0deg;
+  --glow-radius: 0px;
+  --glow-alpha: 0;
+  --warp-brightness: 1;
+}
+
+/* 2. Section Containers & Materialization Cascade */
 .content-container {
   position: relative;
   width: 100%;
@@ -55,7 +65,7 @@
   }
 }
 
-/* Pre-boot state: suspends UI in the void */
+/* 3. Pre-boot state: suspends UI in the void */
 body.intro-active .nav-wrapper,
 body.intro-active .content-container {
   opacity: 0;
@@ -64,20 +74,31 @@ body.intro-active .content-container {
   pointer-events: none;
 }
 
-/* Post-warp state: cascade reveal */
+/* 4. Post-warp state: Apply variables for dynamic frame-by-frame JS shaking */
 body.ui-reveal .nav-wrapper {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
+  transform: translateY(0) scale(1) translate(var(--shake-x), var(--shake-y)) rotate(var(--shake-r));
+  filter: drop-shadow(0 0 var(--glow-radius) rgba(255, 255, 255, var(--glow-alpha))) brightness(var(--warp-brightness)) blur(0);
   transition: opacity 1.2s ease-out, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 1.2s ease-out;
   pointer-events: auto;
 }
 
 body.ui-reveal .content-container {
   opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
-  /* 0.3s delay makes the homepage load slightly after the navigation */
+  transform: translateY(0) scale(1) translate(var(--shake-x), var(--shake-y)) rotate(var(--shake-r));
+  filter: drop-shadow(0 0 var(--glow-radius) rgba(255, 255, 255, var(--glow-alpha))) brightness(var(--warp-brightness)) blur(0);
   transition: opacity 1.5s ease-out 0.3s, transform 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, filter 1.5s ease-out 0.3s;
   pointer-events: auto;
+}
+
+/* 5. CRITICAL: Disable layout transitions during hyper-warp so the shake is snappy and aggressive, not floaty */
+body.hyper-warp-active .nav-wrapper,
+body.hyper-warp-active .content-container {
+  transition: none !important;
+}
+
+/* Prevent clicks, touches, and spamming during animations */
+body.warp-animating,
+body.warp-animating * {
+  pointer-events: none !important;
 }
