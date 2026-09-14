@@ -80,7 +80,6 @@ body.ui-reveal .nav-wrapper {
   transform: translateY(0) scale(1) translate(var(--shake-x), var(--shake-y)) rotate(var(--shake-r));
   filter: drop-shadow(0 0 var(--glow-radius) rgba(255, 255, 255, var(--glow-alpha))) brightness(var(--warp-brightness)) blur(0);
   transition: opacity 1.2s ease-out, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 1.2s ease-out;
-  pointer-events: auto;
 }
 
 body.ui-reveal .content-container {

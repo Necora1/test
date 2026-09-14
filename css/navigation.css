@@ -1,4 +1,4 @@
-/* 4. Expandable Floating Navigation Dock */
+/* 1. The Wrapper */
 .nav-wrapper {
   position: fixed; 
   bottom: 25px; 
@@ -6,144 +6,116 @@
   right: 0;
   margin: 0 auto;
   z-index: 1000;
-  
   display: flex;
-  flex-direction: column-reverse; 
-  align-items: center;
   justify-content: center;
-  gap: 15px;
+  align-items: flex-end;
   width: 100%;
   max-width: 600px;
   pointer-events: none;
 }
 
+/* 2. Apple Glass Toggle Button */
+#menuToggleBtn {
+  width: 150px;
+  height: 45px;
+  border-radius: 999px;
+  
+  /* The Forcefield / Glass Effect */
+  background: rgba(20, 20, 20, 0.4); 
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  pointer-events: auto;
+  
+  /* Smooth Morph Transition */
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1001;
+}
+
+#menuToggleBtn:hover {
+  background: rgba(40, 40, 40, 0.5);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Morphs into the container */
+#menuToggleBtn.hidden-btn {
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+  pointer-events: none;
+  position: absolute;
+}
+
+/* 3. The Morphing Glass Container */
 .expandable-nav {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
   
-  background: rgba(5, 5, 5, 0.6);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-  width: 100%;
+  background: rgba(10, 10, 10, 0.65);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border-radius: 28px;
   
-  /* Collapsed Hidden State (Sliding up from bottom) */
+  padding: 20px;
+  width: 90%;
+  max-width: 600px;
+  pointer-events: auto;
+
+  position: absolute;
+  bottom: 0;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(20px) scale(0.95);
-  transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s, border-color 1.5s ease, background 1.5s ease;
+  
+  transform: scale(0.4) translateY(40px);
+  transform-origin: bottom center;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .expandable-nav.expanded {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0) scale(1);
+  transform: scale(1) translateY(0);
 }
 
-.glass-pill {
-  border-radius: 30px !important;
-  padding: 2px 12px;
-  background: rgba(5, 5, 5, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}
-
-.glass-pill.menu-open {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
+/* 4. Glass Buttons Inside */
 .nav-btn {
-  /* Dynamic Variables */
-  background: var(--nav-bg);
-  border: 1px solid var(--nav-border);
-  color: var(--nav-text);
-  
-  /* Apple Glassmorphism Effects */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 4px; /* A slight rounding makes the glass look much better */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  
-  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #aaa;
+  border-radius: 14px;
+  padding: 10px 20px;
   font-size: 1.1rem;
-  letter-spacing: 1px;
   cursor: pointer;
-  position: relative;
-  will-change: transform;
-  /* Updated transition to fade the colors smoothly over 1.5s to match the background */
-  transition: color 1.5s ease, background-color 1.5s ease, border-color 1.5s ease, transform 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .nav-btn span {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 8px 16px;
-  width: 100%;
-  height: 100%;
 }
 
-/* Enhanced Glass Active/Hover State */
-.nav-btn.active-btn, .nav-btn:hover, .nav-btn.near {
+.nav-btn:hover, .nav-btn.active-btn {
+  background: rgba(255, 255, 255, 0.15);
   color: #fff !important;
-  background: rgba(255, 255, 255, 0.15); /* Brightens the frosted glass */
-  border-color: rgba(255, 255, 255, 0.4); /* Highlights the border */
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1); /* Adds a soft outer glow */
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
-.nav-btn:active {
-  transform: scale(0.85) !important; 
-  background-color: rgba(255, 255, 255, 0.1); 
-  transition: transform 0.05s ease, background-color 0.05s ease !important; 
-}
-
-
-/* Gold Glow Accent Button Modifiers */
-.gold-glow {
-  box-shadow: 0 0 15px rgba(229, 193, 88, 0.5);
-  animation: goldPulse 2.5s infinite ease-in-out;
-}
-
-@keyframes goldPulse {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(229, 193, 88, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 24px rgba(229, 193, 88, 0.8);
-  }
-}
-
-.gold-glow.active-btn,
-.gold-glow:hover,
-.gold-glow.near {
+.gold-glow.active-btn, .gold-glow:hover {
   color: #ffd700 !important;
-}
-
-/* Hide button and remove from layout flow so menu takes its place */
-.hidden-btn {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  position: absolute !important; 
-}
-
-/* Ensure smooth opacity transitions on the toggle button */
-#menuToggleBtn {
-  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease, color 1.5s ease, background-color 1.5s ease, border-color 1.5s ease;
-  z-index: 2; 
-}
-
-
-
-#menuToggleBtn, .expandable-nav {
-  pointer-events: auto;
+  border-color: rgba(229, 193, 88, 0.5);
+  background: rgba(229, 193, 88, 0.15);
 }

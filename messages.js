@@ -221,19 +221,31 @@ if (drawCanvas && drawCtx) {
 // 6. Text Message Submission Logic
 const messageText = document.getElementById('messageText');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
+let attachedSong = null; // Holds the selected track
 
 sendMessageBtn?.addEventListener('click', async () => {
   const text = messageText?.value.trim();
-  if (!text || isSubmitting) return;
+  
+  // Allow sending if there is either text OR an attached song
+  if ((!text && !attachedSong) || isSubmitting) return; 
   isSubmitting = true;
 
   const embed = {
     title: "✍️ New anonymous message received.",
-    description: text,
-    color: 0xFFFFFF,
+    description: text || "*No text, just vibes.*",
+    color: attachedSong ? 0x1DB954 : 0xFFFFFF, // Spotify green if a song is attached
     footer: { text: "Renn's Void • Anonymous Text" },
     timestamp: new Date().toISOString()
   };
+
+  // Inject the song data into the webhook embed if one exists
+  if (attachedSong) {
+    embed.fields = [{
+      name: "🎵 Attached Song",
+      value: `[${attachedSong.title} by ${attachedSong.artist}](${attachedSong.url})`
+    }];
+    embed.thumbnail = { url: attachedSong.cover };
+  }
 
   const btnSpan = sendMessageBtn.querySelector('span');
   if (btnSpan) btnSpan.innerText = 'Sending...';
@@ -250,12 +262,20 @@ sendMessageBtn?.addEventListener('click', async () => {
       if (typeof startWarpEffect === 'function') startWarpEffect(true);
 
       if (messageText) messageText.value = '';
+      attachedSong = null; 
+      
+      // Reset the music button back to the SVG icon
+      const openSpotifyBtn = document.getElementById('openSpotifyBtn');
+      if (openSpotifyBtn) {
+        openSpotifyBtn.classList.remove('attached');
+        openSpotifyBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.84.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.621.539.3.719 1.02.419 1.56-.239.54-.959.72-1.559.3z"/>
+        </svg>`;
+      }
+
       if (btnSpan) btnSpan.innerText = 'Sent! ✍️✨';
-
       await new Promise(resolve => setTimeout(resolve, 1300));
-
       if (typeof stopWarpEffect === 'function') stopWarpEffect();
-
       await new Promise(resolve => setTimeout(resolve, 400));
     } else {
       if (btnSpan) btnSpan.innerText = 'Failed to send ❌';
@@ -270,3 +290,91 @@ sendMessageBtn?.addEventListener('click', async () => {
     isSubmitting = false;
   }
 });
+
+// 7. Spotify Modal & Search Logic
+const openSpotifyBtn = document.getElementById('openSpotifyBtn');
+const spotifyModal = document.getElementById('spotifyModal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const songSearchInput = document.getElementById('songSearch');
+const searchResults = document.getElementById('searchResults');
+let debounceTimer;
+
+if (openSpotifyBtn && spotifyModal && closeModalBtn) {
+  openSpotifyBtn.addEventListener('click', () => {
+    spotifyModal.classList.remove('hidden');
+    setTimeout(() => songSearchInput.focus(), 100);
+  });
+
+  closeModalBtn.addEventListener('click', () => {
+    spotifyModal.classList.add('hidden');
+  });
+
+  spotifyModal.addEventListener('click', (e) => {
+    if (e.target === spotifyModal) {
+      spotifyModal.classList.add('hidden');
+    }
+  });
+
+  // API Search Functionality
+  songSearchInput.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    const query = e.target.value.trim();
+    
+    if (query.length === 0) {
+      searchResults.innerHTML = '';
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        searchResults.innerHTML = '<div style="color:#888; text-align:center; padding: 20px;">Searching...</div>';
+        
+        // Public iTunes API (No OAuth needed, provides instant music data)
+        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=15`);
+        const data = await response.json();
+        
+        searchResults.innerHTML = '';
+        
+        if (data.results.length === 0) {
+          searchResults.innerHTML = '<div style="color:#888; text-align:center; padding: 20px;">No songs found.</div>';
+          return;
+        }
+
+        data.results.forEach(track => {
+          const trackEl = document.createElement('div');
+          trackEl.className = 'track-item';
+          trackEl.innerHTML = `
+            <img src="${track.artworkUrl60}" class="track-img" alt="Cover">
+            <div class="track-info">
+              <span class="track-title">${track.trackName}</span>
+              <span class="track-artist">${track.artistName}</span>
+            </div>
+          `;
+          
+          trackEl.addEventListener('click', () => {
+            attachedSong = {
+              title: track.trackName,
+              artist: track.artistName,
+              url: track.trackViewUrl, 
+              cover: track.artworkUrl100
+            };
+            
+            // Swap SVG for the album cover on the button
+            openSpotifyBtn.classList.add('attached');
+            openSpotifyBtn.innerHTML = `
+              <img src="${track.artworkUrl60}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid #1DB954; display: block;">
+            `;
+            
+            spotifyModal.classList.add('hidden');
+            songSearchInput.value = ''; 
+            searchResults.innerHTML = '';
+          });
+          
+          searchResults.appendChild(trackEl);
+        });
+      } catch (err) {
+        searchResults.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding: 20px;">Search failed. Try again.</div>';
+      }
+    }, 500);
+  });
+}

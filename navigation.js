@@ -76,6 +76,11 @@ const themes = {
 };
 
 function showSection(sectionId, evt) {
+  const menuLabel = document.querySelector('#menuToggleBtn span');
+  if (menuLabel) {
+    menuLabel.innerText = sectionId.toUpperCase();
+  }
+  
   if (currentActiveSectionId === sectionId) return;
   currentActiveSectionId = sectionId;
 
