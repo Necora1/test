@@ -329,9 +329,9 @@ if (openSpotifyBtn && spotifyModal && closeModalBtn) {
       try {
         searchResults.innerHTML = '<div style="color:#888; text-align:center; padding: 20px;">Searching...</div>';
         
-        // Public iTunes API (No OAuth needed, provides instant music data)
-        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=15`);
-        const data = await response.json();
+        // Using a CORS proxy to bypass mobile WebKit strict tracking prevention
+        const targetUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=15`;
+        const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
         
         searchResults.innerHTML = '';
         
