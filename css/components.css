@@ -408,3 +408,88 @@ input[type="color"]::-webkit-color-swatch { border: 1px solid #555; border-radiu
   object-fit: cover;
   display: block;
 }
+
+/* ==========================================================
+   5. COMPACT ADMIN CONTROL PANEL STYLES
+   ========================================================== */
+.admin-panel-box {
+  width: 100%;
+  max-width: 500px;
+  background: #080808;
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin: 0 auto 12px auto;
+  text-align: left;
+}
+
+.admin-panel-box h3 {
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #1a1a1a;
+  padding-bottom: 6px;
+}
+
+.admin-form-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-input {
+  flex: 1;
+  min-width: 120px;
+  background: #000;
+  border: 1px solid #252525;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.admin-input:focus {
+  border-color: #ff4d4d;
+}
+
+.admin-btn {
+  background: #1a0808;
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  color: #ff4d4d;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-btn:hover {
+  background: #ff4d4d;
+  color: #000;
+  border-color: #ff4d4d;
+}
+
+.admin-user-list {
+  list-style: none;
+  font-size: 0.85rem;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #141414;
+}
+
+.admin-user-item:last-child {
+  border-bottom: none;
+}

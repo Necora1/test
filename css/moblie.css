@@ -1,36 +1,65 @@
-/* 1. Mobile Adjustments */
-@media (max-width: 600px) {
-  body { 
-    padding: 10px; 
-  }
-  nav { 
-    margin-top: 30px; 
-    gap: 20px;
-  }
-}
-
-/* 2. Mobile Adjustments (Switches dock to Bottom) */
 @media (max-width: 600px) {
   body { 
     padding: 10px; 
   }
 
-  .nav-wrapper {
-    top: auto;
-    bottom: 25px;
-    flex-direction: column-reverse; /* Menu button at bottom, expands upwards */
+  .nav-dock {
+    bottom: 18px;
   }
 
-  .expandable-nav {
-    transform: translateY(20px) scale(0.95); /* Expands upwards on mobile */
+  .nav-dock.state-expanded {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92vw;
+    max-width: 420px;
   }
 
-  .expandable-nav.expanded {
-    transform: translateY(0) scale(1);
+  /* Stack side groups and main menu vertically */
+  .dock-expanded-wrapper {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    max-width: 100%;
+  }
+
+  /* Convert side groups into horizontal rows */
+  .dock-side-group {
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .dock-side-group .nav-btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px;
+  }
+
+  /* Expand menu container to full card width */
+  #dockMenu,
+  .dock-menu {
+    width: 100%;
+    max-width: 100%;
+    flex-direction: column;
+    padding: 14px 12px;
+    gap: 8px;
+    border-radius: 22px;
+  }
+
+  .dock-menu .nav-btn {
+    width: 100%;
+    text-align: center;
+    padding: 11px 14px;
+  }
+
+  .current-tab-badge {
+    margin-bottom: 4px;
+    font-size: 0.7rem;
   }
 
   .content-container {
-    margin-top: 30px;
-    padding-bottom: 120px; /* Room for bottom dock on mobile */
+    margin-top: 20px;
+    padding-bottom: 120px;
   }
 }

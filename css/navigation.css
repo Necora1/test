@@ -1,121 +1,261 @@
-/* 1. The Wrapper */
-.nav-wrapper {
-  position: fixed; 
-  bottom: 25px; 
-  left: 0;
-  right: 0;
-  margin: 0 auto;
+/* ==========================================
+   Gracious Dock & Label Animations
+   ========================================== */
+
+/* Dock Base Positioning & Transitions */
+.nav-dock {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
   z-index: 1000;
   display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  width: 100%;
-  max-width: 600px;
-  pointer-events: none;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: 
+    left 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s ease;
 }
 
-/* 2. Apple Glass Toggle Button */
-#menuToggleBtn {
-  width: 150px;
-  height: 45px;
-  border-radius: 999px;
-  
-  /* The Forcefield / Glass Effect */
-  background: rgba(20, 20, 20, 0.4); 
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  
+/* Toggle Button Container */
+#dockToggleBtn,
+.dock-toggle-btn {
+  height: 54px;
+  width: auto;
+  min-width: 54px;
+  max-width: 54px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 0 18px;
+  cursor: pointer;
+  gap: 0;
   color: #fff;
-  font-size: 0.95rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  cursor: pointer;
-  pointer-events: auto;
+  overflow: hidden;
+  box-sizing: border-box;
   
-  /* Smooth Morph Transition */
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 1001;
+  /* Apple Liquid Glass Effect */
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  
+  transition: 
+    max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.4s ease,
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
 }
 
-#menuToggleBtn:hover {
-  background: rgba(40, 40, 40, 0.5);
+#dockToggleBtn:hover,
+.dock-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.25), 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
-/* Morphs into the container */
-#menuToggleBtn.hidden-btn {
-  opacity: 0;
-  transform: scale(0.8) translateY(20px);
+/* Hamburger Icon */
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 18px;
+  height: 12px;
+  flex-shrink: 0;
   pointer-events: none;
-  position: absolute;
 }
 
-/* 3. The Morphing Glass Container */
-.expandable-nav {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  
-  background: rgba(10, 10, 10, 0.65);
-  backdrop-filter: blur(20px) saturate(200%);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  border-radius: 28px;
-  
-  padding: 20px;
-  width: 90%;
-  max-width: 600px;
-  pointer-events: auto;
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background-color: #fff;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
 
-  position: absolute;
-  bottom: 0;
+/* Label Text Expansion */
+#dockActiveLabel,
+.dock-label {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
   opacity: 0;
-  visibility: hidden;
-  
-  transform: scale(0.4) translateY(40px);
-  transform-origin: bottom center;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(-4px);
+  margin-left: 0;
+  pointer-events: none;
+  transition: 
+    max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.4s ease,
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    margin-left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.expandable-nav.expanded {
+/* Showing Tab Mode & Expanded Mode Pill Morph */
+.nav-dock.state-label #dockToggleBtn,
+.nav-dock.state-label .dock-toggle-btn,
+.nav-dock.state-expanded #dockToggleBtn,
+.nav-dock.state-expanded .dock-toggle-btn {
+  max-width: 260px;
+  padding: 0 20px;
+  border-radius: 22px;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.3), 0 10px 35px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Expanded Label State */
+.nav-dock.state-label #dockActiveLabel,
+.nav-dock.state-expanded #dockActiveLabel,
+.nav-dock.state-label .dock-label,
+.nav-dock.state-expanded .dock-label {
+  max-width: 180px;
   opacity: 1;
-  visibility: visible;
-  transform: scale(1) translateY(0);
+  transform: translateX(0);
+  margin-left: 8px;
 }
 
-/* 4. Glass Buttons Inside */
-.nav-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: #aaa;
-  border-radius: 14px;
-  padding: 10px 20px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+/* Full Centered Dock Opening */
+.nav-dock.state-expanded {
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
 }
 
-.nav-btn span {
+.nav-dock.state-expanded #dockToggleBtn,
+.nav-dock.state-expanded .dock-toggle-btn {
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Expanded Wrapper Row */
+.dock-expanded-wrapper {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  max-width: 95vw;
+  animation: popUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.nav-dock.state-expanded .dock-expanded-wrapper {
   display: flex;
+}
+
+/* Outside Side Groups (Left & Right) */
+.dock-side-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   align-items: center;
   justify-content: center;
 }
 
-.nav-btn:hover, .nav-btn.active-btn {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+/* Side Glass Buttons */
+.dock-side-group .nav-btn {
+  background: rgba(12, 12, 12, 0.72);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+  padding: 10px 16px;
+  color: #ccc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dock-side-group .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
 }
 
-.gold-glow.active-btn, .gold-glow:hover {
-  color: #ffd700 !important;
-  border-color: rgba(229, 193, 88, 0.5);
-  background: rgba(229, 193, 88, 0.15);
+.dock-side-group .nav-btn.auth-btn {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-weight: 700;
+}
+
+.dock-side-group .nav-btn.auth-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.35);
+}
+
+/* Expanded Menu Panel */
+#dockMenu,
+.dock-menu {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  
+  background: rgba(12, 12, 12, 0.72);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 28px;
+  padding: 18px;
+  max-width: 580px;
+  width: auto;
+  box-shadow: 0 0 35px rgba(255, 255, 255, 0.12), 0 16px 48px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+@keyframes popUp {
+  from { opacity: 0; transform: translateY(15px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Active Page Indicator */
+.current-tab-badge {
+  width: 100%;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  color: #aaa;
+  padding: 4px 0 8px;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 6px;
+}
+
+/* Glass Menu Buttons */
+.dock-menu .nav-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ccc;
+  border-radius: 16px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
+}
+
+.dock-menu .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
