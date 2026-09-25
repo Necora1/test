@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Site</title>
+  <meta name="description" content="About me, blog, photo gallery, and a way to get in touch.">
+  <link rel="icon" href="images/avatar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#about">
+        <img class="brand-avatar" id="brand-avatar" src="images/avatar.svg" alt="" width="32" height="32">
+        <span id="site-name">My Site</span>
+      </a>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+      </button>
+    </div>
+    <nav class="wrap" aria-label="Sections">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-about" data-tab="about" aria-controls="panel-about" aria-selected="true">About</button>
+        <button role="tab" id="tab-blog" data-tab="blog" aria-controls="panel-blog" aria-selected="false" tabindex="-1">Blog</button>
+        <button role="tab" id="tab-gallery" data-tab="gallery" aria-controls="panel-gallery" aria-selected="false" tabindex="-1">Gallery</button>
+        <button role="tab" id="tab-contact" data-tab="contact" aria-controls="panel-contact" aria-selected="false" tabindex="-1">Contact</button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main" class="wrap">
+    <!-- ABOUT -->
+    <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" tabindex="0">
+      <div class="about-hero">
+        <img id="about-avatar" class="about-avatar" src="images/avatar.svg" alt="" width="160" height="160">
+        <div>
+          <h1 id="about-name"></h1>
+          <p id="about-tagline" class="tagline"></p>
+          <ul id="about-links" class="link-list"></ul>
+        </div>
+      </div>
+      <div class="about-grid">
+        <div id="about-bio" class="prose"></div>
+        <aside class="card">
+          <h2 class="card-title">Quick facts</h2>
+          <dl id="about-facts" class="facts"></dl>
+        </aside>
+      </div>
+    </section>
+
+    <!-- BLOG -->
+    <section id="panel-blog" role="tabpanel" aria-labelledby="tab-blog" tabindex="0" hidden>
+      <div id="blog-list-view">
+        <h1>Blog</h1>
+        <div id="blog-tags" class="chips" role="group" aria-label="Filter by tag"></div>
+        <ol id="blog-list" class="post-list"></ol>
+      </div>
+      <article id="blog-post-view" hidden>
+        <a href="#blog" class="back-link">&larr; All posts</a>
+        <header class="post-header">
+          <h1 id="post-title"></h1>
+          <p id="post-meta" class="meta"></p>
+        </header>
+        <div id="post-body" class="prose"></div>
+      </article>
+    </section>
+
+    <!-- GALLERY -->
+    <section id="panel-gallery" role="tabpanel" aria-labelledby="tab-gallery" tabindex="0" hidden>
+      <h1>Gallery</h1>
+      <ul id="gallery-grid" class="gallery"></ul>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="panel-contact" role="tabpanel" aria-labelledby="tab-contact" tabindex="0" hidden>
+      <h1>Send me something</h1>
+      <p id="contact-intro" class="lead"></p>
+      <form id="contact-form" class="card form" novalidate>
+        <div class="field-row">
+          <label class="field">
+            <span>Your name</span>
+            <input name="name" autocomplete="name" maxlength="100">
+          </label>
+          <label class="field">
+            <span>Your email <small>(optional, so I can reply)</small></span>
+            <input name="email" type="email" autocomplete="email" maxlength="200">
+          </label>
+        </div>
+        <label class="field">
+          <span>What is it?</span>
+          <select name="kind">
+            <option>Just saying hi</option>
+            <option>A question</option>
+            <option>A link or recommendation</option>
+            <option>Feedback on a post</option>
+            <option>Something else</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Link <small>(optional: a photo, file, song, article…)</small></span>
+          <input name="link" type="url" inputmode="url" placeholder="https://" maxlength="500">
+        </label>
+        <label class="field">
+          <span>Message</span>
+          <textarea name="message" rows="6" required maxlength="5000"></textarea>
+        </label>
+        <!-- Honeypot for spam bots; hidden from people -->
+        <label class="hp" aria-hidden="true">Leave this empty <input name="_gotcha" tabindex="-1" autocomplete="off"></label>
+        <div class="form-actions">
+          <button class="btn" type="submit" id="contact-submit">Send</button>
+          <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+      <p id="contact-direct" class="meta"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">&copy; <span id="year"></span> <span id="footer-name"></span></div>
+  </footer>
+
+  <dialog id="lightbox" class="lightbox" aria-label="Photo viewer">
+    <button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Close">&times;</button>
+    <button class="lb-btn lb-prev" id="lb-prev" type="button" aria-label="Previous photo">&lsaquo;</button>
+    <figure>
+      <img id="lb-img" src="" alt="">
+      <figcaption id="lb-caption"></figcaption>
+    </figure>
+    <button class="lb-btn lb-next" id="lb-next" type="button" aria-label="Next photo">&rsaquo;</button>
+  </dialog>
+
+  <script src="js/content.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
