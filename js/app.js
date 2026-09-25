@@ -40,10 +40,27 @@
   $("#year").textContent = new Date().getFullYear();
   $("#brand-avatar").src = S.avatar;
 
+  /* ---------- Hero ---------- */
+  var heroName = $("#hero-name");
+  heroName.setAttribute("aria-label", S.name);
+  heroName.innerHTML = Array.prototype.map.call(S.name, function (ch, i) {
+    return '<span aria-hidden="true" style="--i:' + i + '">' + (ch === " " ? "&nbsp;" : esc(ch)) + "</span>";
+  }).join("");
+  $("#hero-tagline").textContent = S.tagline;
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function scrollToContent() {
+    var main = $("#main");
+    var header = $(".site-header").offsetHeight;
+    var top = main.getBoundingClientRect().top + window.scrollY - header;
+    window.scrollTo({ top: top, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+  $("#scroll-cue").addEventListener("click", scrollToContent);
+
   /* ---------- About ---------- */
   $("#about-avatar").src = S.avatar;
   $("#about-avatar").alt = "Photo of " + S.name;
-  $("#about-name").textContent = S.name;
+  $("#about-name").textContent = "About me";
   $("#about-tagline").textContent = S.tagline;
   $("#about-bio").innerHTML = S.about.map(function (p) { return "<p>" + esc(p) + "</p>"; }).join("");
   $("#about-facts").innerHTML = S.facts.map(function (f) {
@@ -97,7 +114,7 @@
         readingTime(post.body) + ((post.tags || []).length ? " · " + post.tags.map(esc).join(", ") : "");
       $("#post-body").innerHTML = post.body; // author-provided HTML
       document.title = post.title + " · " + S.name;
-      window.scrollTo(0, 0);
+      scrollToContent();
     } else {
       renderTags();
       renderList();
@@ -219,6 +236,7 @@
     b.addEventListener("click", function () {
       if (location.hash === "#" + b.dataset.tab) route();
       else location.hash = b.dataset.tab;
+      scrollToContent();
     });
   });
 

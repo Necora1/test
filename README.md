@@ -7,6 +7,8 @@ A small, dependency-free personal site with four tabs:
 - **Gallery**: photo grid with a full-screen viewer (arrow keys / swipe buttons, Esc to close)
 - **Contact**: a "send me something" form visitors can use to message you directly
 
+The top of the page is an animated sunset drawn entirely in code (`js/sky.js`, a single `<canvas>`, no images). It includes a glowing sun with turning light rays, drifting clouds lit from below, layered mountains with haze, birds, and floating light specks. Everything moves with parallax as you move the mouse or scroll, and scrolling sinks the sun behind the mountains. Switching to dark mode sets the sun, turns the sky to night, raises the moon, and brings out twinkling stars, shooting stars and fireflies. Visitors who have "reduce motion" turned on get a still picture instead.
+
 It's plain HTML, CSS and JavaScript: no build step, no frameworks. It has light and dark themes, works on phones, and is keyboard accessible.
 
 ## Make it yours
