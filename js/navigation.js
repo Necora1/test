@@ -121,8 +121,9 @@
       li.style.setProperty('--i', i);
       if (p.cta) li.className = 'is-wide';
       const a = document.createElement('a');
-      a.href = `#${p.id}`;
+      a.href = p.href || `#${p.id}`;
       a.className = p.cta ? 'nav-pill is-cta' : 'nav-pill';
+      if (p.href) a.classList.add('is-door', 'to-dream');
       a.dataset.pageLink = p.id;
       a.style.setProperty('--pc', p.theme.accent);
       if (!p.cta) {
@@ -142,8 +143,9 @@
     if (!portals) return;
     pages.filter((p) => p.portal).forEach((p) => {
       const a = document.createElement('a');
-      a.href = `#${p.id}`;
-      a.className = p.cta ? 'portal is-wide' : 'portal';
+      a.href = p.href || `#${p.id}`;
+      a.className = p.cta || p.href ? 'portal is-wide' : 'portal';
+      if (p.href) a.classList.add('is-door', 'to-dream');
       a.dataset.pageLink = p.id;
       a.style.setProperty('--pc', p.theme.accent);
       a.innerHTML = '<span class="portal-name"></span><span class="portal-blurb"></span>'

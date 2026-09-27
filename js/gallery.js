@@ -2,11 +2,10 @@
    gallery.js — pictures from Pinterest, laid out the way
    Pinterest lays them out (columns of different heights), with
    a viewer for looking at one picture at a time.
-   The pins come from Pinterest's public widget feed (the same
-   one their official profile widget uses), so no key is needed.
+   The pins themselves come from pinterest.js.
    ========================================================== */
 (() => {
-  const { $, config, jsonp, fetchWithTimeout } = Void;
+  const { $ } = Void;
   const gallery = (Void.gallery = {});
 
   const grid = $('#pinGrid');
@@ -25,56 +24,6 @@
   let pins = [];
   let current = -1;
   let laidOutWidth = 0;
-
-  /* ---------- where the pins come from ---------- */
-  const clean = (s) => String(s || '').trim().replace(/^\/+|\/+$/g, '');
-  const user = () => clean(config.pinterest?.user);
-  const board = () => clean(config.pinterest?.board);
-
-  const profileUrl = () => `https://www.pinterest.com/${encodeURIComponent(user())}/${board() ? `${encodeURIComponent(board())}/` : ''}`;
-
-  const feedUrl = () => (board()
-    ? `https://widgets.pinterest.com/v3/pidgets/boards/${encodeURIComponent(user())}/${encodeURIComponent(board())}/pins/`
-    : `https://widgets.pinterest.com/v3/pidgets/users/${encodeURIComponent(user())}/pins/`);
-
-  // Pinterest image addresses carry their size: …/236x/…, …/564x/…, …/736x/…
-  const resize = (url, size) => url.replace(/\/(\d+x\d*|originals)\//, `/${size}/`);
-
-  function normalize(raw, i) {
-    const images = Object.values(raw?.images || {}).filter((im) => im && typeof im.url === 'string');
-    if (!images.length) return null;
-    const best = images.sort((a, b) => (Number(b.width) || 0) - (Number(a.width) || 0))[0];
-    const color = String(raw.dominant_color || '');
-    return {
-      w: Number(best.width) || 0,
-      h: Number(best.height) || 0,
-      thumb: resize(best.url, '564x'),
-      full: resize(best.url, '736x'),
-      color: /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#1b1b1f',
-      text: String(raw.description || raw.title || '').trim(),
-      link: raw.id ? `https://www.pinterest.com/pin/${encodeURIComponent(raw.id)}/` : profileUrl(),
-      key: String(raw.id || i)
-    };
-  }
-
-  async function fetchPins() {
-    try {
-      const answer = await jsonp(feedUrl(), 10000);
-      const list = answer?.data?.pins;
-      if (Array.isArray(list)) return list;
-      throw new Error(answer?.message || 'Pinterest sent something unexpected');
-    } catch (err) {
-      // Second chance through your own worker, if you set one up (see README)
-      const relay = String(config.relayUrl || '').replace(/\/+$/, '');
-      if (!relay) throw err;
-      const query = new URLSearchParams({ user: user(), board: board() });
-      const res = await fetchWithTimeout(`${relay}/pinterest?${query}`, {}, 10000);
-      if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
-      const data = await res.json();
-      if (!Array.isArray(data.pins)) throw new Error('the worker sent something unexpected');
-      return data.pins;
-    }
-  }
 
   /* ---------- the grid ---------- */
   // Each tile spans as many tiny rows as its height needs; the grid then
@@ -158,11 +107,11 @@
     more.hidden = true;
     skeleton();
     try {
-      pins = (await fetchPins()).map(normalize).filter(Boolean);
+      pins = await Void.pinterest.load();
       state = 'ready';
       if (pins.length) render();
       else { grid.replaceChildren(); say('No pictures here yet.'); }
-      more.href = profileUrl();
+      more.href = Void.pinterest.profileUrl();
       more.hidden = false;
     } catch (err) {
       console.warn('[gallery] Pinterest feed failed:', err.message);
@@ -170,7 +119,7 @@
       grid.replaceChildren();
       grid.removeAttribute('aria-busy');
       say("The pictures couldn't load from Pinterest right now.", { retry: true });
-      more.href = profileUrl();
+      more.href = Void.pinterest.profileUrl();
       more.hidden = false;
     }
   };

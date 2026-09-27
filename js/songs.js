@@ -1,17 +1,12 @@
 /* ==========================================================
-   songs.js — favorite songs (interests page)
-   The track list is ours; the sound comes from one Spotify
-   embed that we tell which song to load (Spotify's iFrame API).
-   A song keeps playing while you look around the other pages,
-   with a small "now playing" chip in the corner.
-   If the API can't load, a plain Spotify player is used instead.
+   songs.js — favorite songs on the interests page
+   The track list is drawn here; the playing itself is done by
+   spotify.js. A song keeps playing while you look around the
+   other pages, with a small "now playing" chip in the corner.
    ========================================================== */
 (() => {
   const { $ } = Void;
-  const API_SRC = 'https://open.spotify.com/embed/iframe-api/v1';
-  const EMBED_HEIGHT = 80;
   const songs = Void.favorites || [];
-  const player = (Void.songs = {});
 
   const list = $('#songList');
   const slot = $('#spotifyEmbed');
@@ -21,21 +16,10 @@
   const miniArtist = $('#miniArtist');
   const miniToggle = $('#miniToggle');
 
-  let mode = 'idle';     // idle · loading · ready · fallback
-  let controller = null;
-  let fallbackFrame = null;
-  let current = -1;      // the song loaded in the player
-  let playing = false;
-  let wantPlay = false;  // start playing as soon as the chosen song has loaded
-  let playTimer = 0;
-  let lastPosition = 0;
-  let lastDuration = 0;
+  let st = Void.spotify.state();
   let heldByChip = false;
   let page = null;
   let built = false;
-
-  const uriOf = (song) => `spotify:track:${song.spotify}`;
-  const embedUrl = (song) => `https://open.spotify.com/embed/track/${encodeURIComponent(song.spotify)}?utm_source=generator`;
 
   /* ---------- the list ---------- */
   function build() {
@@ -93,7 +77,7 @@
 
     list.addEventListener('click', (e) => {
       const row = e.target.closest('.song-row');
-      if (row) choose(Number(row.dataset.index));
+      if (row) Void.spotify.play(Number(row.dataset.index));
     });
 
     // up / down arrows move through the list
@@ -110,11 +94,15 @@
   function paint() {
     if (list) {
       list.querySelectorAll('.song-row').forEach((row, i) => {
-        const on = i === current;
+        const on = i === st.index;
         row.classList.toggle('is-current', on);
-        row.classList.toggle('is-playing', on && playing);
-        row.setAttribute('aria-pressed', String(on && playing));
+        row.classList.toggle('is-playing', on && st.playing);
+        row.setAttribute('aria-pressed', String(on && st.playing));
       });
+    }
+    if (note) {
+      note.hidden = st.mode === 'ready' || st.mode === 'fallback';
+      if (st.mode === 'loading') note.textContent = 'loading spotify…';
     }
     paintMini();
   }
@@ -122,132 +110,37 @@
   /* ---------- the "now playing" chip on other pages ---------- */
   function paintMini() {
     if (!mini) return;
-    const song = songs[current];
-    const show = !!song && mode === 'ready' && page !== 'interests' && (playing || heldByChip);
+    const show = !!st.song && st.mode === 'ready' && page !== 'interests' && (st.playing || heldByChip);
     mini.hidden = !show;
     if (!show) return;
-    miniTitle.textContent = song.title;
-    miniArtist.textContent = song.artist;
-    mini.classList.toggle('is-playing', playing);
-    miniToggle.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    miniTitle.textContent = st.song.title;
+    miniArtist.textContent = st.song.artist;
+    mini.classList.toggle('is-playing', st.playing);
+    miniToggle.setAttribute('aria-label', st.playing ? 'Pause' : 'Play');
   }
 
-  /* ---------- playing ---------- */
-  function kick() {
-    clearTimeout(playTimer);
-    if (!wantPlay || !controller) return;
-    wantPlay = false;
-    controller.play();
-  }
-
-  function choose(i) {
-    const song = songs[i];
-    if (!song) return;
-
-    if (mode === 'ready') {
-      if (i === current) { controller.togglePlay(); return; }
-      current = i;
-      wantPlay = true;
-      lastPosition = 0;
-      lastDuration = 0;
-      controller.loadUri(uriOf(song));
-      // 'ready' usually starts it; this is the backup
-      clearTimeout(playTimer);
-      playTimer = setTimeout(kick, 1500);
-      paint();
-      return;
-    }
-
-    current = i;
-    if (mode === 'fallback') {
-      if (fallbackFrame) fallbackFrame.src = embedUrl(song);
-      paint();
-      return;
-    }
-
-    // the API is still on its way: remember the choice and play it once ready
-    wantPlay = true;
-    paint();
-    loadApi();
-  }
-
-  function onUpdate(e) {
-    const d = e?.data || {};
-    const wasPlaying = playing;
-    playing = d.isPaused === false;
-    if (playing) { wantPlay = false; heldByChip = false; }
-
-    const position = Number(d.position) || 0;
-    const duration = Number(d.duration) || 0;
-
-    // the song ran out on its own: go on to the next one
-    const endedHere = duration > 0 && position >= duration - 1000;
-    const endedJustBefore = lastDuration > 0 && lastPosition >= lastDuration - 2500;
-    if (wasPlaying && d.isPaused && (endedHere || endedJustBefore) && songs.length > 1) {
-      lastPosition = 0;
-      lastDuration = 0;
-      choose((current + 1) % songs.length);
-      return;
-    }
-
-    lastPosition = position;
-    lastDuration = duration;
-    paint();
-  }
-
-  /* ---------- loading Spotify ---------- */
-  function loadApi() {
-    if (mode !== 'idle' || !slot) return;
-    mode = 'loading';
-    note.textContent = 'loading spotify…';
-    note.hidden = false;
-
-    const giveUp = setTimeout(fallback, 15000);
-
-    window.onSpotifyIframeApiReady = (IFrameAPI) => {
-      clearTimeout(giveUp);
-      if (mode !== 'loading') return;
-      const start = songs[current >= 0 ? current : 0];
-      IFrameAPI.createController(slot, { uri: uriOf(start), width: '100%', height: EMBED_HEIGHT }, (ctrl) => {
-        controller = ctrl;
-        mode = 'ready';
-        note.hidden = true;
-        ctrl.addListener('ready', () => { if (wantPlay) kick(); });
-        ctrl.addListener('playback_update', onUpdate);
-        if (wantPlay) { clearTimeout(playTimer); playTimer = setTimeout(kick, 1500); }
-        paint();
-      });
-    };
-
-    const script = document.createElement('script');
-    script.src = API_SRC;
-    script.async = true;
-    script.onerror = () => { clearTimeout(giveUp); fallback(); };
-    document.head.append(script);
-  }
-
-  // No iFrame API (blocked or down): a normal Spotify player, one song at a time
-  function fallback() {
-    if (mode !== 'loading') return;
-    mode = 'fallback';
-    const song = songs[current >= 0 ? current : 0];
-    fallbackFrame = document.createElement('iframe');
-    fallbackFrame.title = 'Spotify player';
-    fallbackFrame.src = embedUrl(song);
-    fallbackFrame.height = String(EMBED_HEIGHT);
-    fallbackFrame.loading = 'lazy';
-    fallbackFrame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
-    slot.replaceWith(fallbackFrame);
-    note.hidden = true;
-    paint();
+  /* ---------- the footer marquee says what's playing ---------- */
+  const marquee = $('.footer-marquee span');
+  const marqueeIdle = marquee ? marquee.textContent : '';
+  function paintMarquee() {
+    if (!marquee) return;
+    marquee.textContent = st.song && st.playing
+      ? `\u266A NOW PLAYING: ${st.song.title} \u2014 ${st.song.artist} \u266A ${marqueeIdle}`
+      : marqueeIdle;
   }
 
   /* ---------- wiring ---------- */
+  Void.on('spotify', (next) => {
+    st = next;
+    if (st.playing) heldByChip = false;
+    paint();
+    paintMarquee();
+  });
+
   if (miniToggle) {
     miniToggle.addEventListener('click', () => {
-      if (!controller) return;
       heldByChip = true;
-      controller.togglePlay();
+      Void.spotify.toggle();
     });
   }
 
@@ -256,11 +149,9 @@
     if (id === 'interests') {
       heldByChip = false;
       build();
-      loadApi();
+      Void.spotify.mount(slot, { height: 80 });
+      paint();
     }
     paintMini();
   });
-
-  player.current = () => songs[current] || null;
-  player.isPlaying = () => playing;
 })();

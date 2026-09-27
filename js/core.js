@@ -86,7 +86,7 @@
   const SETTINGS_KEY = 'void_settings';
   const systemReduce = matchMedia('(prefers-reduced-motion: reduce)');
   // reduceMotion: null = follow the device setting
-  Void.settings = Object.assign({ reduceMotion: null, intro: true, lite: false, fabric: true, sparkles: true }, Void.store.get(SETTINGS_KEY, {}));
+  Void.settings = Object.assign({ reduceMotion: null, intro: true, lite: false, fabric: true, sparkles: true, crt: false }, Void.store.get(SETTINGS_KEY, {}));
 
   Void.motion = {
     get reduced() { return html.classList.contains('reduce-motion'); }
@@ -97,6 +97,7 @@
     html.classList.toggle('reduce-motion', !!reduce);
     html.classList.toggle('lite', !!Void.settings.lite);
     html.classList.toggle('no-fabric', !Void.settings.fabric);
+    html.classList.toggle('crt', !!Void.settings.crt);
     Void.emit('settings', Void.settings);
   };
 

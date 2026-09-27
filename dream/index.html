@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Renn | Dream</title>
+  <meta name="description" content="Renn's Void, dreamt differently.">
+  <meta name="theme-color" content="#051014">
+  <meta property="og:title" content="Renn | Dream">
+  <meta property="og:description" content="Renn's Void, dreamt differently.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+
+  <link rel="preload" href="../assets/fonts/fraunces-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="dream.css">
+
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="is-asleep" data-view="home">
+  <canvas id="sky" class="sky" aria-hidden="true"></canvas>
+  <canvas id="life" class="life" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
+
+  <!-- ======================= CORNERS ======================= -->
+  <header class="corner">
+    <a class="corner-home" href="#home">renn's void <span>· dream</span></a>
+    <nav class="corner-right" aria-label="Sound and version">
+      <button type="button" class="hand-link" id="rainBtn" aria-pressed="false">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0"/><path d="M12 2v1"/></svg>
+        rain
+      </button>
+      <a class="hand-link to-classic" href="../index.html">classic version</a>
+    </nav>
+  </header>
+
+  <!-- ======================= THE SCENE ======================= -->
+  <main class="scene" id="scene">
+    <div class="scene-title">
+      <h1 class="dream-title"><span class="t-name">renn</span><span class="t-rest">'s void</span></h1>
+      <p class="dream-sub">dream version</p>
+    </div>
+
+    <nav class="objects" aria-label="Rooms">
+      <a class="obj obj-note" href="#about" data-view="about" style="--x: 15%; --y: 31%; --depth: 0.6; --rot: -6deg; --bob: 7s">
+        <span class="note" aria-hidden="true">
+          <span class="note-tape"></span>
+          <span class="note-text">hi, it's renn</span>
+          <span class="note-fold"></span>
+        </span>
+        <span class="obj-label">about me</span>
+      </a>
+
+      <a class="obj obj-polaroids" href="#gallery" data-view="gallery" style="--x: 84%; --y: 30%; --depth: 0.9; --rot: 5deg; --bob: 8s">
+        <span class="pola-stack" aria-hidden="true">
+          <span class="pola"><span class="pola-img"></span></span>
+          <span class="pola"><span class="pola-img"></span></span>
+          <span class="pola"><span class="pola-img"></span></span>
+        </span>
+        <span class="obj-label">pictures</span>
+      </a>
+
+      <a class="obj obj-tape" href="#interests" data-view="interests" style="--x: 31%; --y: 74%; --depth: 1.1; --rot: -7deg; --bob: 6.5s">
+        <span class="tape tape-mini" aria-hidden="true">
+          <span class="tape-shell">
+            <span class="tape-label"><span class="tape-words"><span class="tape-title">on repeat</span><span class="tape-artist">18 songs</span></span></span>
+            <span class="tape-window"><i class="reel"></i><span class="tape-ribbon"></span><i class="reel"></i></span>
+          </span>
+        </span>
+        <span class="obj-label">songs</span>
+      </a>
+
+      <a class="obj obj-strip" href="#favoomfs" data-view="favoomfs" style="--x: 9%; --y: 67%; --depth: 0.7; --rot: 8deg; --bob: 7.5s">
+        <span class="strip" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="obj-label">friends</span>
+      </a>
+
+      <a class="obj obj-envelope" href="#send" data-view="send" style="--x: 70%; --y: 75%; --depth: 1.2; --rot: 6deg; --bob: 6s">
+        <span class="envelope" aria-hidden="true">
+          <span class="env-back"></span>
+          <span class="env-letter"></span>
+          <span class="env-front"></span>
+          <span class="env-flap"></span>
+          <span class="env-seal">r</span>
+        </span>
+        <span class="obj-label">write to me</span>
+      </a>
+    </nav>
+
+    <button type="button" class="tuned tuned-home" data-tune="home"><span class="tuned-lead">the sky is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+    <p class="scene-hint" id="sceneHint">click the things floating around · the sky moves with you</p>
+  </main>
+
+  <!-- ======================= ABOUT ======================= -->
+  <section class="view view-about" id="view-about" data-view="about" hidden aria-labelledby="aboutHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="aboutHead" tabindex="-1">about me</h2>
+      <button type="button" class="tuned" data-tune="about"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+
+      <article class="letter">
+        <span class="washi washi-1" aria-hidden="true"></span>
+        <span class="washi washi-2" aria-hidden="true"></span>
+        <div class="letter-body">
+          <p>hi, i'm renn.</p>
+          <p>i take photos as a hobby, and i play guitar.</p>
+          <p>most of what i listen to is japanese shoegaze and alt rock (死んだ僕の彼女, きのこ帝国, SEAPOOL, Plastic Tree) and a lot of indie like Alex G, Vundabar, Car Seat Headrest and Carissa's Wierd.</p>
+          <p>this is the dream version of my site. the pictures are scattered around, the tapes are on the shelf, and if you want to tell me something, there's paper and a pen.</p>
+          <p class="signature">&mdash; renn</p>
+        </div>
+      </article>
+
+      <ul class="stickies">
+        <li><a class="sticky s1" href="https://x.com/zeroedmymind" target="_blank" rel="noopener me"><span>twitter</span>@zeroedmymind</a></li>
+        <li><a class="sticky s2" href="https://www.instagram.com/zeroedmypulse/" target="_blank" rel="noopener me"><span>instagram</span>@zeroedmypulse</a></li>
+        <li><a class="sticky s3" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener me"><span>pinterest</span>xqygen</a></li>
+        <li><a class="sticky s4" href="#send"><span>or just</span>write to me</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ======================= PICTURES ======================= -->
+  <section class="view view-gallery" id="view-gallery" data-view="gallery" hidden aria-labelledby="picsHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="picsHead" tabindex="-1">pictures</h2>
+      <button type="button" class="tuned" data-tune="gallery"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">pictures i make. click one to look closer. with a mouse you can pick them up and move them around.</p>
+      <div class="polaroids" id="polaroids"></div>
+      <div class="pic-status" id="picStatus" role="status" hidden></div>
+      <a class="hand-link pic-more" id="picMore" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener" hidden>more on pinterest &nearr;</a>
+    </div>
+  </section>
+
+  <!-- ======================= SONGS ======================= -->
+  <section class="view view-interests" id="view-interests" data-view="interests" hidden aria-labelledby="songsHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="songsHead" tabindex="-1">on repeat</h2>
+      <p class="view-lede">my favorite songs. put a tape in and the whole dream takes its colours.</p>
+      <div class="tape-shelf" id="tapeShelf"></div>
+      <p class="view-foot">plays through spotify: whole songs if you're logged in to spotify in this browser, 30-second previews if you're not.</p>
+    </div>
+  </section>
+
+  <!-- ======================= FRIENDS ======================= -->
+  <section class="view view-favoomfs" id="view-favoomfs" data-view="favoomfs" hidden aria-labelledby="friendsHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="friendsHead" tabindex="-1">friends</h2>
+      <button type="button" class="tuned" data-tune="favoomfs"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <div class="board">
+        <p class="board-note">saving these spots for my favorite people</p>
+        <div class="frames" aria-hidden="true">
+          <span class="frame" style="--r: -4deg"><i>?</i></span>
+          <span class="frame" style="--r: 3deg"><i>?</i></span>
+          <span class="frame" style="--r: -2deg"><i>?</i></span>
+          <span class="frame" style="--r: 5deg"><i>?</i></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= WRITE TO ME ======================= -->
+  <section class="view view-send" id="view-send" data-view="send" hidden aria-labelledby="sendHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="sendHead" tabindex="-1">write to me</h2>
+      <button type="button" class="tuned" data-tune="send"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">it's anonymous. write something, or draw something.</p>
+
+      <div class="segmented" id="sendTabs" role="tablist" aria-label="What to send" data-active="write">
+        <span class="segmented-thumb" aria-hidden="true"></span>
+        <button type="button" role="tab" id="tabWrite" data-tab="write" aria-selected="true" aria-controls="panelWrite">write</button>
+        <button type="button" role="tab" id="tabDraw" data-tab="draw" aria-selected="false" aria-controls="panelDraw" tabindex="-1">draw</button>
+      </div>
+
+      <!-- write -->
+      <div class="send-panel" id="panelWrite" role="tabpanel" aria-labelledby="tabWrite">
+        <div class="message-card">
+          <label class="sr-only" for="messageText">Your message</label>
+          <textarea id="messageText" rows="6" maxlength="2000" placeholder="dear renn,"></textarea>
+          <div class="message-bar">
+            <button type="button" class="attach-btn" id="openMusicBtn">+ add a song</button>
+            <div class="song-chip" id="songChip" hidden>
+              <button type="button" class="song-chip-main" id="songChipChange" aria-label="Change song">
+                <img class="song-chip-cover" id="songChipCover" alt="">
+                <span class="song-chip-text">
+                  <span class="song-chip-title" id="songChipTitle"></span>
+                  <span class="song-chip-artist" id="songChipArtist"></span>
+                </span>
+              </button>
+              <button type="button" class="song-chip-remove" id="songChipRemove" aria-label="Remove song">&times;</button>
+            </div>
+            <span class="char-count" id="charCount" aria-live="off">0 / 2000</span>
+          </div>
+        </div>
+        <button type="button" class="send-btn" id="sendMessageBtn"><span class="btn-label">fold it up &amp; send</span></button>
+        <p class="form-status" id="messageStatus" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- draw -->
+      <div class="send-panel" id="panelDraw" role="tabpanel" aria-labelledby="tabDraw" hidden>
+        <div class="draw-card sketchbook">
+          <div class="draw-toolbar" role="toolbar" aria-label="Drawing tools">
+            <div class="tool-group">
+              <button type="button" class="tool-btn is-active" id="penBtn" aria-pressed="true" title="Pen">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                <span class="sr-only">Pen</span>
+              </button>
+              <button type="button" class="tool-btn" id="eraserBtn" aria-pressed="false" title="Eraser">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l7 7a1 1 0 0 1 0 1.4L13.7 21"/><path d="M22 21H7"/><path d="m9.5 9.5 5 5"/></svg>
+                <span class="sr-only">Eraser</span>
+              </button>
+            </div>
+            <div class="tool-group">
+              <button type="button" class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                <span class="sr-only">Undo</span>
+              </button>
+              <button type="button" class="tool-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)" disabled>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+                <span class="sr-only">Redo</span>
+              </button>
+              <button type="button" class="tool-btn" id="clearBtn" title="Clear the page" disabled>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <span class="sr-only">Clear</span>
+              </button>
+              <button type="button" class="tool-btn bg-btn" id="bgToggleBtn" aria-pressed="false" title="Paper or night">
+                <span class="bg-glyph" aria-hidden="true"></span>
+                <span class="sr-only">Switch between a light and a dark page</span>
+              </button>
+            </div>
+            <div class="tool-group size-group">
+              <span class="size-dot" id="sizeDot" aria-hidden="true"><i></i></span>
+              <input type="range" id="brushSize" min="1" max="40" value="4" aria-label="Brush size">
+            </div>
+            <div class="tool-group swatch-group" role="group" aria-label="Colour">
+              <button type="button" class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="White"></button>
+              <button type="button" class="swatch" data-color="#000000" style="--c:#2b2233" aria-label="Ink"></button>
+              <button type="button" class="swatch" data-color="#ff5c8a" style="--c:#ff5c8a" aria-label="Pink"></button>
+              <button type="button" class="swatch" data-color="#ffd166" style="--c:#ffd166" aria-label="Yellow"></button>
+              <button type="button" class="swatch" data-color="#6dffa8" style="--c:#6dffa8" aria-label="Green"></button>
+              <button type="button" class="swatch" data-color="#7cc8ff" style="--c:#7cc8ff" aria-label="Blue"></button>
+              <label class="swatch swatch-custom" id="customSwatch" title="Any colour">
+                <input type="color" id="brushColor" value="#ffffff" aria-label="Pick any colour">
+              </label>
+            </div>
+          </div>
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="drawCanvas" width="1100" height="700" aria-label="Drawing canvas"></canvas>
+            <p class="canvas-hint" id="canvasHint" aria-hidden="true">draw here</p>
+            <div class="brush-cursor" id="brushCursor" aria-hidden="true"></div>
+          </div>
+        </div>
+        <button type="button" class="send-btn" id="sendDrawingBtn"><span class="btn-label">send the drawing</span></button>
+        <p class="form-status" id="drawingStatus" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= WALKMAN ======================= -->
+  <aside class="walkman" id="walkman" hidden aria-label="Music player">
+    <div class="wm-top">
+      <span class="wm-now">now playing</span>
+      <span class="wm-title" id="wmTitle">pick a tape</span>
+      <button type="button" class="wm-btn" id="wmPrev" aria-label="Previous song">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20 9 12l10-8z"/><path d="M5 19V5"/></svg>
+      </button>
+      <button type="button" class="wm-btn wm-play" id="wmPlay" aria-label="Play">
+        <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>
+        <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14"/><path d="M16 5v14"/></svg>
+      </button>
+      <button type="button" class="wm-btn" id="wmNext" aria-label="Next song">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 4 10 8-10 8z"/><path d="M19 5v14"/></svg>
+      </button>
+      <button type="button" class="wm-btn wm-tuck" id="wmTuck" aria-expanded="true" aria-label="Tuck the player away">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="wm-deck">
+      <span class="wm-window" aria-hidden="true"><i class="reel"></i><i class="reel"></i></span>
+      <div class="wm-screen"><div class="wm-slot" id="walkmanSlot"></div></div>
+    </div>
+  </aside>
+
+  <!-- ======================= DIALOGS ======================= -->
+  <dialog class="modal" id="musicModal" aria-labelledby="musicTitle">
+    <div class="modal-card is-wide">
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+      <h2 class="modal-title" id="musicTitle">add a song</h2>
+      <div class="search-field">
+        <label class="sr-only" for="songSearch">Search for a song</label>
+        <input type="search" id="songSearch" placeholder="search for a song…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      </div>
+      <div class="search-results" id="searchResults" aria-live="polite"></div>
+      <p class="search-source" id="searchSource"></p>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="picViewer" aria-label="Picture viewer">
+    <div class="modal-card is-viewer">
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+      <div class="viewer-stage">
+        <button type="button" class="viewer-nav is-prev" id="picPrev" aria-label="Previous picture">&lsaquo;</button>
+        <figure class="viewer-frame" id="picViewerFrame"><img id="picViewerImg" alt=""></figure>
+        <button type="button" class="viewer-nav is-next" id="picNext" aria-label="Next picture">&rsaquo;</button>
+      </div>
+      <div class="viewer-bar">
+        <p class="viewer-text" id="picViewerText"></p>
+        <span class="viewer-count" id="picViewerCount"></span>
+        <a class="viewer-link" id="picViewerLink" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener">open on pinterest</a>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="eyelids" aria-hidden="true"><i></i><i></i></div>
+
+  <!-- shared with the classic version -->
+  <script src="../js/config.js" defer></script>
+  <script src="../js/core.js" defer></script>
+  <script src="../js/api.js" defer></script>
+  <script src="../js/pinterest.js" defer></script>
+  <script src="../js/spotify.js" defer></script>
+  <script src="../js/music.js" defer></script>
+  <script src="../js/messages.js" defer></script>
+  <script src="../js/drawing.js" defer></script>
+  <!-- the dream -->
+  <script src="js/palette.js" defer></script>
+  <script src="js/sky.js" defer></script>
+  <script src="js/life.js" defer></script>
+  <script src="js/rain.js" defer></script>
+  <script src="js/views.js" defer></script>
+  <script src="js/pictures.js" defer></script>
+  <script src="js/tapes.js" defer></script>
+  <script src="js/letters.js" defer></script>
+  <script src="js/scene.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>

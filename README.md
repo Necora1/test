@@ -1,8 +1,22 @@
 # Renn's Void
 
-My website: an old-web (SpaceHey / MySpace era) profile page with woven metal,
-chrome-bevel boxes, blackletter pixel titles, a drifting star sky and a warp
-intro, plus a liquid-chrome animation layer on top.
+My website, in two versions:
+
+- **classic** (`index.html`): an old-web (SpaceHey / MySpace era) profile page
+  with woven metal, chrome-bevel boxes, blackletter pixel titles, a drifting
+  star sky and a warp intro, plus a liquid-chrome animation layer on top.
+- **dream** (`dream/index.html`): the same site, dreamt differently. It's a
+  night sky over a sea that mirrors it, with two moons and glowing jellyfish
+  drifting up like lanterns. The pages are things floating in it: a note, polaroids, a
+  cassette, a photo strip and an envelope. Every room is tuned to one of the
+  favorite songs and takes the colours of its cover. When a song plays, the
+  whole dream takes that song's colours.
+
+A link in each version switches to the other ("dream ✧" in the classic banner,
+home cards and menu; "classic version" in the dream's corner). The site
+remembers which one a visitor picked: opening `index.html` goes straight to
+the dream for someone who chose it last time. `index.html?classic` always
+opens the classic version.
 
 It's plain HTML, CSS and JavaScript. No build step, no frameworks, no npm.
 
@@ -14,15 +28,17 @@ python3 -m http.server 8000
 ```
 
 Opening `index.html` directly also works, but the song search and the login
-need the page to be served over http(s).
+need the page to be served over http(s). The dream version is at
+http://localhost:8000/dream/index.html.
 
 ## What's where
 
 ```
-index.html            every page and dialog (the about text lives here)
+index.html            the classic version (the about text lives here)
 favicon.svg
-assets/fonts/         Jacquard 12, Silkscreen, Lato, Escargoth (all local)
-assets/covers/        album covers for the favorite songs list
+assets/fonts/         Jacquard 12, Silkscreen, Lato, Escargoth, and for the
+                      dream: Fraunces, Caveat, Klee One (all local)
+assets/covers/        album covers for the favorite songs
 css/
   base.css            fonts, colours, reset, liquid-chrome titles
   background.css      the sky canvas and the warp overlay
@@ -35,20 +51,36 @@ css/
   gallery.css         the Pinterest wall and the picture viewer
   effects.css         the liquid layer (sheen, tilt, jelly press, sparkles)
 js/
-  config.js           ← settings you'll actually edit (see below)
-  core.js             shared helpers, settings, dialogs
-  api.js              login server + sending messages/drawings
+  config.js           ← settings you'll actually edit (see below)       [shared]
+  core.js             shared helpers, settings, dialogs                   [shared]
+  api.js              login server + sending messages/drawings            [shared]
+  pinterest.js        the gallery's pictures from Pinterest               [shared]
+  spotify.js          plays the favorite songs through Spotify            [shared]
   background.js       star sky, fog, warp intro, send shake
   navigation.js       pages, page colours, the menu
   auth.js             login, logout, profile, control panel
-  music.js            "add a song" search (Spotify → Apple Music → Deezer)
-  messages.js         write tab
-  drawing.js          draw tab
-  gallery.js          pictures from Pinterest, masonry wall, viewer
-  songs.js            favorite songs, played through Spotify
+  music.js            "add a song" search (Spotify → Apple Music → Deezer)  [shared]
+  messages.js         write tab                                           [shared]
+  drawing.js          draw tab                                            [shared]
+  gallery.js          the masonry wall and the picture viewer
+  songs.js            the favorite songs list + "now playing" chip
   banner.js           banner search, LogIn link, banner height
   effects.js          liquid titles, sheen, tilt, press bounce, sparkles
+  secrets.js          the black hole, and falling asleep into the dream
   main.js             starts everything in order
+dream/
+  index.html          the dream version (its about letter lives here)
+  dream.css           everything it looks like
+  js/palette.js       which song each room is tuned to; colours that glide
+  js/sky.js           the sky and sea (one WebGL shader) + the frame loop
+  js/life.js          jellyfish, dust, rain streaks
+  js/rain.js          rain sounds, generated in the browser
+  js/scene.js         the floating things, parallax, ripples
+  js/views.js         the rooms (#about, #gallery, #interests, #favoomfs, #send)
+  js/pictures.js      polaroids you can pick up, and the viewer
+  js/tapes.js         cassettes and the walkman
+  js/letters.js       a sent letter folding into an envelope and flying off
+  js/main.js          starts the dream
 server/
   void-worker.js      Cloudflare Worker: Spotify token, message relay,
                       Pinterest fallback
@@ -66,11 +98,15 @@ Most things live in **`js/config.js`**:
   address) to show only that board.
 - **Favorite songs:** the `Void.favorites` list. Each song needs its Spotify id
   (the part after `open.spotify.com/track/` in the song's share link) and,
-  optionally, a cover image in `assets/covers/`.
+  optionally, a cover image in `assets/covers/` and a `palette` (the four
+  colours the dream turns into while it plays: sky, horizon, glow, accent).
+- **Dream rooms:** which song each room of the dream is tuned to is at the top
+  of `dream/js/palette.js`.
 - **Services:** the login server, Spotify token URL and message relay.
 
-Page text (about, interests, favoomfs) is in `index.html`. The favoomfs section
-has a commented example of the card markup.
+Page text (about, interests, favoomfs) is in `index.html` for the classic
+version and `dream/index.html` for the dream. The favoomfs section of the
+classic page has a commented example of the card markup.
 
 ### Gallery
 
@@ -127,3 +163,15 @@ their device is respected automatically:
 Jacquard 12, Silkscreen and Lato are open-source (SIL Open Font License) and
 served from `assets/fonts/`. Escargoth is the demo version of a commercial
 font, kept only as a fallback; check its licence before using it more widely.
+
+## Little extras
+
+- **The black hole:** on the classic version, type `void` anywhere (or the
+  Konami code: ↑ ↑ ↓ ↓ ← → ← → B A). A black hole opens where your mouse is,
+  swallows the page and spits it back out.
+- **CRT screen:** menu → settings → "CRT screen" puts scanlines, a rolling bar
+  and a bit of flicker over the classic version.
+- **Rain:** the dream's "rain" button plays rain on the window (made on the
+  spot with Web Audio, no sound files) and makes it rain in the sky.
+- **Now playing:** the classic footer marquee says which song is playing. In
+  the dream, a song keeps playing on the walkman while you wander around.

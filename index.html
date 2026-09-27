@@ -25,7 +25,14 @@
   <link rel="stylesheet" href="css/gallery.css">
   <link rel="stylesheet" href="css/effects.css">
 
-  <script>document.documentElement.classList.add('js');</script>
+  <script>
+    // whoever picked the dream version last time goes straight back to it
+    try {
+      if (/[?&]classic/.test(location.search)) localStorage.setItem('void_version', 'classic');
+      else if (localStorage.getItem('void_version') === 'dream') location.replace('dream/index.html' + location.hash);
+    } catch (e) { /* storage blocked: stay here */ }
+    document.documentElement.classList.add('js');
+  </script>
 </head>
 <body class="is-booting" data-page="home">
   <canvas id="sky" class="sky" aria-hidden="true"></canvas>
@@ -46,6 +53,7 @@
       <nav class="top-links" aria-label="Quick links">
         <a href="#about">About</a>
         <a href="#gallery">Gallery</a>
+        <a href="dream/index.html" class="to-dream">dream ✧</a>
         <button type="button" class="top-link-btn" id="topLoginBtn">LogIn</button>
       </nav>
     </div>
@@ -441,6 +449,13 @@
           </span>
           <input type="checkbox" class="switch" id="setSparkles">
         </label>
+        <label class="setting" for="setCrt">
+          <span class="setting-text">
+            <span class="setting-name">CRT screen</span>
+            <span class="setting-hint">Scanlines, a rolling bar and a little flicker, like an old monitor.</span>
+          </span>
+          <input type="checkbox" class="switch" id="setCrt">
+        </label>
         <label class="setting" for="setFabric">
           <span class="setting-text">
             <span class="setting-name">Background fabric</span>
@@ -506,6 +521,7 @@
   </div>
 
   <!-- ======================= OVERLAYS ======================= -->
+  <div class="crt-roll" aria-hidden="true"></div>
   <canvas id="warp" class="warp" aria-hidden="true"></canvas>
   <div class="warp-glow" id="warpGlow" aria-hidden="true"></div>
   <!-- liquid distortion used by js/effects.js (titles "melt" into place) -->
@@ -519,6 +535,8 @@
   <script src="js/config.js" defer></script>
   <script src="js/core.js" defer></script>
   <script src="js/api.js" defer></script>
+  <script src="js/pinterest.js" defer></script>
+  <script src="js/spotify.js" defer></script>
   <script src="js/background.js" defer></script>
   <script src="js/navigation.js" defer></script>
   <script src="js/auth.js" defer></script>
@@ -529,6 +547,7 @@
   <script src="js/songs.js" defer></script>
   <script src="js/banner.js" defer></script>
   <script src="js/effects.js" defer></script>
+  <script src="js/secrets.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>
 </html>

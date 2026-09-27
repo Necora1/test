@@ -11,6 +11,7 @@
     const lite = $('#setLite');
     const fabric = $('#setFabric');
     const sparkles = $('#setSparkles');
+    const crt = $('#setCrt');
 
     const sync = () => {
       reduce.checked = Void.motion.reduced;
@@ -18,6 +19,7 @@
       lite.checked = !!Void.settings.lite;
       fabric.checked = !!Void.settings.fabric;
       sparkles.checked = !!Void.settings.sparkles;
+      crt.checked = !!Void.settings.crt;
     };
 
     $('#settingsBtn').addEventListener('click', () => {
@@ -29,6 +31,7 @@
     lite.addEventListener('change', () => Void.setSetting('lite', lite.checked));
     fabric.addEventListener('change', () => Void.setSetting('fabric', fabric.checked));
     sparkles.addEventListener('change', () => Void.setSetting('sparkles', sparkles.checked));
+    crt.addEventListener('change', () => Void.setSetting('crt', crt.checked));
     Void.on('settings', sync);
   }
 
