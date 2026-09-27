@@ -21,6 +21,8 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages.css">
   <link rel="stylesheet" href="css/send.css">
+  <link rel="stylesheet" href="css/music.css">
+  <link rel="stylesheet" href="css/gallery.css">
   <link rel="stylesheet" href="css/effects.css">
 
   <script>document.documentElement.classList.add('js');</script>
@@ -31,13 +33,12 @@
   <!-- ======================= BANNER ======================= -->
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand">
+      <a class="brand" href="#home" aria-label="Renn's Void, home">
         <span class="brand-name">RENN'S VOID</span>
-        <span class="brand-tag">est. in the dark</span>
-      </div>
+      </a>
 
       <form class="searchbox" id="siteSearch" role="search">
-        <label class="slug" for="siteSearchInput">Search the void:</label>
+        <label class="slug" for="siteSearchInput">Search:</label>
         <input id="siteSearchInput" type="search" name="q" placeholder="search&#8230;" autocomplete="off" spellcheck="false">
         <button class="top-search-btn" type="submit">Search</button>
       </form>
@@ -57,26 +58,68 @@
     <main id="stage" class="stage">
 
     <section class="page page-home" id="page-home" data-page="home" aria-labelledby="homeTitle">
-      <div class="home-strip"><b>RENN'S VOID</b> &#183; your visit no. <span class="odometer" id="visitCount" aria-label="1">000001</span></div>
       <h1 class="hero-title" id="homeTitle">THE VOID</h1>
       <p class="lede">Welcome to the Void.</p>
-      <div class="nowcard">
-        <span class="nowcard-label">right now</span>
-        <div class="nowcard-row">
-          <span>Mood: <b class="mood-word">bored z z 1,</b></span>
-          <span>Listening: <b class="now-playing">the static between stars</b></span>
-          <span>Your last visit: <b class="stamp">just now</b></span>
-        </div>
-      </div>
       <nav class="portals" id="portals" aria-label="Pages"></nav>
     </section>
 
-    <section class="page" id="page-about" data-page="about" aria-labelledby="aboutTitle" hidden>
+    <section class="page page-about" id="page-about" data-page="about" aria-labelledby="aboutTitle" hidden>
       <header class="page-head">
         <h1 class="page-title" id="aboutTitle">ABOUT</h1>
         <p class="lede">im renn! This is my website :3</p>
       </header>
-      <div class="wip">W.I.P</div>
+
+      <div class="about-grid">
+        <article class="panel-box about-blurb" aria-labelledby="aboutMeLabel">
+          <h2 class="box-label" id="aboutMeLabel">about me</h2>
+          <div class="box-body prose">
+            <p>hi, i'm renn. i take photos as a hobby (they end up in the <a href="#gallery">gallery</a>) and i play guitar.</p>
+            <p>music-wise it's mostly japanese shoegaze and alt rock (死んだ僕の彼女, きのこ帝国, SEAPOOL, Plastic Tree) and a lot of indie like Alex G, Vundabar, Car Seat Headrest and Carissa's Wierd. my favorite songs are on the <a href="#interests">interests</a> page, and you can play them there.</p>
+            <p>this site is my own little corner of the internet. look around, and if you want to tell me something, <a href="#send">send it here</a>. it's anonymous.</p>
+          </div>
+        </article>
+
+        <div class="about-side">
+          <section class="panel-box" aria-labelledby="detailsLabel">
+            <h2 class="box-label" id="detailsLabel">renn's details</h2>
+            <dl class="details">
+              <div><dt>hobbies</dt><dd>photography, guitar</dd></div>
+              <div><dt>music</dt><dd>shoegaze, j-rock, indie</dd></div>
+              <div><dt>photos</dt><dd><a href="#gallery">in the gallery</a></dd></div>
+            </dl>
+          </section>
+
+          <section class="panel-box" aria-labelledby="contactLabel">
+            <h2 class="box-label" id="contactLabel">contacting renn</h2>
+            <ul class="contact-grid">
+              <li>
+                <a href="#send">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  send a message
+                </a>
+              </li>
+              <li>
+                <a href="https://x.com/zeroedmymind" target="_blank" rel="noopener me">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16"/><path d="M20 4 4 20"/></svg>
+                  @zeroedmymind
+                </a>
+              </li>
+              <li>
+                <a href="https://www.instagram.com/zeroedmypulse/" target="_blank" rel="noopener me">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg>
+                  @zeroedmypulse
+                </a>
+              </li>
+              <li>
+                <a href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener me">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V17h14v-1.8a2 2 0 0 0-1.1-1.8l-1.8-.9a2 2 0 0 1-1.1-1.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+                  xqygen
+                </a>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </div>
     </section>
 
     <section class="page page-gallery" id="page-gallery" data-page="gallery" aria-labelledby="galleryTitle" hidden>
@@ -85,18 +128,32 @@
         <p class="lede">Here's the collection of pictures I make</p>
       </header>
       <div class="gallery-frame">
-        <!-- the Juicer feed fills this in when the page is first opened -->
-        <div class="juicer-feed" data-feed-id="xqygen"></div>
-        <p class="gallery-status" id="galleryStatus">Loading pictures…</p>
+        <!-- js/gallery.js fills this from Pinterest the first time the page opens -->
+        <div class="pin-grid" id="pinGrid"></div>
+        <div class="gallery-status" id="galleryStatus" role="status" hidden></div>
       </div>
+      <a class="btn gallery-more" id="galleryMore" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener" hidden>
+        more on pinterest
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+      </a>
     </section>
 
-    <section class="page" id="page-interests" data-page="interests" aria-labelledby="interestsTitle" hidden>
+    <section class="page page-interests" id="page-interests" data-page="interests" aria-labelledby="interestsTitle" hidden>
       <header class="page-head">
         <h1 class="page-title" id="interestsTitle">INTERESTS</h1>
         <p class="lede">Media, hobbies, etc</p>
       </header>
-      <div class="wip">W.I.P</div>
+
+      <section class="player" aria-labelledby="songsLabel">
+        <h2 class="box-label" id="songsLabel">favorite songs</h2>
+        <div class="player-screen">
+          <!-- js/songs.js swaps this for the Spotify player -->
+          <div class="player-embed" id="spotifyEmbed"></div>
+          <p class="player-note" id="playerNote">pick a song</p>
+        </div>
+        <ol class="song-list" id="songList"></ol>
+        <p class="player-foot">Plays through Spotify: whole songs if you're logged in to Spotify in this browser, 30-second previews if you're not.</p>
+      </section>
     </section>
 
     <section class="page" id="page-favoomfs" data-page="favoomfs" aria-labelledby="favoomfsTitle" hidden>
@@ -257,7 +314,7 @@
           <a href="#interests">Interests</a>
           <a href="#send">Send me something</a>
         </nav>
-        <p class="footer-note">&copy; <span id="footYear">2026</span> renn &#183; built in the void &#183; <span class="version-tag" id="versionTag">v0.11.0-beta</span></p>
+        <p class="footer-note">&copy; <span id="footYear">2026</span> renn &#183; <span class="version-tag" id="versionTag">v0.12.0-beta</span></p>
         <span class="footer-marquee" aria-hidden="true"><span>&#9733; HOME &#9733; ABOUT &#9733; GALLERY &#9733; INTERESTS &#9733; SEND ME SOMETHING &#9733;</span></span>
       </div>
     </footer>
@@ -411,6 +468,43 @@
     </div>
   </dialog>
 
+  <dialog class="modal" id="pinViewer" aria-label="Picture viewer">
+    <div class="modal-card is-viewer">
+      <button type="button" class="modal-x" data-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div class="viewer-stage">
+        <button type="button" class="viewer-nav is-prev" id="viewerPrev" aria-label="Previous picture">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <figure class="viewer-frame" id="viewerFrame">
+          <img id="viewerImg" alt="">
+        </figure>
+        <button type="button" class="viewer-nav is-next" id="viewerNext" aria-label="Next picture">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div class="viewer-bar">
+        <p class="viewer-text" id="viewerText"></p>
+        <span class="viewer-count" id="viewerCount"></span>
+        <a class="viewer-link" id="viewerLink" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener">open on pinterest</a>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- a song from the interests page keeps playing on other pages -->
+  <div class="mini-player" id="miniPlayer" hidden>
+    <span class="song-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+    <a class="mini-text" href="#interests">
+      <span class="mini-title" id="miniTitle"></span>
+      <span class="mini-artist" id="miniArtist"></span>
+    </a>
+    <button type="button" class="mini-btn" id="miniToggle" aria-label="Pause">
+      <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14"/><path d="M16 5v14"/></svg>
+      <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>
+    </button>
+  </div>
+
   <!-- ======================= OVERLAYS ======================= -->
   <canvas id="warp" class="warp" aria-hidden="true"></canvas>
   <div class="warp-glow" id="warpGlow" aria-hidden="true"></div>
@@ -431,7 +525,9 @@
   <script src="js/music.js" defer></script>
   <script src="js/messages.js" defer></script>
   <script src="js/drawing.js" defer></script>
-  <script src="js/profile.js" defer></script>
+  <script src="js/gallery.js" defer></script>
+  <script src="js/songs.js" defer></script>
+  <script src="js/banner.js" defer></script>
   <script src="js/effects.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

@@ -65,7 +65,7 @@
   /* ==========================================================
      SHEEN + TILT — mouse only
      ========================================================== */
-  const SHEEN = '.portal, .page-head, .nowcard, .home-strip, .btn, .send-btn, .nav-pill, .util-btn';
+  const SHEEN = '.portal, .page-head, .panel-box, .pin, .contact-grid a, .btn, .send-btn, .nav-pill, .util-btn';
 
   function wireSheen() {
     if (!finePointer) return;
@@ -104,7 +104,7 @@
   /* ==========================================================
      PRESS — squish while held, jelly bounce on release
      ========================================================== */
-  const PRESSABLE = '.btn, .send-btn, .nav-pill, .util-btn, .tool-btn, .dock-toggle, .portal, .top-search-btn, .attach-btn, .segmented [role="tab"], button.track, .oomf';
+  const PRESSABLE = '.btn, .send-btn, .nav-pill, .util-btn, .tool-btn, .dock-toggle, .portal, .top-search-btn, .attach-btn, .segmented [role="tab"], button.track, .oomf, .song-row, .viewer-nav, .mini-btn, .contact-grid a';
 
   function wirePress() {
     let pressed = null;

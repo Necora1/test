@@ -6,6 +6,9 @@
                          { access_token, token_type, expires_in }
      POST /send/text     forwards an anonymous message to Discord
      POST /send/drawing  forwards an anonymous drawing to Discord
+     GET  /pinterest     the gallery's pins, if the browser can't
+                         reach Pinterest's widget feed itself
+                         (?user=…&board=…)
 
    Why: the website then never contains your Discord webhook URLs,
    so nobody can copy them to spam the channel as "anyone" or
@@ -18,8 +21,9 @@
      SPOTIFY_CLIENT_SECRET  from developer.spotify.com
      TEXT_WEBHOOK_URL       Discord webhook for messages
      DRAWING_WEBHOOK_URL    Discord webhook for drawings
-   and this as a plain variable (comma separated):
-     ALLOWED_ORIGINS        e.g. https://zeroedmyworld.com,https://www.zeroedmyworld.com
+   and these as plain variables:
+     ALLOWED_ORIGINS        comma separated, e.g. https://zeroedmyworld.com,https://www.zeroedmyworld.com
+     PINTEREST_USER         optional, e.g. xqygen (only this account can be fetched)
 
    Then in js/config.js set relayUrl to the worker address and
    empty the two webhook URLs. Rotate (re-create) both webhooks in
@@ -40,6 +44,7 @@ export default {
       if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/token')) {
         return json(await spotifyToken(env), 200, cors);
       }
+      if (request.method === 'GET' && url.pathname === '/pinterest') return pinterest(request, url, env, cors);
       if (request.method === 'POST' && url.pathname === '/send/text') return sendText(request, env, cors);
       if (request.method === 'POST' && url.pathname === '/send/drawing') return sendDrawing(request, env, cors);
       return json({ error: 'Not found' }, 404, cors);
@@ -155,4 +160,23 @@ async function sendDrawing(request, env, cors) {
     allowed_mentions: { parse: [] }
   }));
   return forward(env.DRAWING_WEBHOOK_URL, { method: 'POST', body: out }, cors);
+}
+
+/* ---------- Pinterest (gallery fallback) ---------- */
+async function pinterest(request, url, env, cors) {
+  if (!originAllowed(request, env)) return json({ error: 'Forbidden' }, 403, cors);
+  const safe = (v) => String(v || '').replace(/[^\w.-]/g, '').slice(0, 60);
+  const user = safe(url.searchParams.get('user') || env.PINTEREST_USER);
+  const board = safe(url.searchParams.get('board'));
+  if (!user) return json({ error: 'No user' }, 400, cors);
+  if (env.PINTEREST_USER && user !== safe(env.PINTEREST_USER)) return json({ error: 'Forbidden' }, 403, cors);
+
+  const feed = board
+    ? `https://widgets.pinterest.com/v3/pidgets/boards/${user}/${board}/pins/`
+    : `https://widgets.pinterest.com/v3/pidgets/users/${user}/pins/`;
+  const res = await fetch(feed, { headers: { Accept: 'application/json' }, cf: { cacheTtl: 900, cacheEverything: true } });
+  if (!res.ok) return json({ error: 'Pinterest refused' }, 502, cors);
+  const data = await res.json();
+  const pins = Array.isArray(data?.data?.pins) ? data.data.pins : [];
+  return json({ pins }, 200, { ...cors, 'Cache-Control': 'public, max-age=900' });
 }

@@ -66,7 +66,7 @@
   Void.messages.init();
   Void.drawing.init();
   wireSettings();
-  Void.profile.init();
+  Void.banner.init();
   Void.fx.init();
 
   const tag = $('#versionTag');

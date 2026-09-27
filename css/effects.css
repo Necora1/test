@@ -17,16 +17,16 @@
 }
 
 /* ---------- sheen: a soft reflection under the pointer ---------- */
-.nowcard,
-.home-strip,
 .btn,
 .nav-pill,
-.util-btn { position: relative; }
+.util-btn,
+.contact-grid a { position: relative; }
 
 .portal::after,
 .page-head::before,
-.nowcard::after,
-.home-strip::after,
+.panel-box::after,
+.pin::after,
+.contact-grid a::after,
 .btn::after,
 .send-btn::after,
 .nav-pill::before,
@@ -45,8 +45,9 @@
 
 .portal:hover::after,
 .page-head:hover::before,
-.nowcard:hover::after,
-.home-strip:hover::after,
+.panel-box:hover::after,
+.pin.is-loaded:hover::after,
+.contact-grid a:hover::after,
 .btn:hover::after,
 .send-btn:hover:not(:disabled)::after,
 .nav-pill:hover::before,
@@ -141,36 +142,6 @@
   70%  { opacity: 0.9; }
   100% { opacity: 0; transform: translate(calc(var(--x) + var(--dx, 0px)), calc(var(--y) + 30px)) scale(calc(var(--s, 1) * 0.4)); }
 }
-
-/* ---------- visit counter: a little odometer ---------- */
-.odometer {
-  display: inline-flex;
-  gap: 1px;
-  padding: 2px;
-  vertical-align: -0.25em;
-  background: #000;
-  box-shadow: var(--edge-in);
-}
-
-.odo-digit {
-  display: inline-block;
-  width: 0.9em;
-  height: 1.1em;
-  overflow: hidden;
-  line-height: 1.1em;
-  text-align: center;
-  color: var(--lime);
-  text-shadow: 0 0 6px color-mix(in srgb, var(--lime) 60%, transparent);
-  background: linear-gradient(180deg, #050505, #1d1d21 50%, #050505);
-}
-
-.odo-strip {
-  display: flex;
-  flex-direction: column;
-  transition: transform 1.6s var(--ease-out);
-}
-
-.odo-strip > span { height: 1.1em; }
 
 /* ---------- reduced motion: keep it all still ---------- */
 .reduce-motion .portal,

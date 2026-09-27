@@ -1,0 +1,187 @@
+/* ==========================================================
+   gallery.css — the Pinterest wall and the picture viewer
+   Pictures "develop" as they load: they start grey and soft,
+   over their own average colour, and come into focus.
+   ========================================================== */
+
+.gallery-frame {
+  width: 100%;
+  min-height: 220px;
+  padding: 10px;
+  border-radius: var(--r-md);
+  background: var(--metal-dim);
+  box-shadow: var(--edge);
+}
+
+/* columns of different heights, like Pinterest: newest first, left to
+   right, each picture dropping into the shortest column. The rows are
+   tiny and gallery.js tells each picture how many it spans. */
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-auto-rows: 2px;
+  column-gap: 10px;
+  align-items: start;
+}
+
+.pin {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--c, #1b1b1f);
+  box-shadow: var(--edge), 0 4px 12px rgba(0, 0, 0, 0.45);
+  cursor: zoom-in;
+  transition: transform 0.35s var(--ease-out), box-shadow 0.3s ease, filter 0.3s ease;
+  animation: pin-in 0.7s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.pin img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  filter: blur(14px) grayscale(1) brightness(1.35) contrast(0.9);
+  transform: scale(1.06);
+  transition: opacity 0.5s ease, filter 1.6s var(--ease-out), transform 1.6s var(--ease-out);
+}
+
+.pin.is-loaded img {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+
+.pin:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--edge), 0 12px 26px rgba(0, 0, 0, 0.6), 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.pin.is-broken { display: none; }
+
+.pin.is-skeleton {
+  cursor: default;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%) 0 0 / 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+
+@keyframes pin-in {
+  from { opacity: 0; transform: translateY(14px); }
+}
+
+.gallery-status {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 56px 16px;
+  color: var(--text-3);
+}
+
+.gallery-more { gap: 8px; }
+.gallery-more .icon { width: 15px; height: 15px; }
+
+@media (max-width: 560px) {
+  .pin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; }
+  .gallery-frame { padding: 8px; }
+}
+
+/* ---------- the viewer ---------- */
+.modal-card.is-viewer {
+  max-width: min(980px, 100%);
+  padding: 30px 12px 12px;
+}
+
+.viewer-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewer-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--c, #0b0b0d);
+  box-shadow: var(--edge-in);
+  touch-action: pan-y;
+}
+
+.viewer-frame img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(72vh, 900px);
+  max-height: min(72dvh, 900px);
+  object-fit: contain;
+}
+
+.viewer-frame.is-moving[data-dir="next"] img { animation: slide-from-right 0.45s var(--ease-out); }
+.viewer-frame.is-moving[data-dir="prev"] img { animation: slide-from-left 0.45s var(--ease-out); }
+
+@keyframes slide-from-right { from { opacity: 0; transform: translateX(28px) scale(0.98); } }
+@keyframes slide-from-left  { from { opacity: 0; transform: translateX(-28px) scale(0.98); } }
+
+.viewer-nav {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 2px;
+  color: #e6e6ee;
+  background: linear-gradient(180deg, #3a3a40, #202024 55%, #141416);
+  box-shadow: var(--edge);
+  transition: filter 0.2s ease;
+}
+
+.viewer-nav:hover { filter: brightness(1.3); }
+
+.viewer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 10px;
+  padding: 0 4px;
+}
+
+.viewer-text {
+  flex: 1 1 240px;
+  font-size: 0.86rem;
+  color: var(--text-2);
+  text-align: left;
+}
+
+.viewer-count {
+  font: 400 0.7rem/1 var(--font-pixel);
+  color: var(--text-3);
+}
+
+.viewer-link {
+  margin-left: auto;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+  .viewer-stage { grid-template-columns: minmax(0, 1fr); }
+  .viewer-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    translate: 0 -50%;
+    background: rgba(12, 12, 14, 0.7);
+  }
+  .viewer-nav.is-prev { left: 8px; }
+  .viewer-nav.is-next { right: 8px; }
+}

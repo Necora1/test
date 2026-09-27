@@ -1,8 +1,9 @@
 /* ==========================================================
    navigation.js — pages (router + themes) and the floating dock
+   (the gallery and the song player load themselves on 'page:shown')
    ========================================================== */
 (() => {
-  const { $, $$, config, pages } = Void;
+  const { $, $$, pages } = Void;
   const html = document.documentElement;
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
   const byId = Object.fromEntries(pages.map((p) => [p.id, p]));
@@ -72,7 +73,6 @@
       next.hidden = false;
       window.scrollTo(0, 0);
       if (booted) playEnter(next);
-      if (id === 'gallery') Void.gallery.load();
       Void.emit('page:shown', id);
     };
 
@@ -314,46 +314,6 @@
 
     document.fonts?.ready.then(measureLabel);
   }
-
-  /* ==========================================================
-     GALLERY — the Juicer feed loads the first time the page opens
-     ========================================================== */
-  const gallery = (Void.gallery = {});
-  let galleryState = 'idle';
-
-  gallery.load = () => {
-    const status = $('#galleryStatus');
-    const feed = $('#page-gallery .juicer-feed');
-    if (galleryState === 'loaded') {
-      // let Juicer re-measure in case the window changed size while hidden
-      requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
-      return;
-    }
-    if (galleryState === 'loading' || !feed) return;
-    galleryState = 'loading';
-    feed.dataset.feedId = config.juicerFeedId;
-    status.hidden = false;
-    status.textContent = 'Loading pictures…';
-
-    const watcher = new MutationObserver(() => {
-      if (feed.children.length) {
-        status.hidden = true;
-        watcher.disconnect();
-      }
-    });
-    watcher.observe(feed, { childList: true });
-
-    const script = document.createElement('script');
-    script.src = `https://www.juicer.io/embed/${encodeURIComponent(config.juicerFeedId)}/embed-code.js`;
-    script.async = true;
-    script.onload = () => { galleryState = 'loaded'; };
-    script.onerror = () => {
-      galleryState = 'idle';
-      watcher.disconnect();
-      status.textContent = "The gallery couldn't load right now. Try again later.";
-    };
-    document.body.append(script);
-  };
 
   /* ==========================================================
      init

@@ -141,7 +141,7 @@
   width: 100%;
   max-width: 780px;
   margin: 0 auto;
-  /* clears the fixed banner at any width (profile.js measures it) */
+  /* clears the fixed banner at any width (banner.js measures it) */
   padding: calc(var(--topbar-h, 60px) + 16px) var(--gutter) 0;
   text-align: center;
   font-size: 0.78rem;

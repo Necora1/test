@@ -1,0 +1,249 @@
+/* ==========================================================
+   music.css — favorite songs (interests page) and the
+   "now playing" chip that follows you to other pages
+   ========================================================== */
+
+.player {
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: var(--metal);
+  box-shadow: var(--edge), var(--drop);
+}
+
+/* the sunken screen the Spotify player sits in */
+.player-screen {
+  position: relative;
+  margin: 12px 12px 0;
+  padding: 6px;
+  border-radius: 3px;
+  background: #050506;
+  box-shadow: var(--edge-in);
+}
+
+.player-embed,
+.player-screen iframe {
+  display: block;
+  width: 100%;
+  height: 80px;
+  border: 0;
+  border-radius: 10px;
+}
+
+.player-note {
+  position: absolute;
+  inset: 6px;
+  display: grid;
+  place-items: center;
+  font: 400 0.72rem/1 var(--font-pixel);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+/* ---------- the track list ---------- */
+.song-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 4px 10px;
+  padding: 12px;
+}
+
+.song-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.7em 44px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  text-align: left;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.song-row:hover {
+  background: color-mix(in srgb, var(--accent) 10%, rgba(255, 255, 255, 0.03));
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.song-row:focus-visible { outline-offset: -2px; }
+
+.song-row.is-current {
+  background: color-mix(in srgb, var(--accent) 15%, #0b0b0d);
+  border-color: transparent;
+  box-shadow: var(--edge-in);
+}
+
+.song-num {
+  font: 400 0.7rem/1 var(--font-pixel);
+  color: var(--text-3);
+  text-align: right;
+}
+
+.song-row.is-current .song-num { color: var(--accent); }
+
+.song-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 2px;
+  object-fit: cover;
+  background: #16161b;
+  box-shadow: var(--edge);
+}
+
+.song-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.song-title,
+.song-artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.song-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.song-artist {
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+
+.explicit {
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  border-radius: 2px;
+  font: 700 0.55rem/1 var(--font-body);
+  text-decoration: none;
+  color: #101013;
+  background: #b9b9c2;
+}
+
+/* ---------- equalizer bars on the song that's playing ---------- */
+.song-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.song-eq i {
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  transform-origin: 50% 100%;
+  transform: scaleY(0.3);
+  animation: eq-bounce 0.9s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+
+.song-eq i:nth-child(2) { animation-duration: 0.62s; animation-delay: -0.3s; }
+.song-eq i:nth-child(3) { animation-duration: 1.15s; animation-delay: -0.55s; }
+
+.is-current .song-eq { opacity: 0.5; }
+.is-playing .song-eq { opacity: 1; }
+.is-playing .song-eq i { animation-play-state: running; }
+
+@keyframes eq-bounce {
+  from { transform: scaleY(0.22); }
+  to   { transform: scaleY(1); }
+}
+
+.player-foot {
+  padding: 0 14px 14px;
+  font-size: 0.76rem;
+  color: var(--text-3);
+}
+
+/* ---------- "now playing" chip on the other pages ---------- */
+.mini-player {
+  position: fixed;
+  right: var(--dock-inset);
+  bottom: calc(var(--dock-bottom) + var(--safe-bottom) + 6px);
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(300px, calc(100vw - 2 * var(--dock-inset) - 170px));
+  height: 44px;
+  padding: 0 6px 0 12px;
+  border-radius: var(--r-sm);
+  background: rgba(12, 12, 14, 0.88);
+  box-shadow: var(--edge), 0 8px 24px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  animation: mini-in 0.6s var(--spring) both;
+  transition: opacity 0.25s ease;
+}
+
+.mini-player .song-eq { opacity: 1; }
+.mini-player.is-playing .song-eq i { animation-play-state: running; }
+
+.mini-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+  color: inherit;
+}
+
+.mini-title,
+.mini-artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mini-title { font-size: 0.8rem; font-weight: 700; color: #fff; }
+.mini-artist { font-size: 0.7rem; color: var(--text-3); }
+.mini-text:hover .mini-title { text-decoration: underline; }
+
+.mini-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 2px;
+  color: #fff;
+  background: linear-gradient(180deg, #3a3a40, #1c1c1f);
+  box-shadow: var(--edge);
+}
+
+.mini-btn .icon { width: 15px; height: 15px; }
+.mini-btn .icon-play { display: none; fill: currentColor; }
+.mini-player:not(.is-playing) .mini-btn .icon-pause { display: none; }
+.mini-player:not(.is-playing) .mini-btn .icon-play { display: block; }
+
+/* out of the way while the menu is open */
+body:has(.dock[data-state="expanded"]) .mini-player {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes mini-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.9); }
+}
+
+@media (max-width: 480px) {
+  .song-list { grid-template-columns: minmax(0, 1fr); padding: 10px 8px; }
+  .player-screen { margin: 10px 8px 0; }
+}
