@@ -43,6 +43,7 @@
     uniform vec2 uMoon;
     uniform float uMoonR;
     uniform vec4 uRipple[3];
+    uniform float uLucid;
 
     float hash(vec2 p) {
       p = fract(p * vec2(123.34, 456.21));
@@ -145,6 +146,19 @@
       float sa = sin(ang);
       p = m + mat2(ca, sa, -sa, ca) * dm;
 
+      // lucid: the sky folds into a slowly turning kaleidoscope
+      if (uLucid > 0.001) {
+        vec2 c = p - vec2(0.0, 0.02);
+        float r = length(c);
+        float a = atan(c.y, c.x) + t * 0.06;
+        float seg = 6.2831853 / 6.0;
+        a = mod(a, seg);
+        a = abs(a - seg * 0.5);
+        r *= 1.0 + 0.08 * sin(r * 14.0 - t * 1.6);
+        vec2 k = r * 1.35 * vec2(cos(a + 0.35), sin(a + 0.35)) - vec2(0.0, 0.2);
+        p = mix(p, k, uLucid);
+      }
+
       // rings where you clicked
       for (int i = 0; i < 3; i++) {
         vec4 r = uRipple[i];
@@ -168,6 +182,11 @@
       vec2 uv = gl_FragCoord.xy / uRes;
       vec2 lk = (uv - vec2(1.05 + 0.08 * sin(t * 0.07), -0.05)) * vec2(1.4, 1.0);
       col += uGlow * exp(-length(lk) * 2.4) * 0.14;
+
+      // lucid colours: slowly swapping channels
+      float lr = length(gl_FragCoord.xy / uRes.y - vec2(0.5 * uRes.x / uRes.y, 0.5));
+      vec3 rainbow = 0.55 + 0.45 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + lr * 1.6 - t * 0.08));
+      col = mix(col, (col * 0.6 + 0.25) * rainbow * 1.5, uLucid * 0.75);
 
       // calmer and darker while a room is open
       col = mix(col, col * 0.5 + uSky * 0.28, uFocus * 0.85);
@@ -196,6 +215,8 @@
   let H = 0;
   let focus = 0;
   let focusTarget = 0;
+  let lucid = 0;
+  let lucidTarget = 0;
   let mouse = { x: 0.5, y: 0.45, tx: 0.5, ty: 0.45, amt: 0, tamt: 0 };
   const ripples = new Float32Array(12);
   let rippleSlot = 0;
@@ -232,7 +253,7 @@
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-    ['uRes', 'uTime', 'uMouse', 'uMouseAmt', 'uSky', 'uHorizon', 'uGlow', 'uAccent', 'uFocus', 'uHorizonY', 'uMoon', 'uMoonR', 'uRipple']
+    ['uRes', 'uTime', 'uMouse', 'uMouseAmt', 'uSky', 'uHorizon', 'uGlow', 'uAccent', 'uFocus', 'uHorizonY', 'uMoon', 'uMoonR', 'uRipple', 'uLucid']
       .forEach((name) => { loc[name] = gl.getUniformLocation(program, name); });
   }
 
@@ -270,6 +291,7 @@
     gl.uniform2f(loc.uMoon, lay.moon[0], lay.moon[1]);
     gl.uniform1f(loc.uMoonR, lay.r);
     gl.uniform4fv(loc.uRipple, ripples);
+    gl.uniform1f(loc.uLucid, lucid);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -286,6 +308,7 @@
     mouse.y += (mouse.ty - mouse.y) * k;
     mouse.amt += (mouse.tamt - mouse.amt) * (1 - Math.exp(-dt / 0.6));
     focus += (focusTarget - focus) * (1 - Math.exp(-dt / 0.5));
+    lucid += (lucidTarget - lucid) * (1 - Math.exp(-dt / 1.2));
 
     palette.tick(dt);
     if (gl) draw();
@@ -338,6 +361,7 @@
       rippleSlot = (rippleSlot + 1) % 3;
     },
 
-    setFocus(v) { focusTarget = v; }
+    setFocus(v) { focusTarget = v; },
+    setLucid(v) { lucidTarget = v; }
   };
 })();

@@ -71,12 +71,23 @@ js/
 dream/
   index.html          the dream version (its about letter lives here)
   dream.css           everything it looks like
+  rooms.css           the newer rooms, each room's own world, lucid/void/drift
   js/palette.js       which song each room is tuned to; colours that glide
   js/sky.js           the sky and sea (one WebGL shader) + the frame loop
   js/life.js          jellyfish, dust, rain streaks
   js/rain.js          rain sounds, generated in the browser
   js/scene.js         the floating things, parallax, ripples
-  js/views.js         the rooms (#about, #gallery, #interests, #favoomfs, #send)
+  js/views.js         the rooms (#about, #gallery, #interests, #favoomfs, #send,
+                      #games, #guitar, #oracle, #wishes)
+  js/bedroom.js       about: the 3D bedroom (three.js, an ES module)
+  js/sound.js         the little synth: chimes, plucked strings, a reverb room
+  js/fx.js            sparks, comets, catchable shooting stars, wish stars
+  js/arcade.js        the games room; js/games/*.js are the four games
+  js/guitar.js        the playable guitar
+  js/oracle.js        the tarot reading
+  js/wishes.js        the wish jar (kept in the visitor's browser only)
+  js/extras.js        lucid mode, keys, typed words, drifting, the clock
+  vendor/three.module.min.js   three.js r160 (MIT, see vendor/three.LICENSE)
   js/pictures.js      polaroids you can pick up, and the viewer
   js/tapes.js         cassettes and the walkman
   js/letters.js       a sent letter folding into an envelope and flying off
@@ -175,3 +186,22 @@ font, kept only as a fallback; check its licence before using it more widely.
   spot with Web Audio, no sound files) and makes it rain in the sky.
 - **Now playing:** the classic footer marquee says which song is playing. In
   the dream, a song keeps playing on the walkman while you wander around.
+
+### In the dream
+
+- **About is a 3D room:** late sun through the window, dust in the beam.
+  Drag to look around; click the window (day/night), the lamp, the guitar,
+  the camera, the record player, the covers on the wall, the letter, the plant.
+- **Games:** star catcher, cover memory, blurry covers, lanterns. Best scores
+  are kept in the browser.
+- **Guitar:** drag across the strings, pick chords (1–8), A S D F G H pluck,
+  "let it play" strums a progression by itself.
+- **Fortune:** a three-card reading from a made-up 22-card deck.
+- **Wishes:** each wish becomes a star in the home sky.
+- **Keys:** `?` lists them. `1`–`9` rooms, `L` lucid (the sky becomes a
+  kaleidoscope), `R` rain, `M` mute. Type `void` or `wish`. Click a shooting
+  star to catch it. The title's letters ring when touched. Leave it alone for
+  a minute and the dream drifts apart.
+- **Songs:** `Void.favorites` in `js/config.js`. A song can use `album:` instead
+  of a track id when only its record is on Spotify (it then plays the record).
+

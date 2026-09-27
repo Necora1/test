@@ -25,6 +25,12 @@
   Void.dream.scene.init();
   Void.dream.tapes.init();
   Void.dream.pictures.init();
+  Void.dream.fx.init();
+  Void.dream.wishes.init();
+  Void.dream.oracle.init();
+  Void.dream.guitar.init();
+  Void.dream.arcade.init();
+  Void.dream.extras.init();
   Void.dream.views.init();
 
   // rain on the window

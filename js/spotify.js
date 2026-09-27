@@ -30,8 +30,11 @@
   let lastDuration = 0;
   let lastSent = '';
 
-  const uriOf = (song) => `spotify:track:${song.spotify}`;
-  const embedUrl = (song) => `https://open.spotify.com/embed/track/${encodeURIComponent(song.spotify)}?utm_source=generator`;
+  // a song is a track id, or (when only the record could be found) an album id
+  const kind = (song) => (song.album ? 'album' : 'track');
+  const idOf = (song) => song.album || song.spotify;
+  const uriOf = (song) => `spotify:${kind(song)}:${idOf(song)}`;
+  const embedUrl = (song) => `https://open.spotify.com/embed/${kind(song)}/${encodeURIComponent(idOf(song))}?utm_source=generator`;
   const state = () => ({ index: current, song: songs[current] || null, playing, mode });
 
   function announce() {

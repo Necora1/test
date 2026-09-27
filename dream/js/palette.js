@@ -22,7 +22,11 @@
     gallery: '46JoGRd1QYQj3CrULjCi0j',   // 3月5日。 · Plastic Tree
     interests: '1MT1O2LP1GkE0sPG7cUktb', // PICNIC · SEAPOOL
     favoomfs: '2Rr4raGZMslo4jCPwddih1',  // happy news for sadness · Car Seat Headrest
-    send: '1bnEw1xzEc5f05KdbU9M7r'       // September Come Take This Heart Away · Carissa's Wierd
+    send: '1bnEw1xzEc5f05KdbU9M7r',      // September Come Take This Heart Away · Carissa's Wierd
+    games: '1uK4zAdMcBRyinAOArUA5X',     // odoriko · Vaundy
+    guitar: '3LOuU9L8SJ574EBc4PtOyA',    // Memory · Alex G
+    oracle: '15kuqWifv5GzGq3A2P6EbC',    // Anthems For A Seventeen Year-Old Girl · yeule
+    wishes: '1fkJeS8eigd7lwml2aqIGG'     // sun and moon · mage tears
   };
   const FALLBACK = ['#051014', '#12343a', '#bfe3da', '#3f8f86'];
 

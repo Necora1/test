@@ -8,7 +8,7 @@
 (() => {
   const Void = window.Void;
   const { $, $$ } = Void;
-  const ROOMS = ['about', 'gallery', 'interests', 'favoomfs', 'send'];
+  const ROOMS = ['about', 'gallery', 'interests', 'favoomfs', 'send', 'games', 'guitar', 'oracle', 'wishes'];
   const scene = $('#scene');
   let current = 'home';
   let closing = null;

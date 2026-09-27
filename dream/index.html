@@ -14,6 +14,7 @@
   <link rel="preload" href="../assets/fonts/fraunces-italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="dream.css">
+  <link rel="stylesheet" href="rooms.css">
 
   <script>document.documentElement.classList.add('js');</script>
 </head>
@@ -22,6 +23,8 @@
   <canvas id="life" class="life" aria-hidden="true"></canvas>
   <div class="grain" aria-hidden="true"></div>
   <div class="cursor-glow" aria-hidden="true"></div>
+  <canvas id="fx" class="fx" aria-hidden="true"></canvas>
+  <p class="wish-label" id="wishLabel" hidden></p>
 
   <!-- ======================= CORNERS ======================= -->
   <header class="corner">
@@ -31,7 +34,12 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0"/><path d="M12 2v1"/></svg>
         rain
       </button>
-      <a class="hand-link to-classic" href="../index.html">classic version</a>
+      <button type="button" class="hand-link" id="lucidBtn" aria-pressed="false" title="Lucid mode (L)">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+        lucid
+      </button>
+      <button type="button" class="hand-link keys-btn" id="keysBtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+      <a class="hand-link to-classic" href="../index.html">classic <span class="long">version</span></a>
     </nav>
   </header>
 
@@ -40,6 +48,7 @@
     <div class="scene-title">
       <h1 class="dream-title"><span class="t-name">renn</span><span class="t-rest">'s void</span></h1>
       <p class="dream-sub">dream version</p>
+      <p class="dream-clock" id="dreamClock"></p>
     </div>
 
     <nav class="objects" aria-label="Rooms">
@@ -64,7 +73,7 @@
       <a class="obj obj-tape" href="#interests" data-view="interests" style="--x: 31%; --y: 74%; --depth: 1.1; --rot: -7deg; --bob: 6.5s">
         <span class="tape tape-mini" aria-hidden="true">
           <span class="tape-shell">
-            <span class="tape-label"><span class="tape-words"><span class="tape-title">on repeat</span><span class="tape-artist">18 songs</span></span></span>
+            <span class="tape-label"><span class="tape-words"><span class="tape-title">on repeat</span><span class="tape-artist">53 songs</span></span></span>
             <span class="tape-window"><i class="reel"></i><span class="tape-ribbon"></span><i class="reel"></i></span>
           </span>
         </span>
@@ -86,6 +95,46 @@
         </span>
         <span class="obj-label">write to me</span>
       </a>
+
+      <a class="obj obj-guitar" href="#guitar" data-view="guitar" style="--x: 35%; --y: 17%; --depth: 0.8; --rot: -14deg; --bob: 8.5s">
+        <span class="mini-guitar" aria-hidden="true">
+          <svg viewBox="0 0 120 150">
+            <defs>
+              <linearGradient id="gtrWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1c27d"/><stop offset="1" stop-color="#b86b34"/></linearGradient>
+            </defs>
+            <rect x="54" y="4" width="12" height="62" rx="3" fill="#5b3a24"/>
+            <rect x="51" y="0" width="18" height="16" rx="4" fill="#3a2517"/>
+            <path d="M60 58c-16 0-24 10-22 22 1 7-8 10-8 24 0 20 14 34 30 34s30-14 30-34c0-14-9-17-8-24 2-12-6-22-22-22Z" fill="url(#gtrWood)" stroke="#6b3d1e" stroke-width="2"/>
+            <circle cx="60" cy="96" r="10" fill="#2a1a10"/>
+            <circle cx="60" cy="96" r="13" fill="none" stroke="#6b3d1e" stroke-dasharray="2 3"/>
+            <rect x="48" y="118" width="24" height="5" rx="2" fill="#3a2517"/>
+            <g stroke="#fff6e0" stroke-width="0.8" opacity="0.8"><path d="M57 6v114M59 6v114M61 6v114M63 6v114"/></g>
+          </svg>
+        </span>
+        <span class="obj-label">guitar</span>
+      </a>
+
+      <a class="obj obj-oracle" href="#oracle" data-view="oracle" style="--x: 64%; --y: 15%; --depth: 0.7; --rot: 9deg; --bob: 9s">
+        <span class="mini-tarot" aria-hidden="true"><span class="mt-card"><i></i></span></span>
+        <span class="obj-label">fortune</span>
+      </a>
+
+      <a class="obj obj-games" href="#games" data-view="games" style="--x: 92%; --y: 56%; --depth: 1; --rot: -8deg; --bob: 7.2s">
+        <span class="handheld" aria-hidden="true">
+          <span class="hh-screen"><i class="hh-star"></i><i class="hh-boat"></i></span>
+          <span class="hh-pad"></span>
+          <span class="hh-ab"><i></i><i></i></span>
+        </span>
+        <span class="obj-label">games</span>
+      </a>
+
+      <a class="obj obj-jar" href="#wishes" data-view="wishes" style="--x: 88%; --y: 84%; --depth: 1.15; --rot: 4deg; --bob: 6.8s">
+        <span class="jar" aria-hidden="true">
+          <span class="jar-lid"></span>
+          <span class="jar-glass"><i></i><i></i><i></i><i></i><i></i></span>
+        </span>
+        <span class="obj-label">wishes</span>
+      </a>
     </nav>
 
     <button type="button" class="tuned tuned-home" data-tune="home"><span class="tuned-lead">the sky is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
@@ -94,10 +143,17 @@
 
   <!-- ======================= ABOUT ======================= -->
   <section class="view view-about" id="view-about" data-view="about" hidden aria-labelledby="aboutHead">
+    <div class="bedroom" id="bedroom" aria-hidden="true">
+      <canvas class="bedroom-canvas" id="bedroomCanvas"></canvas>
+      <p class="bedroom-tag" id="bedroomTag"></p>
+    </div>
+    <div class="room-bg bg-about" aria-hidden="true"><i class="sunbeam"></i><i class="sunbeam b2"></i></div>
     <div class="view-inner">
       <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
       <h2 class="view-title" id="aboutHead" tabindex="-1">about me</h2>
       <button type="button" class="tuned" data-tune="about"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede bedroom-lede">my room, late afternoon. drag to look around, click things. the letter is on the desk ↓</p>
+      <div class="bedroom-spacer" aria-hidden="true"></div>
 
       <article class="letter">
         <span class="washi washi-1" aria-hidden="true"></span>
@@ -122,6 +178,7 @@
 
   <!-- ======================= PICTURES ======================= -->
   <section class="view view-gallery" id="view-gallery" data-view="gallery" hidden aria-labelledby="picsHead">
+    <div class="room-bg bg-gallery" aria-hidden="true"><i class="safelight"></i><i class="line l1"></i><i class="line l2"></i></div>
     <div class="view-inner">
       <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
       <h2 class="view-title" id="picsHead" tabindex="-1">pictures</h2>
@@ -135,6 +192,7 @@
 
   <!-- ======================= SONGS ======================= -->
   <section class="view view-interests" id="view-interests" data-view="interests" hidden aria-labelledby="songsHead">
+    <div class="room-bg bg-interests" aria-hidden="true"><i class="neon">on repeat</i><i class="shelf-glow"></i></div>
     <div class="view-inner">
       <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
       <h2 class="view-title" id="songsHead" tabindex="-1">on repeat</h2>
@@ -146,6 +204,7 @@
 
   <!-- ======================= FRIENDS ======================= -->
   <section class="view view-favoomfs" id="view-favoomfs" data-view="favoomfs" hidden aria-labelledby="friendsHead">
+    <div class="room-bg bg-favoomfs" aria-hidden="true"><i class="fairy"></i></div>
     <div class="view-inner">
       <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
       <h2 class="view-title" id="friendsHead" tabindex="-1">friends</h2>
@@ -164,6 +223,7 @@
 
   <!-- ======================= WRITE TO ME ======================= -->
   <section class="view view-send" id="view-send" data-view="send" hidden aria-labelledby="sendHead">
+    <div class="room-bg bg-send" aria-hidden="true"><i class="candle"><b></b></i></div>
     <div class="view-inner">
       <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
       <h2 class="view-title" id="sendHead" tabindex="-1">write to me</h2>
@@ -260,6 +320,83 @@
     </div>
   </section>
 
+
+  <!-- ======================= GAMES ======================= -->
+  <section class="view view-games" id="view-games" data-view="games" hidden aria-labelledby="gamesHead">
+    <div class="room-bg bg-games" aria-hidden="true"><i class="sun"></i><i class="grid"></i></div>
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="gamesHead" tabindex="-1">games</h2>
+      <button type="button" class="tuned" data-tune="games"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">four little games that got into the dream. pick a cartridge.</p>
+      <div class="carts" id="carts" role="tablist" aria-label="Games"></div>
+      <div class="arcade" id="arcadeScreen" role="tabpanel">
+        <div class="arcade-bar"><span class="arcade-score" id="arcadeScore"></span><span class="arcade-best" id="arcadeBest"></span></div>
+        <div class="arcade-stage" id="arcadeStage"></div>
+        <p class="arcade-how" id="arcadeHow"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= GUITAR ======================= -->
+  <section class="view view-guitar" id="view-guitar" data-view="guitar" hidden aria-labelledby="guitarHead">
+    <div class="room-bg bg-guitar" aria-hidden="true"><i class="spot"></i><i class="haze"></i><i class="amp"></i></div>
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="guitarHead" tabindex="-1">guitar</h2>
+      <button type="button" class="tuned" data-tune="guitar"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">i play guitar, so here's one. drag across the strings to strum, click one to pluck it.</p>
+      <div class="guitar-rig">
+        <div class="chords" id="chords" role="group" aria-label="Chords"></div>
+        <div class="neck"><canvas id="guitarCanvas" class="guitar-canvas" aria-label="Guitar strings: drag across them to strum"></canvas><span class="now-chord" id="gtrChord" aria-live="polite"></span></div>
+        <div class="guitar-bar">
+          <button type="button" class="pill-btn" id="gtrDown">strum ↓</button>
+          <button type="button" class="pill-btn" id="gtrUp">strum ↑</button>
+          <button type="button" class="pill-btn" id="gtrRoom" aria-pressed="true">big room reverb</button>
+          <button type="button" class="send-btn" id="gtrAuto" aria-pressed="false"><span class="btn-label">let it play</span></button>
+        </div>
+        <p class="view-foot">keys: 1–8 chords · A S D F G H strings · space strums (shift+space up)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= FORTUNE ======================= -->
+  <section class="view view-oracle" id="view-oracle" data-view="oracle" hidden aria-labelledby="oracleHead">
+    <div class="room-bg bg-oracle" aria-hidden="true"><i class="drape d1"></i><i class="drape d2"></i><i class="orb"></i></div>
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="oracleHead" tabindex="-1">fortune</h2>
+      <button type="button" class="tuned" data-tune="oracle"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">the dream reads cards. think of a question, then shuffle.</p>
+      <div class="oracle-table" id="oracleTable"></div>
+      <button type="button" class="send-btn" id="oracleShuffle"><span class="btn-label">shuffle &amp; draw</span></button>
+      <div class="reading" id="oracleReading" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ======================= WISHES ======================= -->
+  <section class="view view-wishes" id="view-wishes" data-view="wishes" hidden aria-labelledby="wishesHead">
+    <div class="room-bg bg-wishes" aria-hidden="true"><i class="city"></i><i class="windows"></i></div>
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <h2 class="view-title" id="wishesHead" tabindex="-1">wishes</h2>
+      <button type="button" class="tuned" data-tune="wishes"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">write a wish and let it go. it turns into a star over the sea.</p>
+      <form class="wish-form" id="wishForm">
+        <label class="sr-only" for="wishText">Your wish</label>
+        <input type="text" id="wishText" maxlength="90" placeholder="i wish…" autocomplete="off">
+        <button type="submit" class="send-btn"><span class="btn-label">let it go</span></button>
+      </form>
+      <div class="sky-map">
+        <svg class="constellation" id="constellation" viewBox="0 0 1000 360" role="group" aria-label="Your wishes"></svg>
+        <p class="wish-empty" id="wishEmpty">no wishes yet. the sky is waiting.</p>
+      </div>
+      <p class="wish-said" id="wishSaid" aria-live="polite"></p>
+      <p class="view-foot"><span id="wishCount"></span> wishes stay in this browser. nobody else can read them, not even renn.</p>
+      <button type="button" class="hand-link" id="wishClear" hidden>let them all go</button>
+    </div>
+  </section>
+
   <!-- ======================= WALKMAN ======================= -->
   <aside class="walkman" id="walkman" hidden aria-label="Music player">
     <div class="wm-top">
@@ -315,6 +452,26 @@
     </div>
   </dialog>
 
+  <dialog class="modal" id="keysModal" aria-labelledby="keysTitle">
+    <div class="modal-card">
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+      <h2 class="modal-title" id="keysTitle">secret keys</h2>
+      <dl class="keys-list">
+        <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>jump to a room (<kbd>0</kbd> the sky)</dd>
+        <dt><kbd>L</kbd></dt><dd>lucid mode: the sky folds into a kaleidoscope</dd>
+        <dt><kbd>R</kbd></dt><dd>rain</dd>
+        <dt><kbd>M</kbd></dt><dd>mute the dream's own sounds</dd>
+        <dt><kbd>Esc</kbd></dt><dd>back to the sky</dd>
+        <dt>type <b>void</b></dt><dd>…see what happens</dd>
+        <dt>type <b>wish</b></dt><dd>the wish jar</dd>
+        <dt>shooting stars</dt><dd>click one to catch it</dd>
+        <dt>the title</dt><dd>touch the letters, they ring</dd>
+      </dl>
+    </div>
+  </dialog>
+
+  <p class="dream-toast" id="dreamToast" role="status" aria-live="polite" hidden></p>
+
   <div class="eyelids" aria-hidden="true"><i></i><i></i></div>
 
   <!-- shared with the classic version -->
@@ -328,6 +485,7 @@
   <script src="../js/drawing.js" defer></script>
   <!-- the dream -->
   <script src="js/palette.js" defer></script>
+  <script src="js/sound.js" defer></script>
   <script src="js/sky.js" defer></script>
   <script src="js/life.js" defer></script>
   <script src="js/rain.js" defer></script>
@@ -336,6 +494,17 @@
   <script src="js/tapes.js" defer></script>
   <script src="js/letters.js" defer></script>
   <script src="js/scene.js" defer></script>
+  <script src="js/fx.js" defer></script>
+  <script src="js/wishes.js" defer></script>
+  <script src="js/oracle.js" defer></script>
+  <script src="js/guitar.js" defer></script>
+  <script src="js/arcade.js" defer></script>
+  <script src="js/games/catcher.js" defer></script>
+  <script src="js/games/memory.js" defer></script>
+  <script src="js/games/quiz.js" defer></script>
+  <script src="js/games/lanterns.js" defer></script>
+  <script src="js/extras.js" defer></script>
   <script src="js/main.js" defer></script>
+  <script type="module" src="js/bedroom.js"></script>
 </body>
 </html>
