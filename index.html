@@ -1,153 +1,438 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Site</title>
-  <meta name="description" content="About me, blog, photo gallery, and a way to get in touch.">
-  <link rel="icon" href="images/avatar.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <canvas id="sky" aria-hidden="true"></canvas>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Renn | Void</title>
+  <meta name="description" content="Welcome to the Void.">
+  <meta name="theme-color" content="#030303">
+  <meta property="og:title" content="Renn | Void">
+  <meta property="og:description" content="Welcome to the Void.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="#about">
-        <img class="brand-avatar" id="brand-avatar" src="images/avatar.svg" alt="" width="32" height="32">
-        <span id="site-name">My Site</span>
-      </a>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
-      </button>
-    </div>
-    <nav class="wrap" aria-label="Sections">
-      <div class="tabs" role="tablist">
-        <button role="tab" id="tab-about" data-tab="about" aria-controls="panel-about" aria-selected="true">About</button>
-        <button role="tab" id="tab-blog" data-tab="blog" aria-controls="panel-blog" aria-selected="false" tabindex="-1">Blog</button>
-        <button role="tab" id="tab-gallery" data-tab="gallery" aria-controls="panel-gallery" aria-selected="false" tabindex="-1">Gallery</button>
-        <button role="tab" id="tab-contact" data-tab="contact" aria-controls="panel-contact" aria-selected="false" tabindex="-1">Contact</button>
+  <link rel="preload" href="assets/fonts/jacquard12.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/silkscreen-400.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/background.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/dock.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/send.css">
+  <link rel="stylesheet" href="css/effects.css">
+
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="is-booting" data-page="home">
+  <canvas id="sky" class="sky" aria-hidden="true"></canvas>
+
+  <!-- ======================= BANNER ======================= -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-name">RENN'S VOID</span>
+        <span class="brand-tag">est. in the dark</span>
       </div>
-    </nav>
+
+      <form class="searchbox" id="siteSearch" role="search">
+        <label class="slug" for="siteSearchInput">Search the void:</label>
+        <input id="siteSearchInput" type="search" name="q" placeholder="search&#8230;" autocomplete="off" spellcheck="false">
+        <button class="top-search-btn" type="submit">Search</button>
+      </form>
+
+      <nav class="top-links" aria-label="Quick links">
+        <a href="#about">About</a>
+        <a href="#gallery">Gallery</a>
+        <button type="button" class="top-link-btn" id="topLoginBtn">LogIn</button>
+      </nav>
+    </div>
   </header>
 
-  <section class="hero" aria-labelledby="hero-name">
-    <div class="wrap hero-inner">
-      <p class="hero-kicker">Hello, I'm</p>
-      <h1 class="hero-title" id="hero-name"></h1>
-      <p class="hero-tagline" id="hero-tagline"></p>
-    </div>
-    <button class="scroll-cue" id="scroll-cue" type="button" aria-label="Scroll to content">
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
-    </button>
-  </section>
+  <div class="site">
+    <p class="tip" id="tipBar"><b>TIP:</b> everything you send here is anonymous. No account needed.</p>
 
-  <div class="sheet">
-  <main id="main" class="wrap">
-    <!-- ABOUT -->
-    <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" tabindex="0">
-      <div class="about-hero">
-        <img id="about-avatar" class="about-avatar" src="images/avatar.svg" alt="" width="160" height="160">
-        <div>
-          <h1 id="about-name"></h1>
-          <p id="about-tagline" class="tagline"></p>
-          <ul id="about-links" class="link-list"></ul>
+    <!-- ======================= PAGES ======================= -->
+    <main id="stage" class="stage">
+
+    <section class="page page-home" id="page-home" data-page="home" aria-labelledby="homeTitle">
+      <div class="home-strip"><b>RENN'S VOID</b> &#183; your visit no. <span class="odometer" id="visitCount" aria-label="1">000001</span></div>
+      <h1 class="hero-title" id="homeTitle">THE VOID</h1>
+      <p class="lede">Welcome to the Void.</p>
+      <div class="nowcard">
+        <span class="nowcard-label">right now</span>
+        <div class="nowcard-row">
+          <span>Mood: <b class="mood-word">bored z z 1,</b></span>
+          <span>Listening: <b class="now-playing">the static between stars</b></span>
+          <span>Your last visit: <b class="stamp">just now</b></span>
         </div>
       </div>
-      <div class="about-grid">
-        <div id="about-bio" class="prose"></div>
-        <aside class="card">
-          <h2 class="card-title">Quick facts</h2>
-          <dl id="about-facts" class="facts"></dl>
-        </aside>
+      <nav class="portals" id="portals" aria-label="Pages"></nav>
+    </section>
+
+    <section class="page" id="page-about" data-page="about" aria-labelledby="aboutTitle" hidden>
+      <header class="page-head">
+        <h1 class="page-title" id="aboutTitle">ABOUT</h1>
+        <p class="lede">im renn! This is my website :3</p>
+      </header>
+      <div class="wip">W.I.P</div>
+    </section>
+
+    <section class="page page-gallery" id="page-gallery" data-page="gallery" aria-labelledby="galleryTitle" hidden>
+      <header class="page-head">
+        <h1 class="page-title" id="galleryTitle">GALLERY</h1>
+        <p class="lede">Here's the collection of pictures I make</p>
+      </header>
+      <div class="gallery-frame">
+        <!-- the Juicer feed fills this in when the page is first opened -->
+        <div class="juicer-feed" data-feed-id="xqygen"></div>
+        <p class="gallery-status" id="galleryStatus">Loading pictures…</p>
       </div>
     </section>
 
-    <!-- BLOG -->
-    <section id="panel-blog" role="tabpanel" aria-labelledby="tab-blog" tabindex="0" hidden>
-      <div id="blog-list-view">
-        <h1>Blog</h1>
-        <div id="blog-tags" class="chips" role="group" aria-label="Filter by tag"></div>
-        <ol id="blog-list" class="post-list"></ol>
+    <section class="page" id="page-interests" data-page="interests" aria-labelledby="interestsTitle" hidden>
+      <header class="page-head">
+        <h1 class="page-title" id="interestsTitle">INTERESTS</h1>
+        <p class="lede">Media, hobbies, etc</p>
+      </header>
+      <div class="wip">W.I.P</div>
+    </section>
+
+    <section class="page" id="page-favoomfs" data-page="favoomfs" aria-labelledby="favoomfsTitle" hidden>
+      <header class="page-head">
+        <h1 class="page-title" id="favoomfsTitle">FAVOOMFS</h1>
+        <p class="lede">my favorite oomfs</p>
+      </header>
+      <div class="wip">W.I.P</div>
+      <!--
+        When you're ready, replace the W.I.P box with cards like this:
+        <div class="oomf-grid">
+          <a class="oomf" href="https://link-to-their-page" target="_blank" rel="noopener">
+            <img class="oomf-avatar" src="images/oomfs/name.png" alt="">
+            <span class="oomf-name">name</span>
+            <span class="oomf-note">a line about them</span>
+          </a>
+        </div>
+      -->
+    </section>
+
+    <section class="page page-send" id="page-send" data-page="send" aria-labelledby="sendTitle" hidden>
+      <header class="page-head">
+        <h1 class="page-title" id="sendTitle">SEND ME SOMETHING</h1>
+        <p class="lede">You can either write or draw</p>
+      </header>
+
+      <div class="segmented" id="sendTabs" role="tablist" aria-label="What to send" data-active="write">
+        <span class="segmented-thumb" aria-hidden="true"></span>
+        <button type="button" role="tab" id="tabWrite" data-tab="write" aria-selected="true" aria-controls="panelWrite">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          write
+        </button>
+        <button type="button" role="tab" id="tabDraw" data-tab="draw" aria-selected="false" aria-controls="panelDraw" tabindex="-1">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg>
+          draw
+        </button>
       </div>
-      <article id="blog-post-view" hidden>
-        <a href="#blog" class="back-link">&larr; All posts</a>
-        <header class="post-header">
-          <h1 id="post-title"></h1>
-          <p id="post-meta" class="meta"></p>
-        </header>
-        <div id="post-body" class="prose"></div>
-      </article>
-    </section>
 
-    <!-- GALLERY -->
-    <section id="panel-gallery" role="tabpanel" aria-labelledby="tab-gallery" tabindex="0" hidden>
-      <h1>Gallery</h1>
-      <ul id="gallery-grid" class="gallery"></ul>
-    </section>
-
-    <!-- CONTACT -->
-    <section id="panel-contact" role="tabpanel" aria-labelledby="tab-contact" tabindex="0" hidden>
-      <h1>Send me something</h1>
-      <p id="contact-intro" class="lead"></p>
-      <form id="contact-form" class="card form" novalidate>
-        <div class="field-row">
-          <label class="field">
-            <span>Your name</span>
-            <input name="name" autocomplete="name" maxlength="100">
-          </label>
-          <label class="field">
-            <span>Your email <small>(optional, so I can reply)</small></span>
-            <input name="email" type="email" autocomplete="email" maxlength="200">
-          </label>
+      <!-- write -->
+      <div class="send-panel" id="panelWrite" role="tabpanel" aria-labelledby="tabWrite">
+        <div class="message-card">
+          <label class="sr-only" for="messageText">Your message</label>
+          <textarea id="messageText" rows="4" maxlength="2000" placeholder="Type here"></textarea>
+          <div class="message-bar">
+            <button type="button" class="attach-btn" id="openMusicBtn">
+              <svg class="icon-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.84.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.621.539.3.719 1.02.419 1.56-.239.54-.959.72-1.559.3z"/></svg>
+              <span>add a song</span>
+            </button>
+            <div class="song-chip" id="songChip" hidden>
+              <button type="button" class="song-chip-main" id="songChipChange" aria-label="Change song">
+                <img class="song-chip-cover" id="songChipCover" alt="">
+                <span class="song-chip-text">
+                  <span class="song-chip-title" id="songChipTitle"></span>
+                  <span class="song-chip-artist" id="songChipArtist"></span>
+                </span>
+              </button>
+              <button type="button" class="song-chip-remove" id="songChipRemove" aria-label="Remove song">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+            <span class="char-count" id="charCount" aria-live="off">0 / 2000</span>
+          </div>
         </div>
-        <label class="field">
-          <span>What is it?</span>
-          <select name="kind">
-            <option>Just saying hi</option>
-            <option>A question</option>
-            <option>A link or recommendation</option>
-            <option>Feedback on a post</option>
-            <option>Something else</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Link <small>(optional: a photo, file, song, article…)</small></span>
-          <input name="link" type="url" inputmode="url" placeholder="https://" maxlength="500">
-        </label>
-        <label class="field">
-          <span>Message</span>
-          <textarea name="message" rows="6" required maxlength="5000"></textarea>
-        </label>
-        <!-- Honeypot for spam bots; hidden from people -->
-        <label class="hp" aria-hidden="true">Leave this empty <input name="_gotcha" tabindex="-1" autocomplete="off"></label>
-        <div class="form-actions">
-          <button class="btn" type="submit" id="contact-submit">Send</button>
-          <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
-        </div>
-      </form>
-      <p id="contact-direct" class="meta"></p>
-    </section>
-  </main>
+        <button type="button" class="send-btn" id="sendMessageBtn"><span class="btn-label">SEND ANONYMOUSLY ✍️🤫</span></button>
+        <p class="form-status" id="messageStatus" role="status" aria-live="polite"></p>
+      </div>
 
-  <footer class="site-footer">
-    <div class="wrap">&copy; <span id="year"></span> <span id="footer-name"></span></div>
-  </footer>
+      <!-- draw -->
+      <div class="send-panel" id="panelDraw" role="tabpanel" aria-labelledby="tabDraw" hidden>
+        <div class="draw-card">
+          <div class="draw-toolbar" role="toolbar" aria-label="Drawing tools">
+            <div class="tool-group">
+              <button type="button" class="tool-btn is-active" id="penBtn" aria-pressed="true" title="Pen">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                <span class="sr-only">Pen</span>
+              </button>
+              <button type="button" class="tool-btn" id="eraserBtn" aria-pressed="false" title="Eraser">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l7 7a1 1 0 0 1 0 1.4L13.7 21"/><path d="M22 21H7"/><path d="m9.5 9.5 5 5"/></svg>
+                <span class="sr-only">Eraser</span>
+              </button>
+            </div>
+            <div class="tool-group">
+              <button type="button" class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                <span class="sr-only">Undo</span>
+              </button>
+              <button type="button" class="tool-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)" disabled>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+                <span class="sr-only">Redo</span>
+              </button>
+              <button type="button" class="tool-btn" id="clearBtn" title="Clear canvas" disabled>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <span class="sr-only">Clear</span>
+              </button>
+              <button type="button" class="tool-btn bg-btn" id="bgToggleBtn" aria-pressed="false" title="White background">
+                <span class="bg-glyph" aria-hidden="true">BG</span>
+                <span class="sr-only">White background</span>
+              </button>
+            </div>
+            <div class="tool-group size-group">
+              <span class="size-dot" id="sizeDot" aria-hidden="true"><i></i></span>
+              <input type="range" id="brushSize" min="1" max="40" value="4" aria-label="Brush size">
+            </div>
+            <div class="tool-group swatch-group" role="group" aria-label="Colour">
+              <button type="button" class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="White"></button>
+              <button type="button" class="swatch" data-color="#000000" style="--c:#000000" aria-label="Black"></button>
+              <button type="button" class="swatch" data-color="#ff5c8a" style="--c:#ff5c8a" aria-label="Pink"></button>
+              <button type="button" class="swatch" data-color="#ffd166" style="--c:#ffd166" aria-label="Yellow"></button>
+              <button type="button" class="swatch" data-color="#6dffa8" style="--c:#6dffa8" aria-label="Green"></button>
+              <button type="button" class="swatch" data-color="#7cc8ff" style="--c:#7cc8ff" aria-label="Blue"></button>
+              <label class="swatch swatch-custom" id="customSwatch" title="Any colour">
+                <input type="color" id="brushColor" value="#ffffff" aria-label="Pick any colour">
+              </label>
+            </div>
+          </div>
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="drawCanvas" width="1100" height="700" aria-label="Drawing canvas"></canvas>
+            <p class="canvas-hint" id="canvasHint" aria-hidden="true">draw here</p>
+            <div class="brush-cursor" id="brushCursor" aria-hidden="true"></div>
+          </div>
+        </div>
+        <button type="button" class="send-btn" id="sendDrawingBtn"><span class="btn-label">SEND ANONYMOUSLY 🎨🤫</span></button>
+        <p class="form-status" id="drawingStatus" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="page page-admin" id="page-admin" data-page="admin" aria-labelledby="adminTitle" hidden>
+      <header class="page-head">
+        <h1 class="page-title" id="adminTitle">CONTROL PANEL</h1>
+      </header>
+      <div class="panel-card">
+        <h2 class="card-label">Create entity</h2>
+        <form class="admin-form" id="createUserForm" novalidate>
+          <label class="sr-only" for="newUsername">New username</label>
+          <input class="field" type="text" id="newUsername" placeholder="Username" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <label class="sr-only" for="newPassword">New password</label>
+          <input class="field" type="password" id="newPassword" placeholder="Password" autocomplete="new-password">
+          <button class="btn btn-danger" type="submit">ADD ENTITY</button>
+        </form>
+        <p class="form-status" id="createUserStatus" role="status" aria-live="polite"></p>
+      </div>
+      <div class="panel-card">
+        <h2 class="card-label">Active entities</h2>
+        <ul class="entity-list" id="userList">
+          <li class="entity"><span>renn</span><span class="entity-role">OWNER</span></li>
+        </ul>
+      </div>
+    </section>
+    </main>
+
+    <!-- ======================= FOOTER ======================= -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <nav class="footer-links" aria-label="Footer">
+          <a href="#home">Home</a>
+          <a href="#about">About</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#interests">Interests</a>
+          <a href="#send">Send me something</a>
+        </nav>
+        <p class="footer-note">&copy; <span id="footYear">2026</span> renn &#183; built in the void &#183; <span class="version-tag" id="versionTag">v0.11.0-beta</span></p>
+        <span class="footer-marquee" aria-hidden="true"><span>&#9733; HOME &#9733; ABOUT &#9733; GALLERY &#9733; INTERESTS &#9733; SEND ME SOMETHING &#9733;</span></span>
+      </div>
+    </footer>
   </div>
 
-  <dialog id="lightbox" class="lightbox" aria-label="Photo viewer">
-    <button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Close">&times;</button>
-    <button class="lb-btn lb-prev" id="lb-prev" type="button" aria-label="Previous photo">&lsaquo;</button>
-    <figure>
-      <img id="lb-img" src="" alt="">
-      <figcaption id="lb-caption"></figcaption>
-    </figure>
-    <button class="lb-btn lb-next" id="lb-next" type="button" aria-label="Next photo">&rsaquo;</button>
+  <!-- ======================= DOCK ======================= -->
+  <div class="dock" id="dock" data-state="icon">
+    <nav class="dock-panel" id="dockPanel" aria-label="Main" inert>
+      <div class="dock-head">
+        <span class="dock-eyebrow">you are here</span>
+        <span class="dock-where" id="dockWhere">home</span>
+      </div>
+      <ul class="dock-links" id="dockLinks"></ul>
+      <div class="dock-foot">
+        <button type="button" class="util-btn" id="settingsBtn">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></svg>
+          settings
+        </button>
+        <div class="dock-auth">
+          <button type="button" class="util-btn is-strong" id="loginBtn">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
+            login
+          </button>
+          <a class="util-btn" id="panelBtn" href="#admin" data-page-link="admin" hidden>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            panel
+          </a>
+          <button type="button" class="util-btn" id="profileBtn" hidden>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+            profile
+          </button>
+          <button type="button" class="util-btn" id="logoutBtn" hidden>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+            logout
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="dock-bar" id="dockBar">
+      <button type="button" class="dock-toggle" id="dockToggle" aria-expanded="false" aria-controls="dockPanel" aria-label="Open menu">
+        <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="dock-label" aria-hidden="true"><span id="dockLabelText">HOME</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================= DIALOGS ======================= -->
+  <dialog class="modal" id="loginModal" aria-labelledby="loginTitle">
+    <div class="modal-card">
+      <button type="button" class="modal-x" data-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <h2 class="modal-title" id="loginTitle">AUTHENTICATE</h2>
+      <form class="modal-form" id="loginForm" novalidate>
+        <label class="sr-only" for="loginUser">Username</label>
+        <input class="field" id="loginUser" name="username" type="text" placeholder="Username" autocomplete="username" autocapitalize="off" spellcheck="false">
+        <label class="sr-only" for="loginPass">Password</label>
+        <input class="field" id="loginPass" name="password" type="password" placeholder="Password" autocomplete="current-password">
+        <button class="btn btn-primary btn-block" type="submit" id="loginSubmit"><span class="btn-label">ENTER</span></button>
+        <p class="form-error" id="loginError" role="alert" hidden></p>
+      </form>
+    </div>
   </dialog>
 
-  <script src="js/content.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/sky.js"></script>
+  <dialog class="modal" id="logoutModal" aria-labelledby="logoutTitle">
+    <div class="modal-card is-center">
+      <h2 class="modal-title" id="logoutTitle">LOGOUT</h2>
+      <p class="modal-text">Are you sure you want to exit the void?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close>CANCEL</button>
+        <button type="button" class="btn btn-danger" id="confirmLogoutBtn">LOG OUT</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="profileModal" aria-labelledby="profileName">
+    <div class="modal-card is-center">
+      <button type="button" class="modal-x" data-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div class="avatar" id="profileAvatar" aria-hidden="true">R</div>
+      <h2 class="modal-title" id="profileName">renn</h2>
+      <p class="modal-text profile-role" id="profileRole">entity</p>
+      <div class="modal-actions">
+        <a class="btn btn-ghost" href="#admin" data-close>OPEN PANEL</a>
+        <button type="button" class="btn btn-danger" id="profileLogoutBtn">LOG OUT</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="settingsModal" aria-labelledby="settingsTitle">
+    <div class="modal-card">
+      <button type="button" class="modal-x" data-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <h2 class="modal-title" id="settingsTitle">SETTINGS</h2>
+      <div class="settings">
+        <label class="setting" for="setReduceMotion">
+          <span class="setting-text">
+            <span class="setting-name">Reduce motion</span>
+            <span class="setting-hint">Turns off the warp, the shake and the drifting stars.</span>
+          </span>
+          <input type="checkbox" class="switch" id="setReduceMotion">
+        </label>
+        <label class="setting" for="setIntro">
+          <span class="setting-text">
+            <span class="setting-name">Warp intro</span>
+            <span class="setting-hint">Play the star warp when the site opens.</span>
+          </span>
+          <input type="checkbox" class="switch" id="setIntro">
+        </label>
+        <label class="setting" for="setLite">
+          <span class="setting-text">
+            <span class="setting-name">Lite background</span>
+            <span class="setting-hint">Fewer stars and a calmer sky. Easier on battery.</span>
+          </span>
+          <input type="checkbox" class="switch" id="setLite">
+        </label>
+        <label class="setting" for="setSparkles">
+          <span class="setting-text">
+            <span class="setting-name">Cursor sparkles</span>
+            <span class="setting-hint">Little pixel stars that trail the mouse.</span>
+          </span>
+          <input type="checkbox" class="switch" id="setSparkles">
+        </label>
+        <label class="setting" for="setFabric">
+          <span class="setting-text">
+            <span class="setting-name">Background fabric</span>
+            <span class="setting-hint">The woven metal layer over the sky and stars.</span>
+          </span>
+          <input type="checkbox" class="switch" id="setFabric">
+        </label>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="musicModal" aria-labelledby="musicTitle">
+    <div class="modal-card is-wide">
+      <button type="button" class="modal-x" data-close aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <h2 class="modal-title" id="musicTitle">ADD A SONG</h2>
+      <div class="search-field">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <label class="sr-only" for="songSearch">Search for a song</label>
+        <input type="search" id="songSearch" placeholder="Search for a song..." autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      </div>
+      <div class="search-results" id="searchResults" aria-live="polite"></div>
+      <p class="search-source" id="searchSource"></p>
+    </div>
+  </dialog>
+
+  <!-- ======================= OVERLAYS ======================= -->
+  <canvas id="warp" class="warp" aria-hidden="true"></canvas>
+  <div class="warp-glow" id="warpGlow" aria-hidden="true"></div>
+  <!-- liquid distortion used by js/effects.js (titles "melt" into place) -->
+  <svg class="fx-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <filter id="liquid" x="-10%" y="-30%" width="120%" height="160%" color-interpolation-filters="sRGB">
+      <feTurbulence id="liquidNoise" type="fractalNoise" baseFrequency="0.012 0.06" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap id="liquidMap" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
+  <script src="js/config.js" defer></script>
+  <script src="js/core.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/background.js" defer></script>
+  <script src="js/navigation.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/music.js" defer></script>
+  <script src="js/messages.js" defer></script>
+  <script src="js/drawing.js" defer></script>
+  <script src="js/profile.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>

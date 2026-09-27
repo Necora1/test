@@ -1,50 +1,99 @@
-# Personal website
+# Renn's Void
 
-A small, dependency-free personal site with four tabs:
+My website: an old-web (SpaceHey / MySpace era) profile page with woven metal,
+chrome-bevel boxes, blackletter pixel titles, a drifting star sky and a warp
+intro, plus a liquid-chrome animation layer on top.
 
-- **About**: photo, bio, links and quick facts
-- **Blog**: posts with tag filtering and shareable links (`#blog/<slug>`)
-- **Gallery**: photo grid with a full-screen viewer (arrow keys / swipe buttons, Esc to close)
-- **Contact**: a "send me something" form visitors can use to message you directly
+It's plain HTML, CSS and JavaScript. No build step, no frameworks, no npm.
 
-The top of the page is an animated sunset drawn entirely in code (`js/sky.js`, a single `<canvas>`, no images). It includes a glowing sun with turning light rays, drifting clouds lit from below, layered mountains with haze, birds, and floating light specks. Everything moves with parallax as you move the mouse or scroll, and scrolling sinks the sun behind the mountains. Switching to dark mode sets the sun, turns the sky to night, raises the moon, and brings out twinkling stars, shooting stars and fireflies. Visitors who have "reduce motion" turned on get a still picture instead.
-
-It's plain HTML, CSS and JavaScript: no build step, no frameworks. It has light and dark themes, works on phones, and is keyboard accessible.
-
-## Make it yours
-
-Everything you'll want to change is in **`js/content.js`**:
-
-| Section    | What to edit                                                                 |
-|------------|------------------------------------------------------------------------------|
-| Profile    | `name`, `tagline`, `avatar`                                                  |
-| About      | `about` (paragraphs), `facts`, `links`                                       |
-| Blog       | `posts`: add an object with `slug`, `title`, `date` (YYYY-MM-DD), `tags`, `summary`, `body` (HTML) |
-| Gallery    | Put your images in `images/` and add `{ src, alt, caption }` entries to `gallery` |
-| Contact    | `contact.email`, `contact.formEndpoint`, `contact.intro`                     |
-
-Replace the placeholder `images/avatar.svg` and `images/gallery-*.svg` with your own photos (JPG/PNG/WebP all work).
-
-## Receiving messages from visitors
-
-The Contact tab works in two modes:
-
-1. **Direct to your inbox (recommended).** Create a free form at [formspree.io](https://formspree.io), copy its endpoint (looks like `https://formspree.io/f/abcdwxyz`), and paste it into `contact.formEndpoint`. Visitors click **Send** and the message is emailed to you without them leaving the page. If they give an email address, you can reply to it directly. A hidden honeypot field filters out basic spam bots.
-2. **Fallback.** If `formEndpoint` is empty, pressing **Send** opens the visitor's own email app with a message to `contact.email` already filled in.
-
-Visitors can include a name, an optional reply email, a category, an optional link (to a photo, file, song, article…), and a message.
-
-## Preview locally
+## Run it
 
 ```sh
 python3 -m http.server 8000
-# then open http://localhost:8000
+# open http://localhost:8000
 ```
 
-(Opening `index.html` straight from disk also works.)
+Opening `index.html` directly also works, but the song search and the login
+need the page to be served over http(s).
 
-## Publish on GitHub Pages
+## What's where
 
-1. Push this repo to GitHub.
-2. Go to **Settings → Pages**, set **Source** to *Deploy from a branch*, and pick your branch with the `/ (root)` folder.
-3. Your site will be live at `https://<username>.github.io/<repo>/` within a minute or two.
+```
+index.html            every page and dialog
+favicon.svg
+assets/fonts/         Jacquard 12, Silkscreen, Lato, Escargoth (all local)
+css/
+  base.css            fonts, colours, reset, liquid-chrome titles
+  background.css      the sky canvas and the warp overlay
+  layout.css          banner, page column, page transitions, footer
+  dock.css            the menu button and menu panel
+  components.css      buttons, fields, dialogs, switches
+  pages.css           home, gallery, favoomfs, control panel
+  send.css            "send me something": write, draw, song search
+  effects.css         the liquid layer (sheen, tilt, jelly press, sparkles)
+js/
+  config.js           ← settings you'll actually edit (see below)
+  core.js             shared helpers, settings, dialogs
+  api.js              login server + sending messages/drawings
+  background.js       star sky, fog, warp intro, send shake
+  navigation.js       pages, page colours, the menu, the gallery feed
+  auth.js             login, logout, profile, control panel
+  music.js            "add a song" search (Spotify → Apple Music → Deezer)
+  messages.js         write tab
+  drawing.js          draw tab
+  profile.js          "right now" box, visit counter, banner search
+  effects.js          liquid titles, sheen, tilt, press bounce, sparkles
+  main.js             starts everything in order
+server/
+  void-worker.js      Cloudflare Worker: Spotify token + message relay
+```
+
+## Editing
+
+Most things live in **`js/config.js`**:
+
+- **Pages:** the `Void.pages` list sets the menu order, the home cards, and each
+  page's colours. To add a page, add an entry there and a matching
+  `<section class="page" data-page="…">` in `index.html`.
+- **Right now box:** the `Void.rightNow` moods and songs. One of each is picked
+  at random per visit.
+- **Services:** the login server, Spotify token URL, Juicer gallery feed and
+  message relay.
+
+Page text (about, interests, favoomfs) is in `index.html`. The favoomfs section
+has a commented example of the card markup.
+
+## Anonymous messages: set up the relay
+
+Messages and drawings go to Discord. **Don't put webhook URLs in the
+website.** Anyone can read them from the browser and use them to spam the
+channel or delete the webhook.
+
+1. In Discord, **delete the old webhooks and create new ones.** The previous
+   URLs were published in this repository, so treat them as compromised.
+2. In the Cloudflare dashboard, open your worker, replace its code with
+   `server/void-worker.js`, and under *Settings → Variables and Secrets* add
+   these secrets: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`,
+   `TEXT_WEBHOOK_URL`, `DRAWING_WEBHOOK_URL`. Also add the plain variable
+   `ALLOWED_ORIGINS`, for example `https://zeroedmyworld.com`.
+3. Put the worker's address in `relayUrl` in `js/config.js`.
+
+Until `relayUrl` (or a webhook) is set, the send button says
+"This feature isn't set up yet." and nothing is sent.
+
+## Motion and settings
+
+Visitors can switch these in **menu → settings**, and "reduce motion" on
+their device is respected automatically:
+
+- **Reduce motion:** no warp, no shake, no drifting stars, no liquid effects.
+- **Warp intro:** the star warp when the site opens.
+- **Lite background:** fewer stars, capped frame rate.
+- **Cursor sparkles:** pixel stars that trail the mouse.
+- **Background fabric:** the woven metal layer.
+
+## Fonts
+
+Jacquard 12, Silkscreen and Lato are open-source (SIL Open Font License) and
+served from `assets/fonts/`. Escargoth is the demo version of a commercial
+font, kept only as a fallback; check its licence before using it more widely.

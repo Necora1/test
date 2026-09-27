@@ -1,0 +1,178 @@
+/* ==========================================================
+   effects.css — the "liquid" layer on top of the old-web skin
+   · a light that follows the mouse across the metal (sheen)
+   · home cards tilt towards the pointer
+   · buttons squish when pressed and spring back like jelly
+   · the menu pours open, its buttons drip in
+   · pixel sparkles trailing the cursor
+   Everything here switches off with reduced motion.
+   ========================================================== */
+
+/* the hidden <svg> that holds the liquid filter */
+.fx-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ---------- sheen: a soft reflection under the pointer ---------- */
+.nowcard,
+.home-strip,
+.btn,
+.nav-pill,
+.util-btn { position: relative; }
+
+.portal::after,
+.page-head::before,
+.nowcard::after,
+.home-strip::after,
+.btn::after,
+.send-btn::after,
+.nav-pill::before,
+.util-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05) 42%, transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.portal:hover::after,
+.page-head:hover::before,
+.nowcard:hover::after,
+.home-strip:hover::after,
+.btn:hover::after,
+.send-btn:hover:not(:disabled)::after,
+.nav-pill:hover::before,
+.util-btn:hover::after { opacity: 1; }
+
+/* ---------- home cards lean towards the pointer ---------- */
+.portal {
+  transform: perspective(800px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+
+.portal:hover {
+  transform: perspective(800px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) translateY(-2px);
+}
+
+/* ---------- press: squish, then spring back ---------- */
+.is-pressed {
+  scale: 0.955 0.93;
+  transition: scale 0.09s ease-out;
+}
+
+.is-release { animation: jelly-release 0.7s ease-out both; }
+
+@keyframes jelly-release {
+  0%   { scale: 0.955 0.93; }
+  28%  { scale: 1.035 1.05; }
+  48%  { scale: 0.988 0.982; }
+  68%  { scale: 1.008 1.006; }
+  100% { scale: 1 1; }
+}
+
+/* ---------- the menu pours open and its buttons drip in ---------- */
+.dock[data-state="expanded"] .dock-panel {
+  animation: pour-open 0.6s var(--ease-out) both;
+}
+
+@keyframes pour-open {
+  0%   { opacity: 0; transform: translateY(28px) scale(0.5, 0.12); }
+  45%  { opacity: 1; transform: translateY(-4px) scale(1.02, 1.05); }
+  72%  { transform: translateY(1px) scale(0.996, 0.988); }
+  100% { opacity: 1; transform: none; }
+}
+
+.dock[data-state="expanded"] .dock-links > li {
+  animation: drip-in 0.75s var(--ease-out) both;
+  animation-delay: calc(0.1s + var(--i, 0) * 0.04s);
+}
+
+@keyframes drip-in {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.9, 1.25); }
+  40%  { opacity: 1; transform: translateY(-3px) scale(1.05, 0.92); }
+  66%  { transform: translateY(1px) scale(0.985, 1.02); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* the send-page tab thumb slides like a drop of mercury */
+.segmented-thumb { transition: transform 0.6s var(--spring); }
+
+/* toggles snap with a spring */
+.switch::after { transition: transform 0.5s var(--spring); }
+
+/* ---------- pixel sparkles behind the cursor ---------- */
+.sparkles {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sparkle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 3px;
+  color: color-mix(in srgb, var(--accent) 60%, #fff);
+  background: currentColor;
+  /* a tiny plus made of pixels */
+  box-shadow: 3px 0 currentColor, -3px 0 currentColor, 0 3px currentColor, 0 -3px currentColor;
+  opacity: 0;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.sparkle.is-on {
+  animation: sparkle-fall 0.9s steps(9) both;
+}
+
+@keyframes sparkle-fall {
+  0%   { opacity: 1; transform: translate(var(--x), var(--y)) scale(var(--s, 1)); }
+  45%  { opacity: 1; }
+  60%  { opacity: 0.2; }
+  70%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(calc(var(--x) + var(--dx, 0px)), calc(var(--y) + 30px)) scale(calc(var(--s, 1) * 0.4)); }
+}
+
+/* ---------- visit counter: a little odometer ---------- */
+.odometer {
+  display: inline-flex;
+  gap: 1px;
+  padding: 2px;
+  vertical-align: -0.25em;
+  background: #000;
+  box-shadow: var(--edge-in);
+}
+
+.odo-digit {
+  display: inline-block;
+  width: 0.9em;
+  height: 1.1em;
+  overflow: hidden;
+  line-height: 1.1em;
+  text-align: center;
+  color: var(--lime);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--lime) 60%, transparent);
+  background: linear-gradient(180deg, #050505, #1d1d21 50%, #050505);
+}
+
+.odo-strip {
+  display: flex;
+  flex-direction: column;
+  transition: transform 1.6s var(--ease-out);
+}
+
+.odo-strip > span { height: 1.1em; }
+
+/* ---------- reduced motion: keep it all still ---------- */
+.reduce-motion .portal,
+.reduce-motion .portal:hover { transform: none; }
+.reduce-motion .sparkles { display: none; }

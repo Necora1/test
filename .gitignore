@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# screenshots and scratch scripts from test runs
+.runi-preview/
+.tmp-screens/
+*.log
+
+# assistant workspace files: keep them on your computer, not in the site
+AGENTS.md
+IDENTITY.md
+SOUL.md
+USER.md
+MEMORY.md
+memory/
+
+node_modules/

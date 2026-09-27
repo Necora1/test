@@ -1,0 +1,325 @@
+/* ==========================================================
+   pages.css — home, work-in-progress, gallery, favoomfs,
+   control panel. Every block is a chrome-bevel box.
+   ========================================================== */
+
+/* ---------- home ---------- */
+.page-home {
+  gap: 16px;
+  padding-top: 0;
+}
+
+/* the classic header strip, like the one in the reference */
+.home-strip {
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, #3d3d44, #1b1b1e 55%, #141416);
+  box-shadow: var(--edge);
+  font: 400 0.78rem/1 var(--font-pixel);
+  letter-spacing: 0.03em;
+  color: #dcdce4;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.home-strip b { color: #fff; }
+
+.page-home .lede {
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+
+/* the "now" card, with a sunken panel inside it */
+.nowcard {
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  border-radius: var(--r-md);
+  background: var(--metal-dim);
+  box-shadow: var(--edge);
+}
+
+.nowcard-label {
+  display: block;
+  margin-bottom: 8px;
+  font: 700 0.62rem/1 var(--font-body);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.nowcard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+.nowcard-row b { color: #fff; font-weight: 700; }
+.nowcard-row .lite { color: var(--lime); }
+
+/* ---------- the big link masonry, like the old profile pages ---------- */
+.portals {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.portal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 92px;
+  padding: 16px 16px 14px;
+  overflow: hidden;
+  text-align: left;
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, #33333a, #1c1c1f 60%, #131315);
+  box-shadow: var(--edge);
+  transition: filter 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--snap);
+}
+
+/* a soft light in the colour of the page it leads to */
+.portal::before {
+  content: '';
+  position: absolute;
+  right: -70px;
+  bottom: -90px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--pc) 55%, transparent), transparent);
+  opacity: 0.32;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.portal-name {
+  position: relative;
+  font: 400 1.6rem/1 var(--font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  transform: scaleY(1.12);
+  transform-origin: left center;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--pc) 55%, transparent), 0 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.portal-blurb {
+  position: relative;
+  font-size: 0.82rem;
+  color: var(--text-3);
+}
+
+.portal-arrow {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 15px;
+  height: 15px;
+  color: var(--text-3);
+  transition: transform 0.35s var(--ease-out), color 0.3s ease;
+}
+
+.portal.is-wide {
+  grid-column: 1 / -1;
+  min-height: 0;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 14px;
+  box-shadow: var(--edge), 0 0 16px color-mix(in srgb, var(--pc) 18%, transparent);
+}
+
+.portal:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  box-shadow: var(--edge), 0 0 0 1px color-mix(in srgb, var(--pc) 60%, transparent), 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.portal:hover::before { opacity: 0.9; }
+.portal:hover .portal-arrow { color: var(--pc); transform: translate(2px, -2px); }
+
+/* ---------- work in progress ---------- */
+.wip {
+  position: relative;
+  width: 100%;
+  padding: 46px 20px;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.022) 0 10px, transparent 10px 20px),
+    linear-gradient(180deg, #1a1a1d, #0e0e10);
+  box-shadow: var(--edge-in);
+  font: 700 1.15rem/1 var(--font-pixel);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.wip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 32%, color-mix(in srgb, var(--accent) 14%, transparent) 50%, transparent 68%);
+  transform: translateX(-100%);
+  animation: wip-scan 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes wip-scan {
+  0% { transform: translateX(-100%); }
+  45%, 100% { transform: translateX(100%); }
+}
+
+/* ---------- gallery ---------- */
+.gallery-frame {
+  width: 100%;
+  min-height: 220px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--metal-dim);
+  box-shadow: var(--edge);
+}
+
+.gallery-status {
+  padding: 66px 0;
+  color: var(--text-3);
+}
+
+/* ---------- favoomfs ---------- */
+.oomf-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.oomf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 12px 14px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, #2f2f35, #1a1a1d);
+  box-shadow: var(--edge);
+  transition: filter 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--snap);
+}
+
+.oomf-avatar {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 6px;
+  border-radius: 2px;
+  object-fit: cover;
+  box-shadow: var(--edge), 0 0 16px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.oomf-name {
+  font: 400 1.3rem/1 var(--font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  transform: scaleY(1.12);
+}
+
+.oomf-note { font-size: 0.8rem; color: var(--text-3); }
+
+.oomf:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  box-shadow: var(--edge), 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* ---------- control panel ---------- */
+.panel-card {
+  width: 100%;
+  max-width: 540px;
+  padding: 14px 18px 18px;
+  text-align: left;
+  border-radius: var(--r-sm);
+  background: var(--metal);
+  box-shadow: var(--edge), var(--drop);
+  border-top: 3px solid rgba(180, 40, 40, 0.55);
+}
+
+.card-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -18px 14px;
+  padding: 7px 18px;
+  font: 700 0.66rem/1 var(--font-body);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #e2e2ea;
+  background: linear-gradient(180deg, #43303a, #241418);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  border-radius: 2px 2px 0 0;
+}
+
+.card-label::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff5a5a;
+  box-shadow: 0 0 8px #ff5a5a;
+  flex: none;
+}
+
+.admin-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-form .field {
+  flex: 1 1 150px;
+  height: 40px;
+  font-size: 1rem;
+}
+
+.admin-form .btn {
+  min-height: 40px;
+  font-size: 0.95rem;
+}
+
+.panel-card .form-status { margin-top: 10px; }
+
+.entity-list { list-style: none; }
+
+.entity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 2px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.entity:last-child { border-bottom: 0; box-shadow: none; }
+
+.entity-role {
+  padding: 4px 8px;
+  border-radius: 2px;
+  font: 700 0.62rem/1 var(--font-body);
+  letter-spacing: 0.2em;
+  color: #ffc9c9;
+  background: linear-gradient(180deg, #6d2020, #340d0d);
+  box-shadow: var(--edge);
+}
+
+@media (max-width: 560px) {
+  .portals { grid-template-columns: minmax(0, 1fr); }
+  .portal { min-height: 84px; }
+  .portal-name { font-size: 1.35rem; }
+  .portal.is-wide { flex-direction: column; gap: 6px; }
+}

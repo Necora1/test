@@ -1,0 +1,340 @@
+/* ==========================================================
+   dock.css — the menu bar
+   Now it reads as an old taskbar: a rail across the bottom
+   holding chrome-bevel buttons, with a pixel display on top.
+   States (on #dock[data-state]): icon · label · expanded
+   Only transform/opacity animate.
+   ========================================================== */
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--dock-bottom) + var(--safe-bottom));
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  container-type: inline-size;
+  transition: transform 1.2s var(--ease-out);
+}
+
+.dock > * { pointer-events: auto; }
+
+.js body.is-booting .dock { transform: translateY(24px); }
+
+/* ---------- the button row: parked bottom-left, glides to the centre ---------- */
+.dock-bar {
+  display: flex;
+  padding: 6px;
+  border-radius: var(--r-sm);
+  background: rgba(12, 12, 14, 0.85);
+  box-shadow: var(--edge), 0 8px 24px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  transform: translateX(calc(-50vw + var(--dock-inset) + 50%));
+  transform: translateX(calc(-50cqw + var(--dock-inset) + 50%));
+  transition: transform 0.62s var(--ease-out), opacity 0.8s ease;
+}
+
+.js body.is-booting .dock-bar {
+  opacity: 0;
+  animation: failsafe-show 0.6s ease-out 5s forwards;
+}
+
+@keyframes failsafe-show { to { opacity: 1; } }
+
+.dock[data-state="expanded"] .dock-bar { transform: translateX(0); }
+
+.dock-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 2px;
+  color: #fff;
+  background: var(--metal);
+  box-shadow: var(--edge);
+  transition: box-shadow 0.3s ease, opacity 0.8s ease, filter 0.3s ease;
+  animation: dock-float 9s ease-in-out infinite;
+}
+
+.js body.is-booting .dock-toggle { opacity: 0; }
+
+@keyframes dock-float {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(0.8px, -1.6px); }
+  66% { transform: translate(-0.8px, -0.6px); }
+}
+
+.dock-toggle:active { filter: brightness(0.85); }
+
+.dock-toggle:hover {
+  box-shadow: var(--edge), 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+  filter: brightness(1.16);
+}
+
+.dock:not([data-state="icon"]) .dock-toggle {
+  box-shadow: var(--edge), 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* hamburger → × */
+.burger {
+  position: relative;
+  width: 18px;
+  height: 12px;
+  flex: none;
+}
+
+.burger span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 70%, transparent);
+  transition: transform 0.45s var(--ease-out), opacity 0.25s ease;
+}
+.burger span:nth-child(1) { top: 0; }
+.burger span:nth-child(2) { top: 5px; }
+.burger span:nth-child(3) { top: 10px; }
+
+.dock[data-state="expanded"] .burger span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.dock[data-state="expanded"] .burger span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+.dock[data-state="expanded"] .burger span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+
+/* current page name; JS measures the text into --label-w */
+.dock-label {
+  display: block;
+  width: 0;
+  margin-left: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  font: 400 0.9rem/1 var(--font-pixel);
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+  transition: width 0.5s var(--ease-out), margin-left 0.5s var(--ease-out), opacity 0.3s ease;
+}
+
+.dock-label > span { display: inline-block; }
+
+.dock:not([data-state="icon"]) .dock-label {
+  width: var(--label-w, 64px);
+  margin-left: 12px;
+  opacity: 1;
+}
+
+/* ---------- the menu panel ---------- */
+.dock-panel {
+  width: min(560px, calc(100vw - 2 * var(--gutter)));
+  width: min(560px, calc(100cqw - 2 * var(--gutter)));
+  max-height: calc(100vh - 54px - var(--dock-bottom) - var(--safe-bottom) - 44px);
+  max-height: calc(100dvh - 54px - var(--dock-bottom) - var(--safe-bottom) - 44px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--metal);
+  box-shadow: var(--edge), var(--drop), 0 0 40px rgba(0, 0, 0, 0.7);
+  transform-origin: 50% 100%;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(18px) scale(0.97);
+  transition: opacity 0.22s ease, transform 0.4s var(--ease-out), visibility 0s linear 0.4s;
+}
+
+.dock-panel::-webkit-scrollbar { display: none; }
+
+.dock[data-state="expanded"] .dock-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.3s ease 0.05s, transform 0.55s var(--ease-out) 0.05s, visibility 0s;
+}
+
+.dock-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 4px 4px 12px;
+  border-radius: 2px;
+  background: #050506;
+  box-shadow: var(--edge-in);
+}
+
+.dock-eyebrow {
+  font: 700 0.62rem/1 var(--font-body);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.dock-where {
+  font: 400 1.5rem/0.9 var(--font-display);
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent);
+  transform: scaleY(1.12);
+}
+
+.dock-links {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dock-links > li {
+  flex: 1 1 30%; /* at most three per row, rows fill the width */
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s ease, transform 0.3s var(--ease-out);
+}
+
+.dock-links > li.is-wide { flex-basis: 100%; }
+
+.dock[data-state="expanded"] .dock-links > li {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.35s ease, transform 0.5s var(--ease-out);
+  transition-delay: calc(0.08s + var(--i, 0) * 0.03s);
+}
+
+.nav-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 2px;
+  font: 400 0.82rem/1 var(--font-pixel);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #dddde4;
+  background: linear-gradient(180deg, #3a3a40, #202024 55%, #141416);
+  box-shadow: var(--edge);
+  white-space: nowrap;
+  transition: filter 0.2s ease, color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.nav-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pc);
+  box-shadow: 0 0 8px var(--pc);
+  opacity: 0.85;
+}
+
+.nav-pill:hover {
+  color: #fff;
+  filter: brightness(1.28);
+  box-shadow: var(--edge), 0 0 0 1px color-mix(in srgb, var(--pc) 65%, transparent);
+}
+
+/* the page you are on, lit up */
+.nav-pill[aria-current="page"] {
+  color: #fff;
+  background: color-mix(in srgb, var(--pc) 30%, #17171a);
+  box-shadow: var(--edge-in), 0 0 14px color-mix(in srgb, var(--pc) 30%, transparent);
+}
+
+.nav-pill[aria-current="page"] .nav-dot { opacity: 1; }
+
+/* "send me something": the golden one */
+.nav-pill.is-cta {
+  position: relative;
+  overflow: hidden;
+  color: #241a02;
+  background: linear-gradient(180deg, #ffe9a8, #e0b34a 55%, #a97c17);
+  box-shadow: var(--edge), 0 0 16px rgba(224, 179, 74, 0.3);
+}
+
+.nav-pill.is-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 0.55) 50%, transparent 62%);
+  transform: translateX(-100%);
+  animation: cta-shine 5.5s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+
+@keyframes cta-shine {
+  0% { transform: translateX(-100%); }
+  28%, 100% { transform: translateX(100%); }
+}
+
+.nav-pill.is-cta:hover {
+  filter: brightness(1.12);
+  box-shadow: var(--edge), 0 0 22px rgba(224, 179, 74, 0.55);
+}
+
+.nav-pill.is-cta[aria-current="page"] { color: #241a02; }
+
+/* footer: settings + account */
+.dock-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 4px 4px;
+  border-top: 1px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.dock-auth {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.util-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 2px;
+  font: 700 0.66rem/1 var(--font-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #c3c3cc;
+  box-shadow: var(--edge);
+  background: linear-gradient(180deg, #35353b, #1d1d20);
+  transition: filter 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.util-btn .icon { width: 15px; height: 15px; }
+
+.util-btn.is-strong {
+  color: #1c1c1f;
+  background: linear-gradient(180deg, #f2f2f5, #b6b6c0 60%, #8d8d97);
+}
+
+.util-btn:hover {
+  filter: brightness(1.25);
+  box-shadow: var(--edge), 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.util-btn[aria-current="page"] {
+  color: #fff;
+  box-shadow: var(--edge-in);
+}
+
+@media (max-width: 420px) {
+  .dock-panel { padding: 10px; }
+  .nav-pill { min-height: 38px; padding: 8px 10px; }
+  .util-btn { padding: 0 8px; }
+}
