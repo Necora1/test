@@ -1,0 +1,359 @@
+/* ==========================================================
+   dock.css — the floating menu
+   States (on #dock[data-state]): icon · label · expanded
+   Only transform/opacity/width animate. The dock spans the
+   whole bottom edge, so nothing re-wraps while it moves.
+   ========================================================== */
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--dock-bottom) + var(--safe-bottom));
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+  container-type: inline-size;
+  transition: transform 1.2s var(--ease-out);
+}
+
+.dock > * { pointer-events: auto; }
+
+.js body.is-booting .dock { transform: translateY(24px); }
+
+/* ---------- the button row: parked bottom-left, glides to the centre ---------- */
+.dock-bar {
+  display: flex;
+  /* left edge at --dock-inset: -half the row + inset + half of itself */
+  transform: translateX(calc(-50vw + var(--dock-inset) + 50%));
+  transform: translateX(calc(-50cqw + var(--dock-inset) + 50%));
+  transition: transform 0.62s var(--ease-out);
+}
+
+.dock[data-state="expanded"] .dock-bar { transform: translateX(0); }
+
+.dock-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 54px;
+  padding: 0 18px;
+  border-radius: 27px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.4s ease, opacity 0.8s ease, scale 0.2s var(--ease-out);
+  animation: dock-float 9s ease-in-out infinite;
+}
+
+.js body.is-booting .dock-toggle { opacity: 0; }
+
+@keyframes dock-float {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(0.8px, -1.6px); }
+  66% { transform: translate(-0.8px, -0.6px); }
+}
+
+.dock-toggle:active { scale: 0.96; }
+
+@media (hover: hover) {
+  .dock-toggle:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.38);
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.22), 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+}
+
+.dock:not([data-state="icon"]) .dock-toggle {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--accent) 28%, transparent), 0 10px 34px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* hamburger → × */
+.burger {
+  position: relative;
+  width: 18px;
+  height: 12px;
+  flex: none;
+}
+
+.burger span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.45s var(--ease-out), opacity 0.25s ease;
+}
+.burger span:nth-child(1) { top: 0; }
+.burger span:nth-child(2) { top: 5px; }
+.burger span:nth-child(3) { top: 10px; }
+
+.dock[data-state="expanded"] .burger span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.dock[data-state="expanded"] .burger span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+.dock[data-state="expanded"] .burger span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+
+/* current page name; JS measures the text into --label-w */
+.dock-label {
+  display: block;
+  width: 0;
+  margin-left: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  font: 700 0.8rem/1 var(--font-body);
+  letter-spacing: 0.22em;
+  transition: width 0.5s var(--ease-out), margin-left 0.5s var(--ease-out), opacity 0.3s ease;
+}
+
+.dock-label > span {
+  display: inline-block;
+  margin-right: -0.22em;
+}
+
+.dock:not([data-state="icon"]) .dock-label {
+  width: var(--label-w, 64px);
+  margin-left: 12px;
+  opacity: 1;
+}
+
+/* ---------- the menu panel ---------- */
+.dock-panel {
+  width: min(560px, calc(100vw - 2 * var(--gutter)));
+  width: min(560px, calc(100cqw - 2 * var(--gutter)));
+  max-height: calc(100vh - 54px - var(--dock-bottom) - var(--safe-bottom) - 44px);
+  max-height: calc(100dvh - 54px - var(--dock-bottom) - var(--safe-bottom) - 44px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding: 16px;
+  border-radius: 28px;
+  background: rgba(16, 16, 21, 0.74);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.6),
+    0 0 44px color-mix(in srgb, var(--accent) 10%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform-origin: 50% 100%;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(18px) scale(0.96);
+  transition: opacity 0.22s ease, transform 0.4s var(--ease-out), visibility 0s linear 0.4s;
+}
+
+.dock-panel::-webkit-scrollbar { display: none; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dock-panel { background: rgba(14, 14, 19, 0.95); }
+  .dock-toggle { background: rgba(28, 28, 34, 0.92); }
+}
+
+.dock[data-state="expanded"] .dock-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.3s ease 0.05s, transform 0.55s var(--ease-out) 0.05s, visibility 0s;
+}
+
+.dock-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  padding: 2px 4px 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dock-eyebrow {
+  font: 700 0.64rem/1 var(--font-body);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.dock-where {
+  font: 400 1.05rem/1 var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dock-links {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dock-links > li {
+  flex: 1 1 30%; /* at most three per row, rows fill the width */
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s ease, transform 0.3s var(--ease-out);
+}
+
+.dock-links > li.is-wide { flex-basis: 100%; }
+
+.dock[data-state="expanded"] .dock-links > li {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.35s ease, transform 0.5s var(--ease-out);
+  transition-delay: calc(0.08s + var(--i, 0) * 0.03s);
+}
+
+.nav-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  font: 400 1.08rem/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #d9d8e0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.25s ease, transform 0.25s var(--ease-out);
+}
+
+.nav-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pc);
+  box-shadow: 0 0 10px var(--pc);
+  opacity: 0.8;
+}
+
+@media (hover: hover) {
+  .nav-pill:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.11);
+    border-color: color-mix(in srgb, var(--pc) 45%, rgba(255, 255, 255, 0.2));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--pc) 22%, transparent);
+    transform: translateY(-2px);
+  }
+}
+
+.nav-pill[aria-current="page"] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--pc) 13%, transparent);
+  border-color: rgba(255, 255, 255, 0.35);
+  border-color: color-mix(in srgb, var(--pc) 55%, transparent);
+}
+
+.nav-pill[aria-current="page"] .nav-dot { opacity: 1; }
+
+/* "send me something": the golden one */
+.nav-pill.is-cta {
+  position: relative;
+  overflow: hidden;
+  color: #ffe7b0;
+  background: linear-gradient(180deg, rgba(255, 214, 130, 0.14), rgba(255, 170, 70, 0.05));
+  border-color: rgba(255, 210, 120, 0.38);
+  box-shadow: 0 0 20px rgba(255, 196, 100, 0.14), inset 0 1px 0 rgba(255, 236, 190, 0.22);
+}
+
+.nav-pill.is-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 240, 200, 0.22) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: cta-shine 5.5s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+
+@keyframes cta-shine {
+  0% { transform: translateX(-100%); }
+  28%, 100% { transform: translateX(100%); }
+}
+
+@media (hover: hover) {
+  .nav-pill.is-cta:hover {
+    color: #fff4d6;
+    border-color: rgba(255, 220, 140, 0.65);
+    box-shadow: 0 0 28px rgba(255, 196, 100, 0.3), inset 0 1px 0 rgba(255, 236, 190, 0.3);
+  }
+}
+
+.nav-pill.is-cta[aria-current="page"] {
+  color: #fff4d6;
+  border-color: rgba(255, 220, 140, 0.7);
+}
+
+/* footer: settings + account */
+.dock-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dock-auth {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.util-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 12px;
+  font: 700 0.7rem/1 var(--font-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  border: 1px solid transparent;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.util-btn .icon { width: 16px; height: 16px; }
+
+.util-btn.is-strong {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+@media (hover: hover) {
+  .util-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+}
+
+.util-btn[aria-current="page"] {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+@media (max-width: 420px) {
+  .dock-panel { padding: 12px; border-radius: 24px; }
+  .nav-pill { min-height: 44px; padding: 10px 12px; font-size: 1rem; }
+  .util-btn { padding: 0 10px; }
+}

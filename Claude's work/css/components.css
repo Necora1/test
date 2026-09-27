@@ -1,0 +1,283 @@
+/* ==========================================================
+   components.css — buttons, fields, dialogs, switches
+   ========================================================== */
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font: 400 1rem/1 var(--font-display);
+  letter-spacing: 0.12em;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.25s ease, transform 0.25s var(--ease-out);
+}
+
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn-block { width: 100%; }
+
+.btn-primary {
+  color: #fff;
+  background: rgba(40, 40, 48, 0.9);
+  background: color-mix(in srgb, var(--accent) 16%, rgba(12, 12, 16, 0.9));
+  border-color: rgba(255, 255, 255, 0.3);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.btn-ghost {
+  color: var(--text-2);
+  background: transparent;
+}
+
+.btn-danger {
+  color: #ff8a8a;
+  background: rgba(255, 77, 77, 0.08);
+  border-color: rgba(255, 77, 77, 0.35);
+}
+
+@media (hover: hover) {
+  .btn-primary:hover { background: color-mix(in srgb, var(--accent) 26%, rgba(12, 12, 16, 0.9)); box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent); }
+  .btn-ghost:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+  .btn-danger:hover { color: #160303; background: #ff5a5a; border-color: #ff5a5a; }
+}
+
+.btn.is-busy,
+.send-btn.is-busy { cursor: progress; }
+
+/* ---------- fields ---------- */
+.field {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--field);
+  border: 1px solid var(--line);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field::placeholder { color: var(--text-3); }
+
+.field:focus {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.form-status,
+.form-error {
+  min-height: 1.4em;
+  font-size: 0.88rem;
+  color: var(--text-3);
+}
+
+.form-status:empty { min-height: 0; }
+.form-status[data-tone="error"],
+.form-error { color: #ff7b7b; }
+.form-status[data-tone="ok"] { color: var(--ok); }
+
+/* ---------- dialogs ---------- */
+dialog.modal {
+  position: fixed;
+  top: var(--vv-top, 0px);
+  left: 0;
+  width: 100%;
+  height: var(--vv-height, 100%);
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: hidden;
+}
+
+dialog.modal[open] {
+  display: grid;
+  place-items: center;
+}
+
+dialog.modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+dialog.modal.is-open::backdrop { opacity: 1; }
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 30px 24px 24px;
+  border-radius: 26px;
+  background: rgba(14, 14, 19, 0.94);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 50px color-mix(in srgb, var(--accent) 8%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  transition: opacity 0.2s ease, transform 0.4s var(--ease-out);
+}
+
+dialog.modal.is-open .modal-card {
+  opacity: 1;
+  transform: none;
+}
+
+.modal-card.is-wide { max-width: 520px; }
+.modal-card.is-center { text-align: center; }
+
+.modal-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--text-3);
+  border: 1px solid var(--line);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.modal-x .icon { width: 16px; height: 16px; }
+
+@media (hover: hover) {
+  .modal-x:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+}
+
+.modal-title {
+  margin-bottom: 20px;
+  font: 400 1.7rem/1 var(--font-display);
+  letter-spacing: 0.1em;
+  color: var(--text);
+  text-align: center;
+}
+
+.modal-text {
+  margin: -8px 0 22px;
+  color: var(--text-2);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-form .btn { margin-top: 8px; }
+.modal-form .form-error { text-align: center; }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions .btn { flex: 1; padding: 0 12px; }
+
+/* profile */
+.avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font: 400 2rem/1 var(--font-display);
+  color: #fff;
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--accent) 55%, #222), #0b0b0e 75%);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.profile-role {
+  font: 700 0.72rem/1 var(--font-body);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ---------- settings ---------- */
+.settings {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 2px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.setting + .setting { border-top: 1px solid var(--line); }
+
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.setting-name {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.setting-hint {
+  color: var(--text-3);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.switch {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  width: 46px;
+  height: 28px;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s var(--ease-out);
+}
+
+.switch:checked {
+  background: #3a3a44;
+  background: color-mix(in srgb, var(--accent) 60%, #111);
+  border-color: color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+.switch:checked::after { transform: translateX(18px); }

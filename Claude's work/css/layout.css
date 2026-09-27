@@ -1,0 +1,103 @@
+/* ==========================================================
+   layout.css — the page column, page transitions, intro state
+   ========================================================== */
+
+.stage {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: clamp(40px, 9vh, 96px) var(--gutter) calc(150px + var(--safe-bottom));
+  transition: opacity 1s ease-out, transform 1.3s var(--ease-out), filter 1s ease-out;
+}
+
+body[data-page="gallery"] .stage { max-width: 1040px; }
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.page-head {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 22px;
+  background: linear-gradient(90deg, transparent, var(--line-strong) 30%, var(--line-strong) 70%, transparent) bottom / 100% 1px no-repeat;
+}
+
+/* ---------- page transitions: "materialize" in, quick fade out ---------- */
+.page.is-entering > * {
+  animation: materialize 0.75s var(--ease-out) both;
+}
+.page.is-entering > :nth-child(1) { animation-delay: 0.04s; }
+.page.is-entering > :nth-child(2) { animation-delay: 0.11s; }
+.page.is-entering > :nth-child(3) { animation-delay: 0.18s; }
+.page.is-entering > :nth-child(4) { animation-delay: 0.25s; }
+.page.is-entering > :nth-child(5) { animation-delay: 0.32s; }
+.page.is-entering > :nth-child(6) { animation-delay: 0.39s; }
+
+.page.is-leaving {
+  animation: dematerialize 0.18s ease-in both;
+  pointer-events: none;
+}
+
+@keyframes materialize {
+  from { opacity: 0; transform: translateY(22px) scale(0.97); filter: blur(8px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes dematerialize {
+  to { opacity: 0; transform: translateY(-8px) scale(0.985); filter: blur(4px); }
+}
+
+/* ---------- intro: the page waits in the void until the warp settles ---------- */
+.js body.is-booting .stage {
+  opacity: 0;
+  transform: translateY(36px) scale(0.96);
+  filter: blur(16px);
+  pointer-events: none;
+}
+
+/* If a script ever fails, show the page anyway */
+.js body.is-booting .stage,
+.js body.is-booting .dock-toggle {
+  animation: failsafe-reveal 0.6s ease-out 5s forwards;
+}
+@keyframes failsafe-reveal { to { opacity: 1; transform: none; filter: none; pointer-events: auto; } }
+
+body:not(.is-booting) .stage {
+  transition-delay: 0.15s;
+}
+
+/* ---------- version ---------- */
+.version-tag {
+  position: fixed;
+  right: 16px;
+  bottom: calc(12px + var(--safe-bottom));
+  z-index: 2;
+  font: 400 11px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  opacity: 0.55;
+  transition: opacity 0.3s ease;
+}
+.version-tag:hover { opacity: 1; }
+
+@media (max-width: 560px) {
+  :root {
+    --gutter: 16px;
+    --dock-inset: 18px;
+    --dock-bottom: 18px;
+  }
+
+  .stage { padding-top: clamp(28px, 6vh, 56px); }
+  .page { gap: 20px; }
+  .version-tag { bottom: calc(8px + var(--safe-bottom)); right: 12px; }
+}
