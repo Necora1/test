@@ -1,34 +1,59 @@
 /* ==========================================================
    door.css — outside renn's door (js/door.js)
+   Meant to look like a dark phone photo, not an illustration:
+   no glows, no rounded anything, plain type.
    ========================================================== */
 .door-scene {
   position: fixed;
   inset: 0;
   z-index: 95;
   overflow: hidden;
-  background: #0b0b0f;                 /* until the hallway is painted */
-  perspective: 1500px;
-  perspective-origin: var(--ox, 50%) var(--oy, 50%);
+  background: #050506;                 /* until the hallway is painted */
   transform-origin: var(--ox, 50%) var(--oy, 50%);
-  transition: transform 1.7s cubic-bezier(0.55, 0, 0.35, 1), opacity 1.1s ease 0.6s, filter 1.7s ease;
+  transition: transform 1.8s cubic-bezier(0.55, 0, 0.35, 1), opacity 1.1s ease 0.7s;
 }
 .door-scene[hidden] { display: none; }
 .door-scene.is-painted { background: transparent; }
 html:not(.at-door) .door-scene { display: none; }
+/* a black edge, so the drifting camera never shows the room round the sides */
+.door-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 10px #050506;
+}
+
+/* the camera: held in a hand, so it drifts a little */
+.door-cam {
+  position: absolute;
+  inset: -12px;
+  perspective: 1500px;
+  perspective-origin: var(--ox, 50%) var(--oy, 50%);
+  animation: door-hand 11s ease-in-out infinite alternate;
+}
+.door-cam > * { margin: 12px; }
+@keyframes door-hand {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  30%  { transform: translate(3px, -2px) rotate(0.12deg); }
+  65%  { transform: translate(-2px, 2px) rotate(-0.08deg); }
+  100% { transform: translate(2px, 1px) rotate(0.05deg); }
+}
 
 .door-hall,
 .door-spill {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   pointer-events: none;
 }
 .door-spill {
   opacity: 0;
   mix-blend-mode: screen;
-  transition: opacity 1.6s ease 0.2s;
+  transition: opacity 1.6s ease 0.3s;
 }
 
-/* the door itself: hinged on the left, it swings into the room */
+/* the door: hinged on the left, it swings into the room */
 .door-leaf {
   position: absolute;
   padding: 0;
@@ -37,71 +62,75 @@ html:not(.at-door) .door-scene { display: none; }
   cursor: pointer;
   transform-origin: 0 50%;
   transform: rotateY(0deg);
-  transition: transform 1.9s cubic-bezier(0.45, 0, 0.2, 1), filter 1.9s ease;
-  box-shadow: 0 0 22px rgb(255 170 90 / 0.28), 0 0 2px rgb(255 190 120 / 0.9);
+  transition: transform 2.1s cubic-bezier(0.45, 0, 0.2, 1), filter 2.1s ease;
   will-change: transform;
 }
 .door-leaf canvas { display: block; }
-.door-leaf:hover,
-.door-leaf:focus-visible { filter: brightness(1.08); outline: none; box-shadow: 0 0 34px rgb(255 170 90 / 0.4), 0 0 2px rgb(255 190 120 / 1); }
-.door-leaf.is-knocked { animation: door-knocked 0.12s ease 3; }
-
+.door-leaf:focus,
+.door-leaf:focus-visible { outline: none; }
+.door-leaf.is-knocked { animation: door-knocked 0.1s linear 3; }
 @keyframes door-knocked {
-  50% { transform: rotateY(0.6deg) translateX(1px); }
+  50% { transform: translateX(0.7px); }
 }
 
-.door-scene.is-open .door-leaf { transform: rotateY(82deg); filter: brightness(0.55); cursor: default; }
+.door-scene.is-open .door-leaf { transform: rotateY(80deg); filter: brightness(0.6); cursor: default; }
 .door-scene.is-open .door-spill { opacity: 1; }
-/* stepping through: the doorway rushes past you */
-.door-scene.is-through { transform: scale(5.5); opacity: 0; filter: blur(3px); pointer-events: none; }
+/* stepping through: the doorway goes past you */
+.door-scene.is-through { transform: scale(5); opacity: 0; pointer-events: none; }
 .door-scene.is-gone { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
 
-.door-outside {
+/* grain that moves, like video */
+.door-grain {
   position: absolute;
-  top: max(18px, env(safe-area-inset-top));
-  left: 22px;
-  margin: 0;
-  color: #9aa0b8;
-  font: 400 0.95rem/1 ui-monospace, 'Courier New', monospace;
-  letter-spacing: 0.06em;
-  opacity: 0.85;
+  inset: -50%;
+  pointer-events: none;
+  opacity: 0.09;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: door-grain 0.5s steps(4) infinite;
 }
-.door-outside span { font: italic 300 1.05rem Fraunces, Georgia, serif; letter-spacing: 0; margin-right: 6px; }
-.door-outside b { font-weight: 400; color: #d6dbef; }
+@keyframes door-grain {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-7%, 4%); }
+  50%  { transform: translate(5%, -6%); }
+  75%  { transform: translate(-3%, -8%); }
+  100% { transform: translate(8%, 3%); }
+}
 
-.door-hint,
+/* plain words: a timestamp, a line of instruction, a subtitle */
+.door-outside,
+.door-hint {
+  position: absolute;
+  margin: 0;
+  font: 400 12px/1 ui-monospace, 'SFMono-Regular', Menlo, 'Courier New', monospace;
+  letter-spacing: 0.04em;
+  color: rgb(255 255 255 / 0.5);
+  text-transform: lowercase;
+}
+.door-outside { top: max(18px, env(safe-area-inset-top)); left: 20px; }
+.door-outside b { font-weight: 400; color: rgb(255 255 255 / 0.75); margin-left: 4px; }
+.door-hint {
+  left: 20px;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  transition: opacity 0.4s ease;
+}
 .door-reply {
   position: absolute;
   left: 0;
   right: 0;
+  bottom: 12%;
   margin: 0;
   text-align: center;
-  font: 600 clamp(1.4rem, 3vw, 2rem)/1.2 Caveat, cursive;
+  font: 400 clamp(15px, 1.6vw, 19px)/1.3 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #f2f2f2;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+  opacity: 0;
+  transition: opacity 0.25s linear;
   pointer-events: none;
 }
-.door-hint {
-  bottom: max(26px, env(safe-area-inset-bottom));
-  color: #e9d9c4;
-  text-shadow: 0 0 18px rgb(255 170 90 / 0.5);
-  animation: door-breathe 3.2s ease-in-out infinite;
-  transition: opacity 0.5s ease;
-}
-.door-hint span { font-size: 0.7em; opacity: 0.6; }
-.door-reply {
-  top: 16%;
-  color: #ffe2b8;
-  text-shadow: 0 0 24px rgb(255 170 90 / 0.8);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-.door-scene.is-knocking .door-hint { opacity: 0; animation: none; }
-.door-scene.is-answered .door-reply { opacity: 1; transform: none; }
-.door-scene.is-open .door-reply { opacity: 0; transition-delay: 0.6s; }
-
-@keyframes door-breathe {
-  50% { opacity: 0.55; }
-}
+.door-reply::before { content: '\2014\00a0'; }
+.door-scene.is-knocking .door-hint { opacity: 0; }
+.door-scene.is-answered .door-reply { opacity: 1; }
+.door-scene.is-open .door-reply { opacity: 0; transition-delay: 0.8s; }
 
 /* the room waits behind the door: no corner, no captions yet */
 .at-door .corner,
@@ -110,9 +139,7 @@ html:not(.at-door) .door-scene { display: none; }
 .at-door .tuned-home,
 .at-door .title-card { visibility: hidden; }
 
-@media (hover: none) {
-  .door-hint span { display: none; }
-}
-
+.reduce-motion .door-cam,
+.reduce-motion .door-grain { animation: none; }
 .reduce-motion .door-scene,
 .reduce-motion .door-leaf { transition-duration: 0.3s; }

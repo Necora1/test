@@ -1,8 +1,9 @@
 /* ==========================================================
    door.js — outside renn's door, before you come in
-   It's night in the hallway. Warm light leaks around a door with a
-   brass 0 on it and a note taped under it: "zeroed my world". In the
-   corner the real time runs, the outside world's clock.
+   It's night in the hallway, dark enough that it looks like a phone
+   photo. Warm light leaks under a plain door with a strip of masking
+   tape on it: "zeroed my world". In the corner the real time runs,
+   the outside world's clock.
 
    Knock (click it, or Enter), and after a moment: "come in". The door
    swings in, the sunset spills out onto the hallway floor, you step
@@ -45,20 +46,23 @@
   };
   const hms = (t) => `${Math.floor(t / 3600)}:${String(Math.floor(t / 60) % 60).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 
-  /* ---------- the geometry: one door, one vanishing point ---------- */
+  /* ---------- the geometry: one door at the end of a narrow hall ---------- */
+  // the camera stands a little to the left, so the hall isn't symmetric:
+  // the right wall shows, the left one is mostly lost in the dark
   function measure() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const dw = Math.min(vw * 0.38, vh * 0.285);
-    const dh = dw * 2.2;
-    const floor = vh * 0.8;
-    const cx = vw / 2;
+    const narrow = vw < vh;
+    const dw = Math.min(vw * (narrow ? 0.4 : 0.3), vh * 0.26);
+    const dh = dw * 2.45;                      // 80 × 200 cm, near enough
+    const floor = vh * 0.84;
+    const cx = vw * (narrow ? 0.52 : 0.55);
+    const x0 = cx - dw / 2;
     return {
-      vw, vh, dw, dh, cx, floor,
-      x0: cx - dw / 2,
+      vw, vh, dw, dh, cx, floor, x0,
       y0: floor - dh,
-      vp: [cx, floor - dh * 0.58],              // eye level, a bit above the handle
-      wall: { x0: cx - dw * 1.75, x1: cx + dw * 1.75, y0: floor - dh * 1.42, y1: floor }
+      vp: [cx - dw * 0.7, floor - dh * 0.66],
+      wall: { x0: x0 - dw * 0.42, x1: x0 + dw + dw * 0.5, y0: floor - dh * 1.28, y1: floor }
     };
   }
 
@@ -89,115 +93,159 @@
     ctx.closePath();
     if (fill) { ctx.fillStyle = fill; ctx.fill(); }
   };
+  let seed = 3;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+
+  // sensor noise, the kind a phone makes in a dark hallway: grey and a little colour
+  let noiseTile = null;
+  function noise() {
+    if (noiseTile) return noiseTile;
+    noiseTile = document.createElement('canvas');
+    noiseTile.width = noiseTile.height = 256;
+    const n = noiseTile.getContext('2d');
+    const img = n.createImageData(256, 256);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = 128 + (Math.random() - 0.5) * 90;
+      img.data[i] = v + (Math.random() - 0.5) * 30;
+      img.data[i + 1] = v + (Math.random() - 0.5) * 30;
+      img.data[i + 2] = v + (Math.random() - 0.5) * 40;
+      img.data[i + 3] = 255;
+    }
+    n.putImageData(img, 0, 0);
+    return noiseTile;
+  }
+  function grainOn(ctx, w, h, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.fillStyle = ctx.createPattern(noise(), 'repeat');
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
 
   /* ---------- the hallway, at night ---------- */
   function paintHall(g) {
+    seed = 3;
     const ctx = canvasFor(hall, g.vw, g.vh);
     const { vw, vh, wall, vp, x0, y0, dw, dh, floor } = g;
-    // a point on the end wall's outline, pushed out along the corridor to the screen's edge
     const out = ([x, y], k) => [vp[0] + (x - vp[0]) * k, vp[1] + (y - vp[1]) * k];
-    const K = 6;
+    const K = 8;
     const tl = [wall.x0, wall.y0];
     const tr = [wall.x1, wall.y0];
     const br = [wall.x1, wall.y1];
     const bl = [wall.x0, wall.y1];
-    // ceiling, side walls, floor
-    poly(ctx, [tl, tr, out(tr, K), out(tl, K)], lin(ctx, 0, wall.y0, 0, 0, [[0, '#15161d'], [1, '#08080b']]));
-    poly(ctx, [tl, bl, out(bl, K), out(tl, K)], lin(ctx, wall.x0, 0, 0, 0, [[0, '#1b1c25'], [1, '#0b0b0f']]));
-    poly(ctx, [tr, br, out(br, K), out(tr, K)], lin(ctx, wall.x1, 0, vw, 0, [[0, '#191a22'], [1, '#09090c']]));
-    poly(ctx, [bl, br, out(br, K), out(bl, K)], lin(ctx, 0, floor, 0, vh, [[0, '#1c1813'], [1, '#0c0a08']]));
-    // floorboards running to the door
+    ctx.fillStyle = '#050506';
+    ctx.fillRect(0, 0, vw, vh);
+    // ceiling, walls, floor: nearly black, the paint only just there
+    poly(ctx, [tl, tr, out(tr, K), out(tl, K)], '#0b0b0d');
+    poly(ctx, [tl, bl, out(bl, K), out(tl, K)], lin(ctx, wall.x0, 0, 0, 0, [[0, '#131316'], [0.4, '#0a0a0c'], [1, '#050506']]));
+    poly(ctx, [tr, br, out(br, K), out(tr, K)], lin(ctx, wall.x1, 0, vw, 0, [[0, '#17171a'], [1, '#0c0c0e']]));
+    poly(ctx, [bl, br, out(br, K), out(bl, K)], '#0e0c0a');
+    // laminate, boards running away from you, joints staggered
     ctx.save();
     poly(ctx, [bl, br, out(br, K), out(bl, K)]);
     ctx.clip();
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.lineWidth = 1;
-    for (let k = -14; k <= 14; k++) {
-      const x = g.cx + k * dw * 0.24;
+    const boardW = dw * 0.23;
+    for (let k = -24; k <= 24; k++) {
+      const x = x0 + k * boardW;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x, floor);
       ctx.lineTo(...out([x, floor], K));
       ctx.stroke();
+      for (let j = 0; j < 4; j++) {
+        const t = 1.1 + ((k * 37 + j * 53) % 97) / 97 * 5;
+        const a = out([x, floor], t);
+        const b = out([x + boardW, floor], t);
+        ctx.beginPath();
+        ctx.moveTo(...a);
+        ctx.lineTo(...b);
+        ctx.stroke();
+      }
+      const shade = rnd();
+      ctx.fillStyle = shade < 0.5 ? `rgba(0,0,0,${shade * 0.3})` : `rgba(120, 100, 80, ${(shade - 0.5) * 0.06})`;
+      poly(ctx, [[x, floor], [x + boardW, floor], out([x + boardW, floor], K), out([x, floor], K)]);
+      ctx.fill();
     }
     ctx.restore();
-    // the end wall, the light from under the door warming it a little
-    poly(ctx, [tl, tr, br, bl], lin(ctx, 0, wall.y0, 0, wall.y1, [[0, '#1d1f28'], [1, '#262631']]));
-    ctx.save();
-    poly(ctx, [tl, tr, br, bl]);
-    ctx.clip();
-    ctx.fillStyle = rad(ctx, g.cx, floor, 10, dw * 1.6, [[0, 'rgba(255, 170, 90, 0.22)'], [1, 'rgba(255, 170, 90, 0)']]);
-    ctx.fillRect(0, 0, vw, vh);
-    ctx.restore();
-    // moonlight from somewhere down the hall, on the left wall
-    ctx.fillStyle = rad(ctx, wall.x0 - dw * 0.8, vp[1], 10, dw * 1.4, [[0, 'rgba(120, 150, 230, 0.12)'], [1, 'rgba(120, 150, 230, 0)']]);
-    ctx.fillRect(0, 0, vw, vh);
-    // skirting
-    poly(ctx, [[wall.x0, floor - dh * 0.05], [wall.x1, floor - dh * 0.05], br, bl], '#2c2c36');
-    // the corners of the corridor
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-    ctx.lineWidth = 2;
-    [tl, tr, br, bl].forEach((p) => { ctx.beginPath(); ctx.moveTo(...p); ctx.lineTo(...out(p, K)); ctx.stroke(); });
-    // the door's casing
+    // the end wall
+    poly(ctx, [tl, tr, br, bl], '#141417');
+    // skirting, square, on the end wall and down the right wall
+    const sk = dh * 0.045;
+    poly(ctx, [[wall.x0, floor - sk], [wall.x1, floor - sk], br, bl], '#1b1b1f');
+    poly(ctx, [[wall.x1, floor - sk], br, out(br, K), out([wall.x1, floor - sk], K)], '#18181b');
+    // the casing round the door: flat boards, square corners
     const cs = dw * 0.075;
-    poly(ctx, [[x0 - cs, y0 - cs], [x0 + dw + cs, y0 - cs], [x0 + dw + cs, floor], [x0 - cs, floor]], lin(ctx, x0 - cs, 0, x0 + dw + cs, 0, [[0, '#3b3c48'], [0.5, '#444553'], [1, '#34353f']]));
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(x0 - cs * 0.5, y0 - cs * 0.5, dw + cs, dh + cs * 0.5);
+    poly(ctx, [[x0 - cs, y0 - cs], [x0 + dw + cs, y0 - cs], [x0 + dw + cs, floor], [x0 - cs, floor]], '#1d1d21');
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(x0 - 2, y0 - 2, dw + 4, 2);
+    ctx.fillRect(x0 - 2, y0, 2, dh);
+    ctx.fillRect(x0 + dw, y0, 2, dh);
     // the doorway itself is a hole: the room is behind it
     ctx.clearRect(x0, y0, dw, dh);
-    // a light switch by the door
-    const sx = x0 + dw + cs * 2.2;
-    const sy = y0 + dh * 0.47;
-    ctx.fillStyle = '#3f404c';
-    ctx.fillRect(sx, sy, dw * 0.09, dw * 0.13);
-    ctx.fillStyle = '#2a2a33';
-    ctx.fillRect(sx + dw * 0.03, sy + dw * 0.035, dw * 0.03, dw * 0.06);
-    // a pair of shoes left by the door
-    [[-1.12, 0.05, -0.12], [-0.86, 0.08, 0.1]].forEach(([dx, dy, rot]) => {
-      const x = g.cx + dx * dw;
-      const y = floor + dy * dh;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rot);
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.beginPath();
-      ctx.ellipse(2, dw * 0.05, dw * 0.13, dw * 0.035, 0, 0, 7);
-      ctx.fill();
-      ctx.fillStyle = '#bdb8ae';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, dw * 0.12, dw * 0.05, 0, 0, 7);
-      ctx.fill();
-      ctx.fillStyle = '#8f8a82';
-      ctx.fillRect(-dw * 0.12, 0, dw * 0.24, dw * 0.03);
-      ctx.fillStyle = '#2e2c30';
-      ctx.beginPath();
-      ctx.ellipse(-dw * 0.03, -dw * 0.012, dw * 0.05, dw * 0.02, 0, 0, 7);
-      ctx.fill();
-      ctx.restore();
-    });
-    // the doormat, with its zero
-    const mat = [[g.cx - dw * 0.55, floor + 6], [g.cx + dw * 0.55, floor + 6], [g.cx + dw * 0.72, floor + dh * 0.12], [g.cx - dw * 0.72, floor + dh * 0.12]];
-    poly(ctx, mat, '#3a2f25');
+    // a light switch on the right wall, square, off
+    const sw = out([wall.x1, y0 + dh * 0.45], 1.28);
+    ctx.fillStyle = '#26262a';
+    ctx.fillRect(sw[0], sw[1], dw * 0.075, dw * 0.1);
+    ctx.fillStyle = '#1a1a1d';
+    ctx.fillRect(sw[0] + dw * 0.02, sw[1] + dw * 0.02, dw * 0.035, dw * 0.06);
+
+    // light: from under the door, a warm fan across the floor…
     ctx.save();
-    ctx.translate(g.cx, floor + dh * 0.066);
-    ctx.scale(1, 0.32);
-    ctx.fillStyle = 'rgba(200, 170, 120, 0.45)';
-    ctx.font = `italic 400 ${dw * 0.34}px Fraunces, Georgia, serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('0', 0, 0);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.save();
+    ctx.translate(g.cx, floor);
+    ctx.scale(1, 0.26);
+    ctx.fillStyle = rad(ctx, 0, 0, 0, dw * 1.5, [[0, 'rgba(255, 170, 95, 0.34)'], [0.25, 'rgba(230, 140, 70, 0.14)'], [1, 'rgba(200, 110, 50, 0)']]);
+    ctx.fillRect(-dw * 2, -dw * 2, dw * 4, dw * 4);
     ctx.restore();
+    // …a smeared reflection of the gap in the laminate…
+    ctx.filter = `blur(${Math.max(4, dw * 0.05)}px)`;
+    ctx.fillStyle = lin(ctx, 0, floor, 0, floor + dh * 0.22, [[0, 'rgba(255, 180, 110, 0.16)'], [1, 'rgba(255, 180, 110, 0)']]);
+    poly(ctx, [[x0 + dw * 0.2, floor], [x0 + dw * 0.8, floor], [x0 + dw * 0.88, floor + dh * 0.22], [x0 + dw * 0.12, floor + dh * 0.22]]);
+    ctx.fill();
+    ctx.filter = 'none';
+    // …and a little up the casing and the walls either side
+    ctx.fillStyle = rad(ctx, g.cx, floor, 0, dw * 1.1, [[0, 'rgba(255, 160, 90, 0.08)'], [1, 'rgba(255, 160, 90, 0)']]);
+    ctx.fillRect(0, 0, vw, vh);
+    // moonlight from a window behind you: a pale skewed square on the right wall
+    const mA = out([wall.x1, y0 + dh * 0.05], 1.9);
+    const mB = out([wall.x1, y0 + dh * 0.05], 2.9);
+    const mC = out([wall.x1, y0 + dh * 0.62], 2.9);
+    const mD = out([wall.x1, y0 + dh * 0.62], 1.9);
+    ctx.filter = 'blur(10px)';
+    poly(ctx, [mA, mB, mC, mD], 'rgba(120, 140, 190, 0.07)');
+    ctx.filter = 'none';
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = dw * 0.04;
+    const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    ctx.beginPath();
+    ctx.moveTo(...mid(mA, mB)); ctx.lineTo(...mid(mD, mC));
+    ctx.moveTo(...mid(mA, mD)); ctx.lineTo(...mid(mB, mC));
+    ctx.stroke();
+    ctx.restore();
+
+    // the lens: darker corners, noise
+    ctx.fillStyle = rad(ctx, g.cx, vh * 0.55, Math.min(vw, vh) * 0.2, Math.max(vw, vh) * 0.75, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.75)']]);
+    ctx.fillRect(0, 0, vw, vh);
+    ctx.clearRect(x0, y0, dw, dh);
+    grainOn(ctx, vw, vh, 0.22);
+    ctx.clearRect(x0, y0, dw, dh);
   }
 
   // the light that pours out once the door opens: on the floor, the walls, into the air
   function paintSpill(g) {
     const ctx = canvasFor(spill, g.vw, g.vh);
-    const { vw, vh, x0, dw, floor, cx } = g;
-    ctx.fillStyle = lin(ctx, 0, floor, 0, vh, [[0, 'rgba(255, 196, 120, 0.85)'], [1, 'rgba(255, 150, 80, 0.15)']]);
-    poly(ctx, [[x0, floor], [x0 + dw, floor], [cx + dw * 2.4, vh], [cx - dw * 1.6, vh]]);
-    ctx.fill();
+    const { vw, vh, x0, dw, floor, cx, vp } = g;
+    // the doorway's shape laid on the floor, stretching towards you
+    const far = [[x0, floor], [x0 + dw, floor]];
+    const near = far.map(([x, y]) => [x + (x - vp[0]) * 1.8 + dw * 0.5, y + (y - vp[1]) * 1.8]);
+    ctx.filter = 'blur(14px)';
+    poly(ctx, [far[0], far[1], near[1], near[0]], lin(ctx, 0, floor, 0, vh, [[0, 'rgba(255, 190, 120, 0.7)'], [1, 'rgba(255, 150, 80, 0.12)']]));
+    ctx.filter = 'none';
     ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = rad(ctx, cx, floor - g.dh * 0.45, 10, Math.max(vw, vh) * 0.7, [[0, 'rgba(255, 180, 100, 0.35)'], [0.5, 'rgba(255, 140, 70, 0.1)'], [1, 'rgba(255, 140, 70, 0)']]);
+    ctx.fillStyle = rad(ctx, cx, floor - g.dh * 0.4, 10, Math.max(vw, vh) * 0.6, [[0, 'rgba(255, 170, 100, 0.22)'], [0.5, 'rgba(255, 140, 70, 0.06)'], [1, 'rgba(255, 140, 70, 0)']]);
     ctx.fillRect(0, 0, vw, vh);
   }
 
@@ -209,107 +257,83 @@
     leaf.style.width = `${dw}px`;
     leaf.style.height = `${dh}px`;
     const ctx = canvasFor(leafCanvas, dw, dh);
-    ctx.fillStyle = lin(ctx, 0, 0, dw, 0, [[0, '#7c7f8c'], [0.6, '#8a8d99'], [1, '#6e717d']]);
+    seed = 11;
+    // a plain laminated door, pale grey in daylight, near black now
+    ctx.fillStyle = lin(ctx, 0, 0, dw, dh, [[0, '#2c2d31'], [0.55, '#26272a'], [1, '#2a2622']]);
     ctx.fillRect(0, 0, dw, dh);
-    ctx.fillStyle = lin(ctx, 0, 0, 0, dh, [[0, 'rgba(0,0,0,0.25)'], [0.6, 'rgba(0,0,0,0)'], [1, 'rgba(255,170,90,0.12)']]);
-    ctx.fillRect(0, 0, dw, dh);
-    // two panels
-    [[0.08, 0.06, 0.84, 0.36], [0.08, 0.5, 0.84, 0.44]].forEach(([x, y, w, h]) => {
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x * dw, y * dh, w * dw, h * dh);
-      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-      ctx.strokeRect(x * dw + 2, y * dh + 2, w * dw - 4, h * dh - 4);
-    });
-    // the room number: a brass zero
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = `italic 400 ${dw * 0.26}px Fraunces, Georgia, serif`;
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillText('0', dw * 0.5 + 2, dh * 0.16 + 3);
-    ctx.fillStyle = lin(ctx, 0, dh * 0.1, 0, dh * 0.22, [[0, '#f0d08a'], [0.5, '#b88a3e'], [1, '#e2bb6c']]);
-    ctx.fillText('0', dw * 0.5, dh * 0.16);
-    // the note, taped on, a bit crooked
-    ctx.save();
-    ctx.translate(dw * 0.5, dh * 0.33);
-    ctx.rotate(-0.04);
-    const nw = dw * 0.66;
-    const nh = dw * 0.42;
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(-nw / 2 + 3, -nh / 2 + 5, nw, nh);
-    ctx.fillStyle = '#e4dccb';
-    ctx.fillRect(-nw / 2, -nh / 2, nw, nh);
-    ctx.fillStyle = 'rgba(220, 200, 150, 0.7)';
-    ctx.save(); ctx.rotate(-0.3); ctx.fillRect(-nw / 2 - 6, -nh / 2 + 4, nw * 0.2, 10); ctx.restore();
-    ctx.save(); ctx.rotate(0.3); ctx.fillRect(nw / 2 - nw * 0.2, -nh / 2 - 26, nw * 0.2, 10); ctx.restore();
-    ctx.fillStyle = '#2b2627';
-    ctx.font = `600 ${dw * 0.06}px Caveat, cursive`;
-    ctx.fillText('the void', -nw * 0.18, -nh * 0.3);
-    ctx.strokeStyle = '#2b2627';
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.moveTo(-nw * 0.34, -nh * 0.3);
-    ctx.lineTo(-nw * 0.02, -nh * 0.31);
-    ctx.stroke();
-    ctx.font = `600 ${dw * 0.105}px Caveat, cursive`;
-    ctx.fillText('zeroed my world', 0, -nh * 0.02);
-    ctx.font = `600 ${dw * 0.055}px Caveat, cursive`;
-    ctx.fillStyle = '#5a4f4a';
-    ctx.fillText('(renn’s room · knock first)', 0, nh * 0.27);
-    ctx.restore();
-    // stickers
-    const star = (x, y, r, col) => {
-      ctx.fillStyle = col;
+    // the grain in the laminate: long, faint, not quite straight
+    for (let i = 0; i < 140; i++) {
+      const x = rnd() * dw;
+      const w = 0.4 + rnd() * 1.2;
+      ctx.strokeStyle = rnd() < 0.5 ? `rgba(0,0,0,${0.02 + rnd() * 0.035})` : `rgba(255,255,255,${0.006 + rnd() * 0.01})`;
+      ctx.lineWidth = w;
       ctx.beginPath();
-      for (let k = 0; k < 10; k++) {
-        const a = -Math.PI / 2 + k * Math.PI / 5;
-        const rr = k % 2 ? r * 0.45 : r;
-        ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-      }
-      ctx.closePath();
-      ctx.fill();
-    };
-    star(dw * 0.2, dh * 0.62, dw * 0.05, '#f2c14e');
-    ctx.fillStyle = '#e98aa6';
-    ctx.beginPath();
-    ctx.arc(dw * 0.74, dh * 0.7, dw * 0.035, 0, 7);
-    ctx.fill();
-    ctx.fillStyle = '#2d2a33';
-    ctx.fillRect(dw * 0.26, dh * 0.8, dw * 0.16, dw * 0.1);
-    ctx.fillStyle = '#e4dccb';
-    ctx.fillRect(dw * 0.28, dh * 0.8 + dw * 0.02, dw * 0.12, dw * 0.04);
-    ctx.fillStyle = '#2d2a33';
-    [0.31, 0.37].forEach((x) => { ctx.beginPath(); ctx.arc(dw * x, dh * 0.8 + dw * 0.04, dw * 0.012, 0, 7); ctx.fill(); });
-    // the handle, and a sign hanging from it
-    const hx = dw * 0.86;
-    const hy = dh * 0.53;
-    ctx.fillStyle = '#1b1b20';
-    ctx.beginPath();
-    ctx.arc(hx, hy, dw * 0.04, 0, 7);
-    ctx.fill();
-    ctx.fillRect(hx - dw * 0.16, hy - dw * 0.015, dw * 0.16, dw * 0.03);
-    ctx.fillRect(hx - dw * 0.01, hy + dw * 0.07, dw * 0.02, dw * 0.04);
+      ctx.moveTo(x, 0);
+      ctx.bezierCurveTo(x + (rnd() - 0.5) * 6, dh * 0.33, x + (rnd() - 0.5) * 6, dh * 0.66, x + (rnd() - 0.5) * 4, dh);
+      ctx.stroke();
+    }
+    // scuffs low down, where it gets kicked shut
+    for (let i = 0; i < 9; i++) {
+      ctx.fillStyle = `rgba(0,0,0,${0.08 + rnd() * 0.12})`;
+      ctx.fillRect(dw * (0.2 + rnd() * 0.6), dh * (0.9 + rnd() * 0.07), dw * (0.02 + rnd() * 0.08), 1 + rnd() * 2);
+    }
+    // the warm floor light reaches the bottom of it, just
+    ctx.fillStyle = lin(ctx, 0, dh * 0.8, 0, dh, [[0, 'rgba(255, 160, 90, 0)'], [1, 'rgba(255, 160, 90, 0.07)']]);
+    ctx.fillRect(0, dh * 0.8, dw, dh * 0.2);
+    // hinges
+    [0.1, 0.88].forEach((y) => {
+      ctx.fillStyle = '#1a1a1c';
+      ctx.fillRect(0, dh * y, dw * 0.025, dh * 0.05);
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fillRect(0, dh * y, dw * 0.025, 1);
+    });
+    // a strip of masking tape with the name on it, in marker, a bit crooked
     ctx.save();
-    ctx.translate(hx - dw * 0.02, hy + dw * 0.03);
-    ctx.rotate(0.08);
-    ctx.strokeStyle = '#1b1b20';
-    ctx.lineWidth = 1;
+    ctx.translate(dw * 0.47, dh * 0.3);
+    ctx.rotate(-0.035);
+    const tw = dw * 0.5;
+    const th = dw * 0.085;
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(-dw * 0.06, dw * 0.1);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(dw * 0.06, dw * 0.1);
-    ctx.stroke();
-    ctx.fillStyle = '#c9544a';
-    ctx.fillRect(-dw * 0.13, dw * 0.1, dw * 0.26, dw * 0.13);
-    ctx.fillStyle = '#fbe9dc';
-    ctx.font = `600 ${dw * 0.04}px Caveat, cursive`;
-    ctx.fillText('the world', 0, dw * 0.14);
-    ctx.fillText('is on pause', 0, dw * 0.19);
+    ctx.moveTo(-tw / 2, -th / 2);
+    for (let k = 0; k <= 6; k++) ctx.lineTo(-tw / 2 + (k % 2 ? 2 : -1), -th / 2 + (th * k) / 6);
+    ctx.lineTo(tw / 2, th / 2);
+    for (let k = 6; k >= 0; k--) ctx.lineTo(tw / 2 + (k % 2 ? -2 : 1), -th / 2 + (th * k) / 6);
+    ctx.closePath();
+    ctx.fillStyle = '#4a463d';
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(-tw / 2, th / 2 - 1, tw, 1);
+    ctx.fillStyle = 'rgba(10, 10, 12, 0.85)';
+    ctx.font = `600 ${th * 0.78}px Caveat, cursive`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('zeroed my world', -tw / 2 + th * 0.35, th * 0.04);
     ctx.restore();
-    // light slipping round the edges, from the room behind
-    ctx.fillStyle = lin(ctx, dw - 6, 0, dw, 0, [[0, 'rgba(255, 190, 110, 0)'], [1, 'rgba(255, 190, 110, 0.55)']]);
-    ctx.fillRect(dw - 6, 0, 6, dh);
+    // the handle: a square rose, a straight steel lever, a keyhole
+    const hx = dw * 0.9;
+    const hy = dh * 0.52;
+    const rw = dw * 0.045;
+    const rh = dw * 0.13;
+    ctx.fillStyle = '#3b3c40';
+    ctx.fillRect(hx - rw / 2, hy - rh / 2, rw, rh);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(hx - rw / 2, hy - rh / 2, rw, 1);
+    const lw = dw * 0.17;
+    const lt = dw * 0.024;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(hx - lw, hy - lt / 2 + 3, lw, lt);
+    ctx.fillStyle = lin(ctx, 0, hy - lt / 2, 0, hy + lt / 2, [[0, '#7a7b80'], [0.35, '#515256'], [1, '#2e2f33']]);
+    ctx.fillRect(hx - lw, hy - lt / 2, lw, lt);
+    ctx.fillStyle = '#3b3c40';
+    ctx.fillRect(hx - rw / 2, hy + rh * 0.62, rw, rh * 0.45);
+    ctx.fillStyle = '#0a0a0b';
+    ctx.fillRect(hx - 1, hy + rh * 0.72, 2, rh * 0.2);
+    // the gaps: a line of light under the door and down the latch side
+    ctx.fillStyle = 'rgba(255, 196, 130, 0.9)';
+    ctx.fillRect(0, dh - 1.5, dw, 1.5);
+    ctx.fillStyle = lin(ctx, 0, 0, 0, dh, [[0, 'rgba(255, 196, 130, 0.25)'], [1, 'rgba(255, 196, 130, 0.6)']]);
+    ctx.fillRect(dw - 1, 0, 1, dh);
+    grainOn(ctx, dw, dh, 0.25);
   }
 
   function paint() {
@@ -428,6 +452,7 @@
       Promise.all([document.fonts.load('600 20px Caveat'), document.fonts.load('italic 400 30px Fraunces')]).catch(() => {}).then(draw);
       let rt = 0;
       window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (!el.hidden) draw(); }, 150); });
+      if (!matchMedia('(hover: hover)').matches) { const h = el.querySelector('.door-hint'); if (h) h.textContent = 'tap the door to knock'; }
       leaf.addEventListener('click', knock);
       document.addEventListener('keydown', (e) => {
         if (el.hidden || state !== 'closed') return;

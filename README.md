@@ -2,13 +2,13 @@
 
 renn's website: one room, one afternoon, rewound to 0:00:00 and played back.
 
-It starts outside renn's door, at night. The door has a brass **0** on it
-and a note taped under it ("~~the void~~ zeroed my world · knock first"),
-warm light leaks round its edges, and in the corner the real time runs:
-the outside world's clock. Knock (click the door, or Enter): after a
-moment someone says "come in", the door swings open, the sunset spills out
-over the hallway floor and you walk through. Closing the door behind you
-zeroes the world: the clock rewinds from the real time to **0:00:00**, the
+It starts outside renn's door, at night, dark like a phone photo: a plain
+door at the end of a narrow hall, a strip of masking tape on it that says
+"zeroed my world", and a line of warm light under it. In the corner the
+real time runs: the outside world's clock. Knock (click the door, or
+Enter): a subtitle says "come in", the door swings open, the sunset spills
+out over the hallway floor and you walk through. Closing the door behind
+you zeroes the world: the clock rewinds from the real time to **0:00:00**, the
 title plays, and you're in renn's room at 5:47 pm: the
 real attic room, remembered a little softer. The slatted ceiling slopes
 down on both sides, the blackout curtains are half drawn, and the sun is

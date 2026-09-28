@@ -78,3 +78,6 @@ button.ghost { margin: 0; padding: 0 16px; height: 36px; color: #f6ead8; backgro
 .people { margin: 10px 0; padding-left: 18px; }
 .row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
 #createUserForm { display: flex; flex-direction: column; gap: 6px; }
+
+/* no rounded corners anywhere: square edges only */
+*, *::before, *::after { border-radius: 0 !important; }

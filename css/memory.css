@@ -568,3 +568,6 @@ html.is-shutter::before {
   .cam-word { display: none; }
   .cam-panel { width: 100vw; }
 }
+
+/* no rounded corners anywhere: square edges only */
+*, *::before, *::after { border-radius: 0 !important; }

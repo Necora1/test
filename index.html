@@ -407,11 +407,14 @@
 
   <!-- ======================= THE DOOR ======================= -->
   <div class="door-scene" id="doorScene" role="dialog" aria-label="Outside renn's door">
-    <canvas class="door-hall" aria-hidden="true"></canvas>
-    <canvas class="door-spill" aria-hidden="true"></canvas>
-    <button type="button" class="door-leaf" id="doorLeaf" aria-label="Knock on the door, and come in"><canvas aria-hidden="true"></canvas></button>
-    <p class="door-outside" aria-hidden="true"><span>outside</span> <b id="doorClock">0:00:00</b></p>
-    <p class="door-hint">knock to come in <span>(or press enter)</span></p>
+    <div class="door-cam">
+      <canvas class="door-hall" aria-hidden="true"></canvas>
+      <canvas class="door-spill" aria-hidden="true"></canvas>
+      <button type="button" class="door-leaf" id="doorLeaf" aria-label="Knock on the door, and come in"><canvas aria-hidden="true"></canvas></button>
+    </div>
+    <div class="door-grain" aria-hidden="true"></div>
+    <p class="door-outside" aria-hidden="true">outside <b id="doorClock">0:00:00</b></p>
+    <p class="door-hint">click the door to knock</p>
     <p class="door-reply" aria-live="polite">come in.</p>
   </div>
 
