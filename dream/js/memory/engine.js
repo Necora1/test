@@ -3,12 +3,15 @@
    Takes the painted layers (paint.js) and lights them on the GPU
    every frame, then runs them through a "memory" pass:
 
-   scene   sun through the window (leaf shadows drifting across
-           it), beams in the air with dust turning in them, the
-           lamp, the laptop, fairy lights, night in the window,
-           rain on the glass, a warm glow under whatever you point at
+   scene   the low sun in the window, sinking as the day goes; the
+           light it rakes across the bed (branch shadows drifting in
+           it), rays in the air with dust turning in them, the lamp,
+           the laptop, fairy lights, night and rain in the window,
+           a warm glow under whatever you point at
    bloom   bright parts bleed light (plus a red halation, like film)
-   post    zoom blur while the camera moves, chromatic fringes,
+   post    a lens flare off the sun (a streak, a red ghost ring, a
+           green dot, a hexagon), zoom blur while the camera moves,
+           chromatic fringes,
            soft-focus edges, light leaks, a faded warm grade,
            vignette, grain and a slight gate weave
 
@@ -32,17 +35,18 @@
   // x, y: the point looked at (board px) · zoom · tod: 0 afternoon → 1 night
   // lamp, screen, lights: how bright · dof: blur around the point · dim: darker behind a room
   const PRESETS = {
-    home: { x: 800, y: 500, zoom: 1, tod: 0, lamp: 0, screen: 0.12, lights: 0.3, dof: 0, dim: 0 },
-    about: { x: 518, y: 250, zoom: 2.1, tod: 0.04, lamp: 0, screen: 0.12, lights: 0.3, dof: 0.75, dim: 0.28, caption: 'the note i left for whoever comes in' },
-    interests: { x: 470, y: 290, zoom: 2.0, tod: 0.18, lamp: 0.2, screen: 0.12, lights: 0.5, dof: 0.7, dim: 0.34, caption: 'every tape i wore out' },
-    games: { x: 478, y: 532, zoom: 2.7, tod: 0.78, lamp: 0, screen: 1.4, lights: 0.6, dof: 0.8, dim: 0.34, caption: 'the laptop, way past midnight' },
-    send: { x: 590, y: 580, zoom: 2.5, tod: 0.86, lamp: 1, screen: 0.3, lights: 0.8, dof: 0.8, dim: 0.34, caption: 'writing things i never send' },
-    guitar: { x: 700, y: 560, zoom: 1.75, tod: 0.1, lamp: 0, screen: 0.12, lights: 0.4, dof: 0.6, dim: 0.3, caption: 'it is always a little out of tune' },
-    gallery: { x: 1170, y: 222, zoom: 2.1, tod: 0.42, lamp: 0.3, screen: 0.12, lights: 1.1, dof: 0.7, dim: 0.34, caption: 'pictures of when it was warm' },
-    oracle: { x: 1110, y: 660, zoom: 2.5, tod: 1, lamp: 0.45, screen: 0.2, lights: 1.3, dof: 0.8, dim: 0.34, caption: 'cards on the bed at 3am' },
-    favoomfs: { x: 1490, y: 360, zoom: 2.2, tod: 0.3, lamp: 0, screen: 0.12, lights: 0.6, dof: 0.7, dim: 0.3, caption: 'the people who stayed' },
-    wishes: { x: 128, y: 330, zoom: 3.4, tod: 1, lamp: 0.2, screen: 0.12, lights: 1, dof: 0.2, dim: 0, caption: 'out the window, and up' }
+    home: { x: 800, y: 500, zoom: 1, tod: 0, lamp: 0, screen: 0.15, lights: 0.35, dof: 0, dim: 0 },
+    wishes: { x: 872, y: 470, zoom: 2.5, tod: 1, lamp: 0.2, screen: 0.15, lights: 1, dof: 0.2, dim: 0, caption: 'out the window, and up' },
+    gallery: { x: 340, y: 540, zoom: 2.0, tod: 0.35, lamp: 0.3, screen: 0.15, lights: 1.2, dof: 0.7, dim: 0.3, caption: 'pictures of when it was warm' },
+    favoomfs: { x: 220, y: 300, zoom: 2.4, tod: 0.25, lamp: 0, screen: 0.15, lights: 0.7, dof: 0.7, dim: 0.3, caption: 'the people who stayed' },
+    about: { x: 1088, y: 342, zoom: 2.6, tod: 0.05, lamp: 0, screen: 0.15, lights: 0.35, dof: 0.75, dim: 0.25, caption: 'the note i left for whoever comes in' },
+    interests: { x: 1350, y: 500, zoom: 2.2, tod: 0.18, lamp: 0.2, screen: 0.15, lights: 0.5, dof: 0.7, dim: 0.32, caption: 'every tape i wore out' },
+    guitar: { x: 1110, y: 620, zoom: 1.9, tod: 0.08, lamp: 0, screen: 0.15, lights: 0.4, dof: 0.6, dim: 0.28, caption: 'it is always a little out of tune' },
+    games: { x: 430, y: 750, zoom: 2.4, tod: 0.8, lamp: 0, screen: 1.5, lights: 0.7, dof: 0.8, dim: 0.32, caption: 'the laptop, way past midnight' },
+    send: { x: 640, y: 590, zoom: 2.6, tod: 0.88, lamp: 1, screen: 0.3, lights: 0.9, dof: 0.8, dim: 0.32, caption: 'writing things i never send' },
+    oracle: { x: 822, y: 850, zoom: 2.4, tod: 1, lamp: 0.45, screen: 0.2, lights: 1.3, dof: 0.8, dim: 0.32, caption: 'cards on the bed at 3am' }
   };
+
 
   let gl = null;
   let layers = null;
@@ -102,7 +106,8 @@
   `;
 
   const SCENE = COMMON + `
-    uniform sampler2D uAlb; uniform sampler2D uBlur; uniform sampler2D uSun; uniform sampler2D uEmit; uniform sampler2D uFg;
+    uniform sampler2D uAlb; uniform sampler2D uBlur; uniform sampler2D uSun; uniform sampler2D uEmit; uniform sampler2D uFg; uniform sampler2D uGlass;
+    uniform vec2 uSunB;          // the sun, in board uv (it sinks as the day goes)
     uniform vec4 uView;          // centre x, y and visible width, height (board uv)
     uniform vec2 uFgShift;
     uniform float uAspect;
@@ -110,14 +115,7 @@
     uniform float uRain; uniform float uDof; uniform float uDim; uniform float uLucid; uniform float uVoid; uniform float uFade;
     uniform vec2 uFocus;
     uniform vec4 uHover;
-    uniform vec2 uW0; uniform vec2 uW1; uniform vec2 uW2; uniform vec2 uW3;
     uniform vec2 uMouseB;
-
-    float edge(vec2 a, vec2 b, vec2 p) { vec2 e = b - a; vec2 q = p - a; return (e.x * q.y - e.y * q.x) / length(e); }
-    float inWindow(vec2 p) {
-      float d = min(min(edge(uW0, uW1, p), edge(uW1, uW2, p)), min(edge(uW2, uW3, p), edge(uW3, uW0, p)));
-      return smoothstep(0.0, 0.004, d);
-    }
 
     float dust(vec2 uv) {
       float d = 0.0;
@@ -188,12 +186,12 @@
       vec3 sunCol = vec3(1.0, 0.7, 0.4);
       vec3 moonCol = vec3(0.42, 0.55, 0.95);
 
-      vec3 amb = mix(vec3(0.9, 0.8, 0.72), vec3(0.62, 0.48, 0.64), smoothstep(0.0, 0.6, uTod));
+      vec3 amb = mix(vec3(0.5, 0.36, 0.25), vec3(0.5, 0.38, 0.52), smoothstep(0.0, 0.6, uTod));
       amb = mix(amb, vec3(0.14, 0.15, 0.27), smoothstep(0.55, 1.0, uTod));
       amb = mix(amb, amb * vec3(0.78, 0.84, 0.95), uRain);
 
       vec3 col = alb * amb;
-      col += alb * light * (sunCol * 1.75 * sunAmt + moonCol * 0.55 * moonAmt);
+      col += alb * light * (sunCol * 3.2 * sunAmt + moonCol * 0.55 * moonAmt) + light * sunCol * 0.3 * sunAmt;
       col += air * (sunCol * 0.3 * sunAmt + moonCol * 0.08 * moonAmt);
       col += dust(uv) * (air * 2.6 + light * 0.5) * (sunCol * sunAmt + moonCol * moonAmt * 0.4) * 0.9;
 
@@ -205,19 +203,27 @@
       float tw = 0.6 + 0.4 * sin(uTime * 2.2 + hash(floor(uv * vec2(220.0, 140.0))) * 6.28);
       col += em.b * vec3(1.0, 0.8, 0.52) * uLights * tw * (0.9 + night * 1.6);
 
-      // the window: a night sky later on, rain on the glass when it rains
-      float win = inWindow(uv);
-      if (win > 0.0) {
+      // the window: lit from outside, the sun low in it; a night sky later on
+      float glass = texture2D(uGlass, uv).r;
+      if (glass > 0.001) {
+        vec3 outside = alb * mix(1.45, 1.0, smoothstep(0.0, 0.7, uTod)) * mix(vec3(1.0), vec3(0.62, 0.5, 0.62), smoothstep(0.2, 0.7, uTod));
         vec2 wp = uv * vec2(420.0, 260.0);
         float star = step(0.985, hash(floor(wp))) * (0.5 + 0.5 * sin(uTime * 2.0 + hash(floor(wp) + 3.0) * 20.0));
-        vec3 sky = mix(vec3(0.02, 0.03, 0.09), vec3(0.14, 0.13, 0.3), smoothstep(0.1, 0.62, uv.y)) + star * 0.8;
-        sky += vec3(0.95, 0.9, 0.75) * smoothstep(0.012, 0.0, length((uv - vec2(0.09, 0.2)) * vec2(1.6, 1.0))) ;
-        col = mix(col, sky + alb * 0.06, win * night);
+        vec3 sky = mix(vec3(0.02, 0.03, 0.09), vec3(0.12, 0.1, 0.24), smoothstep(0.2, 0.62, uv.y)) + star * 0.8 + alb * 0.08;
+        outside = mix(outside, sky, night);
         float lane = floor(uv.x * 380.0);
         float drop = step(0.9, hash(vec2(lane, floor(uv.y * 26.0 + uTime * (3.0 + hash(vec2(lane, 1.0)) * 5.0)))));
-        col += win * uRain * drop * vec3(0.5, 0.55, 0.6) * 0.35;
-        col = mix(col, col * vec3(0.7, 0.75, 0.85), win * uRain * 0.5);
+        outside += uRain * drop * vec3(0.5, 0.55, 0.6) * 0.3;
+        outside = mix(outside, outside * vec3(0.72, 0.76, 0.86), uRain * 0.6);
+        col = mix(col, outside, glass);
       }
+      // the sun itself, going down behind the glass
+      vec2 sd = (uv - uSunB) * vec2(1.6, 1.0);
+      float sdist = length(sd);
+      float disk = smoothstep(0.0115, 0.0085, sdist);
+      float corona = exp(-sdist * sdist * 3000.0) * 1.6 + exp(-sdist * 40.0) * 0.3;
+      col += glass * (disk * 6.0 + corona * 2.0) * vec3(1.0, 0.84, 0.58) * sunAmt;
+      col += (1.0 - glass) * exp(-sdist * 9.0) * 0.08 * sunCol * sunAmt;
 
       // what you're pointing at glows a little
       float hd = length((uv - uHover.xy) * vec2(1.6, 1.0));
@@ -263,6 +269,7 @@
     uniform sampler2D uScene; uniform sampler2D uBloom; uniform sampler2D uBloomWide;
     uniform vec2 uRes; uniform float uTime; uniform float uFlash; uniform float uZoomBlur;
     uniform float uLucid; uniform float uFade; uniform vec3 uLeak;
+    uniform vec2 uSunS; uniform float uFlare;   // the sun on screen, and how much it flares
     void main() {
       vec2 uv = vUv;
       // the film shivers in the gate, very slightly
@@ -291,6 +298,30 @@
       col += bloom * 0.55 + wide * 0.45;
       col += (bloom + wide) * vec3(1.0, 0.42, 0.22) * 0.2;          // halation
       col = mix(col, col * 0.6 + wide * 1.2 + bloom * 0.3, smoothstep(0.1, 0.32, e) * 0.35); // soft edges
+
+      // the lens flare: a streak up through the sun, and ghosts across the frame
+      if (uFlare > 0.001) {
+        float asp = uRes.x / uRes.y;
+        vec2 fs = (uv - uSunS) * vec2(asp, 1.0);
+        // mostly upwards, soft, like light smeared on the lens
+        float up = fs.y > 0.0 ? 1.8 : 10.0;
+        float streak = exp(-abs(fs.x) * 70.0) * exp(-abs(fs.y) * up) * 0.42;
+        streak += exp(-abs(fs.y) * 160.0) * exp(-abs(fs.x) * 7.0) * 0.08;
+        vec3 flare = vec3(1.0, 0.72, 0.36) * streak;
+        vec2 axis = vec2(0.5) - uSunS;
+        vec2 g1 = (uv - (uSunS + axis * 0.55 + vec2(-0.08, -0.12))) * vec2(asp, 1.0);
+        float gl1 = length(g1);
+        float ring = smoothstep(0.125, 0.112, gl1) * smoothstep(0.05, 0.11, gl1);
+        flare += vec3(1.0, 0.28, 0.2) * (ring * 0.4 + exp(-gl1 * gl1 * 90.0) * 0.14);
+        vec2 g2 = (uv - (uSunS + axis * 0.55 + vec2(-0.1, -0.16))) * vec2(asp, 1.0);
+        flare += vec3(0.5, 1.0, 0.45) * smoothstep(0.012, 0.004, length(g2)) * 0.6;
+        vec2 g3 = (uv - (uSunS + vec2(-0.2, 0.12))) * vec2(asp, 1.0);
+        float hex = max(abs(g3.x) * 0.866 + abs(g3.y) * 0.5, abs(g3.y));
+        flare += vec3(1.0, 0.62, 0.3) * smoothstep(0.1, 0.085, hex) * 0.16;
+        vec2 g4 = (uv - (uSunS - axis * 0.25)) * vec2(asp, 1.0);
+        flare += vec3(1.0, 0.8, 0.5) * smoothstep(0.03, 0.0, length(g4)) * 0.18;
+        col += flare * uFlare;
+      }
 
       // light leaks drifting through the corners
       vec2 lk = uv - vec2(1.02 + 0.06 * sin(uTime * 0.11), 0.95 + 0.05 * cos(uTime * 0.08));
@@ -389,16 +420,17 @@
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-    progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uW0', 'uW1', 'uW2', 'uW3', 'uMouseB']);
+    progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uMouseB', 'uGlass', 'uSunB']);
     progs.bright = program(BRIGHT, ['uTex', 'uTexel', 'uThreshold']);
     progs.blur = program(BLUR, ['uTex', 'uDir']);
-    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak']);
+    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare']);
 
     tex.alb = texture(layers.albedo);
     tex.blur = texture(layers.blur);
     tex.sun = texture(layers.sun);
     tex.emit = texture(layers.emit);
     tex.fg = texture(layers.fg);
+    tex.glass = texture(layers.glass);
   }
 
   function resize() {
@@ -542,11 +574,9 @@
     gl.uniform1f(S.loc.uFade, fade);
     gl.uniform2f(S.loc.uFocus, cur.x / BOARD.W, cur.y / BOARD.H);
     gl.uniform4f(S.loc.uHover, hover.x, hover.y, hover.r, hover.a);
-    const w = layers.window;
-    gl.uniform2f(S.loc.uW0, w[0][0] / BOARD.W, w[0][1] / BOARD.H);
-    gl.uniform2f(S.loc.uW1, w[1][0] / BOARD.W, w[1][1] / BOARD.H);
-    gl.uniform2f(S.loc.uW2, w[2][0] / BOARD.W, w[2][1] / BOARD.H);
-    gl.uniform2f(S.loc.uW3, w[3][0] / BOARD.W, w[3][1] / BOARD.H);
+    bindTex(5, tex.glass, S.loc.uGlass);
+    const sunY = layers.sunAt[1] + Math.min(1, cur.tod) * 70;
+    gl.uniform2f(S.loc.uSunB, layers.sunAt[0] / BOARD.W, sunY / BOARD.H);
     gl.uniform2f(S.loc.uMouseB, mouse.bx, mouse.by);
     draw(fbo.scene, RW, RH);
 
@@ -585,6 +615,15 @@
     gl.uniform1f(P.loc.uFade, fade);
     const glow = Void.dream.palette.current.glow;
     gl.uniform3f(P.loc.uLeak, 0.6 + glow[0] * 0.4, 0.35 + glow[1] * 0.25, 0.2 + glow[2] * 0.2);
+    // where the sun is on screen: the flare follows the camera
+    const sunY2 = layers.sunAt[1] + Math.min(1, cur.tod) * 70;
+    const [sx, sy] = toScreen(layers.sunAt[0], sunY2);
+    const su = sx / window.innerWidth;
+    const sv = 1 - sy / window.innerHeight;
+    const onScreen = Math.max(0, Math.min(1, (0.62 - Math.max(Math.abs(su - 0.5), Math.abs(sv - 0.5))) / 0.12));
+    const sunAmt = (1 - Math.min(1, cur.tod / 0.72)) * (1 - rain * 0.85);
+    gl.uniform2f(P.loc.uSunS, su, sv);
+    gl.uniform1f(P.loc.uFlare, sunAmt * onScreen * (1 - cur.dim) * (1 - fade * 0.6));
     draw(null, RW, RH);
   }
 

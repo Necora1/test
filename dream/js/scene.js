@@ -76,7 +76,7 @@
     if (h) {
       label.textContent = h.label;
       label.classList.add('is-on');
-      if (finePointer && !h.action) Void.dream.sound.chime(Void.dream.sound.step(h.id.length % 7, 523), { vol: 0.025, dur: 0.6, wet: 0.5 });
+      if (finePointer && !h.action && navigator.userActivation?.hasBeenActive !== false) Void.dream.sound.chime(Void.dream.sound.step(h.id.length % 7, 523), { vol: 0.025, dur: 0.6, wet: 0.5 });
     } else label.classList.remove('is-on');
   }
 
