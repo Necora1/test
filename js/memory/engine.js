@@ -128,7 +128,7 @@
   `;
 
   const SCENE = COMMON + `
-    uniform sampler2D uAlb; uniform sampler2D uBlur; uniform sampler2D uSun; uniform sampler2D uEmit; uniform sampler2D uFg; uniform sampler2D uGlass;
+    uniform sampler2D uAlb; uniform sampler2D uBlur; uniform sampler2D uSun; uniform sampler2D uEmit; uniform sampler2D uFg; uniform sampler2D uGlass; uniform vec4 uWinB;
     uniform vec2 uSunB;          // the sun, in board uv (it sinks as the day goes)
     uniform vec4 uView;          // centre x, y and visible width, height (board uv)
     uniform vec2 uFgShift;
@@ -227,13 +227,17 @@
       col += em.b * vec3(1.0, 0.8, 0.52) * uLights * tw * (0.9 + night * 1.6);
 
       // the window: lit from outside, the sun low in it; a night sky later on
-      float glass = texture2D(uGlass, uv).r;
+      vec3 gm = texture2D(uGlass, uv).rgb;
+      float glass = gm.r;
+      float skyM = gm.g;                 // sky, not the house across the street
       if (glass > 0.001) {
         vec3 outside = alb * mix(1.05, 0.9, smoothstep(0.0, 0.7, uTod)) * mix(vec3(1.0), vec3(0.62, 0.5, 0.62), smoothstep(0.2, 0.7, uTod));
         vec2 wp = uv * vec2(420.0, 260.0);
         float star = step(0.985, hash(floor(wp))) * smoothstep(0.32, 0.05, length(fract(wp) - 0.5)) * (0.5 + 0.5 * sin(uTime * 2.0 + hash(floor(wp) + 3.0) * 20.0));
         vec3 sky = mix(vec3(0.02, 0.03, 0.09), vec3(0.12, 0.1, 0.24), smoothstep(0.2, 0.62, uv.y)) + star * 0.8 + alb * 0.08;
-        outside = mix(outside, sky, night);
+        // the house goes dark, its windows come on one by one
+        vec3 house = alb * vec3(0.1, 0.1, 0.18) + gm.b * vec3(1.0, 0.7, 0.38) * 0.75 * smoothstep(0.55, 0.85, uTod);
+        outside = mix(outside, mix(house, sky, skyM), night);
         float lane = floor(uv.x * 380.0);
         float drop = step(0.9, hash(vec2(lane, floor(uv.y * 26.0 + uTime * (3.0 + hash(vec2(lane, 1.0)) * 5.0)))));
         outside += uRain * drop * vec3(0.5, 0.55, 0.6) * 0.3;
@@ -245,14 +249,14 @@
           float k = fract(cyc) * 4.0;
           for (int i = 0; i < 5; i++) {
             float fi = float(i);
-            vec2 bp = vec2(0.43 + (k - fi * 0.12) * 0.065, 0.3 + fi * 0.018 + sin(k * 3.0 + fi) * 0.012 + hash(vec2(floor(cyc), fi)) * 0.05);
+            vec2 bp = uWinB.xy + uWinB.zw * vec2(-0.15 + (k - fi * 0.12) * 0.33, 0.1 + fi * 0.035 + sin(k * 3.0 + fi) * 0.025 + hash(vec2(floor(cyc), fi)) * 0.1);
             vec2 q = (uv - bp) * vec2(1.6, 1.0) / 0.0055;
             float flap = sin(uTime * 11.0 + fi * 2.0);
             q.x = abs(q.x);
             float dd = abs(q.y + q.x * (0.35 + 0.35 * flap) - q.x * q.x * 0.25);
             b += smoothstep(0.35, 0.0, dd) * step(q.x, 1.1);
           }
-          outside *= 1.0 - clamp(b, 0.0, 1.0) * 0.85 * uBirds;
+          outside *= 1.0 - clamp(b, 0.0, 1.0) * 0.85 * uBirds * skyM;
         }
         col = mix(col, outside, glass);
       }
@@ -261,7 +265,7 @@
       float sdist = length(sd);
       float disk = smoothstep(0.0115, 0.0085, sdist);
       float corona = exp(-sdist * sdist * 4000.0) * 1.0 + exp(-sdist * 55.0) * 0.12;
-      col += glass * (disk * 2.6 + corona * 1.1) * vec3(1.0, 0.84, 0.58) * sunAmt;
+      col += (disk * 2.6 * skyM + corona * 1.1 * glass * (0.35 + 0.65 * skyM)) * vec3(1.0, 0.84, 0.58) * sunAmt;
       col += (1.0 - glass) * exp(-sdist * 9.0) * 0.08 * sunCol * sunAmt;
 
       // what you're pointing at glows a little
@@ -614,7 +618,7 @@
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-    progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uMouseB', 'uGlass', 'uSunB', 'uDustAmt', 'uBirds']);
+    progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uMouseB', 'uGlass', 'uSunB', 'uDustAmt', 'uBirds', 'uWinB']);
     progs.bright = program(BRIGHT, ['uTex', 'uTexel', 'uThreshold']);
     progs.blur = program(BLUR, ['uTex', 'uDir']);
     progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uAvg', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare', 'uSunVis', 'uExposure', 'uHdr', 'uBloomAmt', 'uRays', 'uAnamorphic', 'uDirt', 'uGrain', 'uCA', 'uDreamy', 'uVignette', 'uGrade', 'uRainLens', 'uLeaks', 'uGuides', 'uViewP', 'uGuideAmt']);
@@ -785,6 +789,8 @@
     bindTex(5, tex.glass, S.loc.uGlass);
     const sunY = layers.sunAt[1] + Math.min(1, cur.tod) * 70;
     gl.uniform2f(S.loc.uSunB, layers.sunAt[0] / BOARD.W, sunY / BOARD.H);
+    const wr = layers.windowRect;
+    gl.uniform4f(S.loc.uWinB, wr.x / BOARD.W, wr.y / BOARD.H, wr.w / BOARD.W, wr.h / BOARD.H);
     gl.uniform2f(S.loc.uMouseB, mouse.bx, mouse.by);
     gl.uniform1f(S.loc.uDustAmt, settings.dust);
     gl.uniform1f(S.loc.uBirds, settings.birds);

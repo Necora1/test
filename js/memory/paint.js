@@ -1,8 +1,11 @@
 /* ==========================================================
    memory/paint.js — renn's room, painted in code
-   Late in the day, facing the window: the sun is low behind bare
-   winter trees, the room is dark and warm, and the only real
-   light comes straight through the glass.
+   The real room, remembered a little softer: an attic with a
+   slatted ceiling sloping down on both sides, one white window
+   with the red brick house across the street, heavy dark curtains
+   half drawn, the radiator, the fan, the wire lamp. Late in the
+   day: the sun going down behind the neighbours' roof, and a
+   window-shaped patch of it lying on the floor.
 
    The room is built in 3D and projected through one camera, so
    everything shares one vanishing point:
@@ -15,15 +18,15 @@
    Eye level (the horizon) is at VP[1]; everything below it shows
    its top, everything above it its underside. The sunlight is
    traced the same way: each pane of the window is pushed along the
-   light's direction until it lands on the bed, its foot, or the
-   floor.
+   light's direction until it lands on the floor.
 
    Layers handed to the engine:
    albedo   the room in dim, even light
    sun      R: where the sun lands · G: light in the air ·
             B: where branch shadows can drift through it
-   emit     R: the lamp · G: the laptop screen · B: fairy lights
-   glass    white where you see out of the window
+   emit     R: the lamps · G: the laptop screen · B: fairy lights
+   glass    R: where you see out of the window · G: sky (not the
+            house) · B: the house's windows (lit at night)
    fg       (empty) anything right in front of the camera
    guides   perspective guides (vanishing point, horizon, the
             lines everything is built on) — the camera panel shows them
@@ -34,17 +37,22 @@
   const H = 1000;
 
   /* ---------- the camera ---------- */
-  const VP = [870, 460];                     // vanishing point = eye level
+  const VP = [800, 470];                     // vanishing point = eye level
   const P = (X, Y, z) => [VP[0] + (X - VP[0]) / (1 - z), VP[1] + (Y - VP[1]) / (1 - z)];
-  const DEPTH = 1000;                        // the camera is 1000 wall-units from the back wall
-  const NEAR = 0.7;                          // walls are drawn out to here (past the edges of the picture)
+  const NEAR = 0.72;                         // walls are drawn out to here (past the edges of the picture)
 
-  /* ---------- the room (in wall units) ---------- */
-  const ROOM = { l: 380, r: 1300, ceil: 120, floor: 640 };
-  const WIN = { l: 700, r: 960, t: 180, b: 505, inset: -0.04, transom: 60 };
-  const BED = { l: 700, r: 1050, top: 530, mat: 548, base: 640, head: 0.0, foot: 0.385, fold: 0.1 };
-  const LIGHT = { dx: 60, dy: 300 };         // how far the sunlight moves per unit of z (it comes down, towards you)
-  const SUN = [846, 446];                    // on screen: just above the horizon, inside the window
+  /* ---------- the room (in wall units; ~200 units to a metre) ---------- */
+  // an attic: straight walls up to the knee line, then the ceiling slopes
+  // up to a flat strip in the middle
+  const ROOM = { l: 250, r: 1350, floor: 700, knee: 300, ceil: 120, cl: 420, cr: 1180 };
+  const WIN = { l: 640, r: 960, t: 222, b: 505, inset: -0.06, transom: 46, side: 60 };
+  const FR = 12;                             // the white frame's thickness
+  const MU = 4;                              // the thin bars
+  const CUR = { top: 134, z: 0.045, lOut: 448, lInTop: 670, lInBot: 696, rInTop: 936, rInBot: 910, rOut: 1162 };
+  CUR.lIn = (CUR.lInTop + CUR.lInBot) / 2;
+  CUR.rIn = (CUR.rInTop + CUR.rInBot) / 2;
+  const LIGHT = { dx: -60, dy: 1000 };       // how far the sunlight moves per unit of z (down and a little left)
+  const SUN = [850, 312];                    // on screen: over the neighbours' roof, inside the window
 
   /* ---------- helpers ---------- */
   let S = 1;
@@ -80,6 +88,15 @@
     path(ctx, pts);
     ctx.fillStyle = style;
     ctx.fill();
+  }
+
+  function line(ctx, a, b, style, width = 1) {
+    ctx.strokeStyle = style;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(a[0], a[1]);
+    ctx.lineTo(b[0], b[1]);
+    ctx.stroke();
   }
 
   // a soft-edged shape: only its blurred shadow is drawn
@@ -153,6 +170,7 @@
 
   /* ---------- 3D shapes ---------- */
   const quad = (pts3) => pts3.map((p) => P(...p));
+  const sc = (z) => 1 / (1 - z);             // how much bigger things are at depth z
 
   // the faces of a box you can actually see from the camera, farthest first
   function boxFaces(x0, x1, y0, y1, z0, z1) {
@@ -171,6 +189,7 @@
       fillPoly(ctx, pts, colors[name]);
     });
   }
+  const face = (x0, x1, y0, y1, z0, z1, name) => (boxFaces(x0, x1, y0, y1, z0, z1).find(([n]) => n === name) || [])[1];
 
   // an image laid onto a (roughly flat) quad: p0 top-left, p1 top-right, p3 bottom-left
   function imageQuad(ctx, img, p0, p1, p3) {
@@ -188,19 +207,40 @@
     ctx.restore();
   }
 
+  // a flat ellipse lying on a horizontal plane (a disc on the floor, a mug's rim)
+  function floorDisc(X, Y, z, r) {
+    const c = P(X, Y, z);
+    const f = P(X, Y, z - r / 1000);
+    const n = P(X, Y, z + r / 1000);
+    return [c[0], (f[1] + n[1]) / 2, r * sc(z), Math.abs(n[1] - f[1]) / 2];
+  }
+
   /* ---------- the window's panes (wall units, on the back wall) ---------- */
   function panes() {
-    const out = [];
-    const bar = 7;
-    const cw = (WIN.r - WIN.l) / 3;
-    for (let c = 0; c < 3; c++) out.push([WIN.l + c * cw + bar / 2, WIN.t + bar / 2, cw - bar, WIN.transom - bar]);
-    const top = WIN.t + WIN.transom + 10;
-    const rh = (WIN.b - top) / 4;
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 3; c++) out.push([WIN.l + c * cw + bar / 2, top + r * rh + bar / 2, cw - bar, rh - bar]);
+    const { l, r, t, b, transom, side } = WIN;
+    const out = [[l + FR, t + FR, r - l - 2 * FR, transom - FR]];
+    const y0 = t + transom + FR;
+    const y1 = b - FR;
+    const rh = (y1 - y0) / 3;
+    const cx0 = l + side + FR;
+    const cx1 = r - side - FR;
+    const cw = (cx1 - cx0) / 3;
+    const cols = [[l + FR, l + side]];
+    for (let k = 0; k < 3; k++) cols.push([cx0 + k * cw + (k ? MU / 2 : 0), cx0 + (k + 1) * cw - (k < 2 ? MU / 2 : 0)]);
+    cols.push([r - side, r - FR]);
+    for (let k = 0; k < 3; k++) {
+      const ya = y0 + k * rh + (k ? MU / 2 : 0);
+      const yb = y0 + (k + 1) * rh - (k < 2 ? MU / 2 : 0);
+      cols.forEach(([xa, xb]) => out.push([xa, ya, xb - xa, yb - ya]));
     }
     return out;
   }
+  // the panes the curtains leave open (for the light)
+  const openPanes = () => panes().map(([x, y, w, h]) => {
+    const a = Math.max(x, CUR.lIn);
+    const b = Math.min(x + w, CUR.rIn);
+    return [a, y, b - a, h];
+  }).filter(([, , w]) => w > 2);
 
   // the window on screen (the glass sits a little way into the wall)
   const glassTL = P(WIN.l, WIN.t, WIN.inset);
@@ -218,21 +258,26 @@
     const z = (Yp - Y) / LIGHT.dy;
     return [X + LIGHT.dx * z, Yp, z];
   };
-  // …or on a vertical plane facing the camera at depth zp
-  const onFace = (X, Y, zp) => [X + LIGHT.dx * zp, Y + LIGHT.dy * zp, zp];
 
   /* ---------- things in the room (for the paint, the light and the clicks) ---------- */
-  const NIGHT = { l: 500, r: 620, t: 570, z0: 0.0, z1: 0.12 };
-  const LAMP = { x: NIGHT.l + 42, z: 0.05 };   // stands on the nightstand, the letter beside it
-  const SHELF = { l: 1190, r: ROOM.r, t: 175, z0: 0.06, z1: 0.27 };
-  const SHELF_ROWS = [175, 262, 350, 438, 520, 640];
-  const CRATE = { l: 1200, r: 1292, t: 585, z0: 0.31, z1: 0.41 };
-  const LAPTOP = { l: 718, r: 818, z0: 0.24, z1: 0.32 };   // left of the sun, so it never covers it
-  const CARDS = { x: 985, z: 0.3 };
-  const GUITAR = { X: 1128, z: 0.31 };        // where it stands on the floor
-  const NOTE = { l: 1060, r: 1140, t: 262, b: 328 };
-  const PHOTOS = { z0: 0.07, z1: 0.36, t: 272, b: 470 };
-  const FRIENDS = [[0.1, 0.17, 150, 250], [0.2, 0.28, 168, 232], [0.3, 0.34, 190, 240]];
+  const BED = { l: 250, r: 520, top: 590, rail: 612, head: 0.1, foot: NEAR };
+  const NIGHT = { l: 545, r: 640, t: 612, z0: 0.33, z1: 0.43 };
+  const CLOCK = { X: 606, z: 0.37, r: 15 };
+  const LAPTOP = { l: 356, r: 456, z0: 0.25, z1: 0.31 };
+  const CARDS = { x: 436, z: 0.37 };
+  const FAN = { X: 500, z: 0.06, cy: 382, r: 58 };
+  const DESK = { l: 1215, r: ROOM.r, t: 555, z0: 0.2, z1: 0.46 };
+  const HUTCH = { l: 1290, shelf: 478, top: 408 };
+  const BENCH = { l: 1128, r: 1208, t: 598, z0: 0.4, z1: 0.47 };
+  const GUITAR = { X: 1244, z: 0.035 };
+  const RAD = { l: 668, r: 932, t: 552, b: 652, z0: 0.004, z1: 0.03 };
+  const SHELF = { l: 1290, r: ROOM.r, t: 252, b: 300, z0: 0.07, z1: 0.23 };
+  const NOTE = { z0: 0.09, z1: 0.19, t: 318, b: 394 };
+  const PHOTOS = { z0: 0.03, z1: 0.2, t: 330, b: 472 };
+  const FRAMES = [[1188, 1288, 288, 420], [1302, 1340, 322, 372], [1302, 1340, 386, 430]];
+  const LAMPC = { X: 800, z: 0.2, Y: 152, arm: 58 };   // the wire chandelier, hanging from the flat ceiling
+  const RUG = { l: 960, r: 1345, z0: 0.28, z1: 0.56 };
+  const SHAG = { l: 560, r: 1010, z0: 0.47, z1: 0.62 };
 
   /* ==========================================================
      THE ALBEDO
@@ -241,84 +286,130 @@
     rnd = mulberry(7);
     paintShell(ctx);
     paintWindow(ctx);
+    paintRadiator(ctx);
+    paintCurtains(ctx);
+    paintSocket(ctx);
+    paintFrames(ctx, covers);
     paintPhotoWall(ctx, covers);
+    paintWallShelf(ctx);
     paintNote(ctx);
-    paintShelf(ctx);
-    paintRug(ctx);
-    paintCrate(ctx);
-    paintNightstand(ctx);
+    paintChandelier(ctx);
+    paintRugs(ctx);
+    paintGuitar(ctx);
+    paintFan(ctx);
     paintBed(ctx);
     paintOnBed(ctx);
-    paintGuitar(ctx);
+    paintNightstand(ctx);
+    paintDesk(ctx);
+    paintBench(ctx);
   }
 
-  // walls, ceiling, floor, and the soft dark lines where they meet
-  function paintShell(ctx) {
-    const { l, r, ceil, floor } = ROOM;
-    const back = quad([[l, ceil, 0], [r, ceil, 0], [r, floor, 0], [l, floor, 0]]);
-    const left = quad([[l, ceil, 0], [l, ceil, NEAR], [l, floor, NEAR], [l, floor, 0]]);
-    const right = quad([[r, ceil, 0], [r, ceil, NEAR], [r, floor, NEAR], [r, floor, 0]]);
-    const top = quad([[l, ceil, 0], [r, ceil, 0], [r, ceil, NEAR], [l, ceil, NEAR]]);
-    const ground = quad([[l, floor, 0], [r, floor, 0], [r, floor, NEAR], [l, floor, NEAR]]);
+  // walls, the sloping ceiling, the floor, and the soft lines where they meet
+  function shellQuads() {
+    const { l, r, floor, knee, ceil, cl, cr } = ROOM;
+    return {
+      back: quad([[l, knee, 0], [cl, ceil, 0], [cr, ceil, 0], [r, knee, 0], [r, floor, 0], [l, floor, 0]]),
+      left: quad([[l, knee, 0], [l, knee, NEAR], [l, floor, NEAR], [l, floor, 0]]),
+      right: quad([[r, knee, 0], [r, knee, NEAR], [r, floor, NEAR], [r, floor, 0]]),
+      lslope: quad([[l, knee, 0], [cl, ceil, 0], [cl, ceil, NEAR], [l, knee, NEAR]]),
+      rslope: quad([[cr, ceil, 0], [r, knee, 0], [r, knee, NEAR], [cr, ceil, NEAR]]),
+      top: quad([[cl, ceil, 0], [cr, ceil, 0], [cr, ceil, NEAR], [cl, ceil, NEAR]]),
+      ceiling: quad([[l, knee, 0], [cl, ceil, 0], [cr, ceil, 0], [r, knee, 0], [r, knee, NEAR], [cr, ceil, NEAR], [cl, ceil, NEAR], [l, knee, NEAR]]),
+      ground: quad([[l, floor, 0], [r, floor, 0], [r, floor, NEAR], [l, floor, NEAR]])
+    };
+  }
 
-    fillPoly(ctx, back, lin(ctx, 0, ceil, 0, floor, [[0, '#2c1f16'], [0.55, '#3e2c20'], [1, '#33251b']]));
-    // warm bounce around the window
+  function paintShell(ctx) {
+    const { l, r, floor, knee, ceil, cl, cr } = ROOM;
+    const q = shellQuads();
+
+    // the back wall: white paint in the shade of its own window
+    fillPoly(ctx, q.back, lin(ctx, 0, ceil, 0, floor, [[0, '#57524e'], [0.5, '#625c57'], [1, '#6b645e']]));
     ctx.save();
-    path(ctx, back);
+    path(ctx, q.back);
     ctx.clip();
-    ctx.fillStyle = rad(ctx, 830, 380, 40, 520, [[0, 'rgba(170, 118, 66, 0.4)'], [1, 'rgba(0,0,0,0)']]);
+    ctx.fillStyle = rad(ctx, 800, 470, 120, 700, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.38)']]);
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
-    // the side walls: the left catches a little more light than the right
-    fillPoly(ctx, left, lin(ctx, 0, 0, P(l, 0, 0)[0], 0, [[0, '#2a1d15'], [1, '#3a2a1f']]));
-    fillPoly(ctx, right, lin(ctx, P(r, 0, 0)[0], 0, W, 0, [[0, '#302219'], [1, '#1f160f']]));
-    fillPoly(ctx, top, lin(ctx, 0, 0, 0, ceil, [[0, '#120c08'], [1, '#22170f']]));
-    fillPoly(ctx, ground, lin(ctx, 0, floor, 0, H, [[0, '#2c1c12'], [1, '#3e281a']]));
-    grain(ctx, 0.1, () => path(ctx, back));
-    grain(ctx, 0.1, () => path(ctx, left));
-    grain(ctx, 0.1, () => path(ctx, right));
+    // the straight walls under the slopes, getting darker towards you
+    fillPoly(ctx, q.left, lin(ctx, P(l, 0, 0)[0], 0, 0, 0, [[0, '#56514c'], [1, '#2f2c29']]));
+    fillPoly(ctx, q.right, lin(ctx, P(r, 0, 0)[0], 0, W, 0, [[0, '#5c5752'], [1, '#34312e']]));
+    // the ceiling: white boards, the slopes catching the light off the floor
+    const lsA = P(cl, ceil, 0);
+    const lsB = P(cl, ceil, 0.45);
+    fillPoly(ctx, q.lslope, lin(ctx, lsA[0], lsA[1], lsB[0], lsB[1], [[0, '#77716b'], [1, '#3e3a37']]));
+    const rsB = P(cr, ceil, 0.45);
+    fillPoly(ctx, q.rslope, lin(ctx, P(cr, ceil, 0)[0], ceil, rsB[0], rsB[1], [[0, '#7a746e'], [1, '#403c39']]));
+    fillPoly(ctx, q.top, lin(ctx, 0, ceil, 0, P(0, ceil, 0.3)[1], [[0, '#7e7872'], [1, '#4a4642']]));
+    grain(ctx, 0.08, () => path(ctx, q.back));
+    grain(ctx, 0.08, () => path(ctx, q.left));
+    grain(ctx, 0.08, () => path(ctx, q.right));
 
-    // floor boards, running straight at you (into the vanishing point)
+    // the ceiling boards, running across, parallel to the back wall
     ctx.save();
-    path(ctx, ground);
+    path(ctx, q.ceiling);
     ctx.clip();
-    for (let X = l - 1400; X <= r + 1400; X += 34) {
-      const a = P(X, floor, 0);
-      const b = P(X, floor, NEAR);
-      ctx.strokeStyle = 'rgba(10, 5, 2, 0.5)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(a[0], a[1]);
-      ctx.lineTo(b[0], b[1]);
+    for (let z = 0.014; z < NEAR; z += 0.022) {
+      const pts = [P(l, knee, z), P(cl, ceil, z), P(cr, ceil, z), P(r, knee, z)];
+      ctx.lineWidth = 1.1 * Math.sqrt(sc(z));
+      ctx.strokeStyle = 'rgba(24, 21, 19, 0.5)';
+      path(ctx, pts, false);
       ctx.stroke();
-      // board ends, staggered
-      for (let k = 0; k < 4; k++) {
-        const z = ((X * 7 + k * 131) % 97) / 97 * NEAR;
-        const e0 = P(X, floor, z);
-        const e1 = P(X + 34, floor, z);
-        ctx.beginPath();
-        ctx.moveTo(e0[0], e0[1]);
-        ctx.lineTo(e1[0], e1[1]);
-        ctx.stroke();
-      }
+      ctx.strokeStyle = 'rgba(230, 225, 215, 0.07)';
+      path(ctx, pts.map(([x, y]) => [x, y + 2 * sc(z)]), false);
+      ctx.stroke();
     }
     ctx.restore();
-    grain(ctx, 0.12, () => path(ctx, ground));
+    // white trims where the slopes meet the flat ceiling and the walls
+    [[cl, ceil], [cr, ceil], [l, knee], [r, knee]].forEach(([X, Y]) => {
+      crease(ctx, P(X, Y, 0), P(X, Y, NEAR), 14, 0.35);
+      line(ctx, P(X, Y, 0), P(X, Y, NEAR), 'rgba(170, 165, 158, 0.35)', 4);
+    });
 
-    // skirting boards: on the back wall, and running along both side walls
-    const skirt = 16;
-    fillPoly(ctx, quad([[l, floor - skirt, 0], [r, floor - skirt, 0], [r, floor, 0], [l, floor, 0]]), '#3b2a1e');
-    fillPoly(ctx, quad([[l, floor - skirt, 0], [l, floor - skirt, NEAR], [l, floor, NEAR], [l, floor, 0]]), '#35261b');
-    fillPoly(ctx, quad([[r, floor - skirt, 0], [r, floor - skirt, NEAR], [r, floor, NEAR], [r, floor, 0]]), '#2c1f16');
+    // the floor: pale oak laminate, boards running across the room
+    fillPoly(ctx, q.ground, lin(ctx, 0, floor, 0, H, [[0, '#6f6356'], [1, '#54493f']]));
+    ctx.save();
+    path(ctx, q.ground);
+    ctx.clip();
+    const rowZ = 0.036;
+    let row = 0;
+    for (let z = 0; z < NEAR; z += rowZ, row++) {
+      const off = (row * 97) % 240;
+      for (let X = l - off; X < r; X += 240) {
+        const x0 = Math.max(l, X);
+        const x1 = Math.min(r, X + 240);
+        const t = rnd();
+        fillPoly(ctx, quad([[x0, floor, z], [x1, floor, z], [x1, floor, z + rowZ], [x0, floor, z + rowZ]]),
+          t < 0.5 ? `rgba(40, 28, 18, ${0.04 + t * 0.14})` : `rgba(215, 196, 168, ${(t - 0.5) * 0.12})`);
+        line(ctx, P(x0, floor, z), P(x0, floor, z + rowZ), 'rgba(22, 16, 12, 0.4)', 0.9 * Math.sqrt(sc(z)));
+      }
+      line(ctx, P(l, floor, z), P(r, floor, z), 'rgba(22, 16, 12, 0.38)', 1 * Math.sqrt(sc(z)));
+    }
+    // the grain in the wood
+    for (let i = 0; i < 900; i++) {
+      const z = R(0, NEAR);
+      const X = R(l, r);
+      const a = P(X, floor, z);
+      const b = P(X + R(30, 150), floor, z);
+      line(ctx, a, b, rnd() < 0.5 ? `rgba(30, 20, 12, ${R(0.04, 0.1)})` : `rgba(225, 205, 175, ${R(0.03, 0.08)})`, R(0.5, 1.2) * Math.sqrt(sc(z)));
+    }
+    ctx.restore();
+    grain(ctx, 0.1, () => path(ctx, q.ground));
+
+    // skirting boards: along the back wall and both side walls
+    const sk = 14;
+    fillPoly(ctx, quad([[l, floor - sk, 0], [r, floor - sk, 0], [r, floor, 0], [l, floor, 0]]), '#827c75');
+    fillPoly(ctx, quad([[l, floor - sk, 0], [l, floor - sk, NEAR], [l, floor, NEAR], [l, floor, 0]]), '#5e5954');
+    fillPoly(ctx, quad([[r, floor - sk, 0], [r, floor - sk, NEAR], [r, floor, NEAR], [r, floor, 0]]), '#66615b');
 
     // where the surfaces meet: soft, dark corners
-    const c = (a, b, w = 22, al = 0.55) => crease(ctx, P(...a), P(...b), w, al);
-    c([l, ceil, 0], [l, floor, 0]);
-    c([r, ceil, 0], [r, floor, 0]);
-    c([l, ceil, 0], [r, ceil, 0]);
-    c([l, floor, 0], [r, floor, 0], 16, 0.45);
-    c([l, ceil, 0], [l, ceil, NEAR], 30);
-    c([r, ceil, 0], [r, ceil, NEAR], 30);
+    const c = (a, b, w = 20, al = 0.5) => crease(ctx, P(...a), P(...b), w, al);
+    c([l, knee, 0], [l, floor, 0]);
+    c([r, knee, 0], [r, floor, 0]);
+    c([l, knee, 0], [cl, ceil, 0], 16, 0.4);
+    c([cl, ceil, 0], [cr, ceil, 0], 16, 0.4);
+    c([cr, ceil, 0], [r, knee, 0], 16, 0.4);
+    c([l, floor, 0], [r, floor, 0], 14, 0.45);
     c([l, floor, 0], [l, floor, NEAR], 18, 0.4);
     c([r, floor, 0], [r, floor, NEAR], 18, 0.4);
   }
@@ -330,18 +421,134 @@
     ctx.lineWidth = width;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.quadraticCurveTo((x + x2) / 2 + R(-4, 4), (y + y2) / 2 + R(-4, 4), x2, y2);
+    ctx.quadraticCurveTo((x + x2) / 2 + R(-3, 3), (y + y2) / 2 + R(-3, 3), x2, y2);
     ctx.stroke();
     const n = depth > 3 ? 2 : 3;
     for (let i = 0; i < n; i++) branch(ctx, x2, y2, len * R(0.62, 0.8), ang + R(-0.7, 0.7), width * 0.68, depth - 1);
   }
 
-  function trunk(ctx) {
+  /* ---------- outside: the house across the street ---------- */
+  const OUT = (() => {
     const { x, y, w, h } = GLASS;
+    const ridge = y + h * 0.4;
+    const eaves = y + h * 0.57;
+    return {
+      ridge,
+      eaves,
+      chimneys: [[x + w * 0.44, ridge - 46, 20, 60], [x + w * 0.9, ridge - 34, 18, 48]],
+      gable: [x + w * 0.22, x + w * 0.36, ridge - 22],
+      windows: [0.12, 0.43, 0.75].map((fx) => [x + w * fx, eaves + 22, w * 0.12, 54])
+    };
+  })();
+
+  // the house's outline against the sky (roof, gable, chimneys)
+  function houseShape(ctx) {
+    const { x, y, w, h } = GLASS;
+    const { ridge, eaves, chimneys, gable } = OUT;
     ctx.beginPath();
-    ctx.moveTo(x + 10, y + h + 20);
-    ctx.quadraticCurveTo(x + 30, y + 280, x - 10, y + 110);
+    ctx.moveTo(x - 10, y + h + 10);
+    ctx.lineTo(x - 10, eaves - 4);
+    ctx.lineTo(x + w * 0.06, ridge);
+    ctx.lineTo(gable[0] + 6, ridge);
+    ctx.lineTo((gable[0] + gable[1]) / 2, gable[2]);
+    ctx.lineTo(gable[1] - 6, ridge);
+    ctx.lineTo(x + w * 0.96, ridge);
+    ctx.lineTo(x + w + 10, eaves - 4);
+    ctx.lineTo(x + w + 10, y + h + 10);
+    ctx.closePath();
+    chimneys.forEach(([cx, cy, cw, ch]) => ctx.rect(cx - 2, cy - 4, cw + 4, ch));
+  }
+
+  function paintOutside(ctx) {
+    const { x, y, w, h } = GLASS;
+    const { ridge, eaves, chimneys, gable, windows } = OUT;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    // the sky, going gold towards the roofs
+    ctx.fillStyle = lin(ctx, 0, y, 0, ridge + 10, [[0, '#86aee0'], [0.35, '#b6c5e2'], [0.72, '#f3d0a4'], [1, '#ffb25e']]);
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = rad(ctx, SUN[0], SUN[1], 0, 180, [[0, 'rgba(255, 242, 210, 0.95)'], [0.22, 'rgba(255, 206, 132, 0.55)'], [1, 'rgba(255, 180, 100, 0)']]);
+    ctx.fillRect(x, y, w, h);
+    // long thin clouds
+    [[0.25, 0.16, 90], [0.7, 0.1, 70], [0.5, 0.26, 120]].forEach(([fx, fy, len]) => {
+      ctx.fillStyle = 'rgba(255, 226, 196, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(x + w * fx, y + h * fy, len, 4, -0.03, 0, 7);
+      ctx.fill();
+    });
+    // a bare branch reaching in from the top corner
+    rnd = mulberry(12);
+    ctx.strokeStyle = 'rgba(48, 38, 42, 0.8)';
+    branch(ctx, x + w + 6, y + 18, 46, 2.75, 4, 6);
+    branch(ctx, x + w + 6, y + 70, 34, 3.0, 3, 5);
+    rnd = mulberry(21);
+
+    // the roof: grey metal, backlit, its ridge catching the sun
+    houseShape(ctx);
+    ctx.fillStyle = lin(ctx, 0, ridge, 0, eaves, [[0, '#6c6f7d'], [1, '#4d505c']]);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.14)';
+    ctx.lineWidth = 1;
+    for (let sx = x; sx < x + w; sx += 7) {
+      ctx.beginPath();
+      ctx.moveTo(sx, ridge);
+      ctx.lineTo(sx - 3, eaves);
+      ctx.stroke();
+    }
+    line(ctx, [x + w * 0.06, ridge], [x + w * 0.96, ridge], 'rgba(255, 214, 160, 0.9)', 2);
+    // the little gable facing us, white-trimmed
+    const [g0, g1, gt] = gable;
+    fillPoly(ctx, [[g0, eaves], [(g0 + g1) / 2, gt], [g1, eaves]], '#7b7f8c');
+    ctx.strokeStyle = '#d9d2ca';
+    ctx.lineWidth = 2.5;
+    path(ctx, [[g0, eaves], [(g0 + g1) / 2, gt], [g1, eaves]], false);
     ctx.stroke();
+    // chimneys, brick, lit on the edge nearest the sun
+    chimneys.forEach(([cx, cy, cw, ch]) => {
+      ctx.fillStyle = lin(ctx, cx, 0, cx + cw, 0, [[0, '#8a4332'], [1, '#b0573c']]);
+      ctx.fillRect(cx, cy, cw, ch);
+      ctx.fillStyle = '#6b3428';
+      ctx.fillRect(cx - 2, cy - 4, cw + 4, 5);
+      ctx.fillStyle = 'rgba(255, 200, 140, 0.8)';
+      ctx.fillRect(cx + cw - 2, cy, 2, ch * 0.6);
+    });
+    // the brick front, in its own shade
+    ctx.fillStyle = lin(ctx, 0, eaves, 0, y + h, [[0, '#a2503a'], [1, '#7c3a2b']]);
+    ctx.fillRect(x, eaves, w, y + h - eaves);
+    ctx.strokeStyle = 'rgba(60, 24, 16, 0.35)';
+    ctx.lineWidth = 0.8;
+    for (let by = eaves + 4, k = 0; by < y + h; by += 4.5, k++) {
+      ctx.beginPath();
+      ctx.moveTo(x, by);
+      ctx.lineTo(x + w, by);
+      ctx.stroke();
+      for (let bx = x + (k % 2) * 5; bx < x + w; bx += 10) {
+        ctx.beginPath();
+        ctx.moveTo(bx, by - 4.5);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+      }
+    }
+    ctx.fillStyle = '#d6cec5';
+    ctx.fillRect(x, eaves - 1, w, 5);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(x, eaves + 4, w, 5);
+    // its windows, white frames, the sky in the glass
+    windows.forEach(([wx, wy, ww, wh]) => {
+      ctx.fillStyle = '#e2dbd3';
+      ctx.fillRect(wx - 3, wy - 3, ww + 6, wh + 6);
+      ctx.fillStyle = lin(ctx, 0, wy, 0, wy + wh, [[0, '#7f8fb0'], [1, '#48526c']]);
+      ctx.fillRect(wx, wy, ww, wh);
+      ctx.fillStyle = '#e2dbd3';
+      ctx.fillRect(wx + ww / 2 - 1.5, wy, 3, wh);
+      ctx.fillRect(wx, wy + wh * 0.35, ww, 3);
+    });
+    // the warm haze of the low sun over everything outside
+    ctx.fillStyle = 'rgba(255, 190, 130, 0.12)';
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
   }
 
   function paintWindow(ctx) {
@@ -349,523 +556,425 @@
     // the recess: the four sides of the hole in the wall, running into it
     const o = [P(l, t, 0), P(r, t, 0), P(r, b, 0), P(l, b, 0)];
     const i = [P(l, t, inset), P(r, t, inset), P(r, b, inset), P(l, b, inset)];
-    fillPoly(ctx, [o[0], o[1], i[1], i[0]], '#1c130d');   // top reveal (in shadow)
-    fillPoly(ctx, [o[0], i[0], i[3], o[3]], '#3a2a1f');   // left reveal
-    fillPoly(ctx, [i[1], o[1], o[2], i[2]], '#35271c');   // right reveal
-    fillPoly(ctx, [i[3], i[2], o[2], o[3]], '#4a3627');   // bottom reveal
+    fillPoly(ctx, [o[0], o[1], i[1], i[0]], '#46423f');   // top (in shadow)
+    fillPoly(ctx, [o[0], i[0], i[3], o[3]], '#7c766f');   // left (the sun reaches it)
+    fillPoly(ctx, [i[1], o[1], o[2], i[2]], '#56514c');   // right
+    fillPoly(ctx, [i[3], i[2], o[2], o[3]], '#86807a');   // bottom
 
-    // outside: pale winter sky, the sun going down, fields to the horizon (eye level)
-    const { x, y, w, h } = GLASS;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x, y, w, h);
-    ctx.clip();
-    const hz = VP[1];
-    ctx.fillStyle = lin(ctx, 0, y, 0, y + h, [[0, '#8fb2de'], [0.3, '#b9cde6'], [0.62, '#f4d8a2'], [(hz - y) / h - 0.02, '#ffac50'], [(hz - y) / h, '#f08a34'], [(hz - y) / h + 0.04, '#7a4a22'], [1, '#3a2412']]);
-    ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = rad(ctx, SUN[0], SUN[1], 0, 200, [[0, 'rgba(255, 236, 190, 0.9)'], [0.3, 'rgba(255, 190, 110, 0.45)'], [1, 'rgba(255, 170, 90, 0)']]);
-    ctx.fillRect(x, y, w, h);
-    // the far treeline sits right on the horizon
-    ctx.fillStyle = 'rgba(70, 42, 24, 0.9)';
-    ctx.beginPath();
-    ctx.moveTo(x, hz + 4);
-    for (let k = 0; k <= 30; k++) ctx.lineTo(x + (k / 30) * w, hz - R(0, 12) + (k % 3) * 2);
-    ctx.lineTo(x + w, y + h);
-    ctx.lineTo(x, y + h);
-    ctx.closePath();
+    paintOutside(ctx);
+
+    // the frame: white plastic, seen against the light
+    const bar = (x0, y0, x1, y1, col = '#aaa49e') => fillPoly(ctx, quad([[x0, y0, inset], [x1, y0, inset], [x1, y1, inset], [x0, y1, inset]]), col);
+    const y0 = t + WIN.transom + FR;
+    const y1 = b - FR;
+    const rh = (y1 - y0) / 3;
+    const cx0 = l + WIN.side + FR;
+    const cx1 = r - WIN.side - FR;
+    const cw = (cx1 - cx0) / 3;
+    for (let k = 1; k < 3; k++) bar(l, y0 + k * rh - MU / 2, r, y0 + k * rh + MU / 2, '#b3ada7');
+    for (let k = 1; k < 3; k++) bar(cx0 + k * cw - MU / 2, y0, cx0 + k * cw + MU / 2, y1, '#b3ada7');
+    bar(l, t, r, t + FR);
+    bar(l, b - FR, r, b);
+    bar(l, t, l + FR, b);
+    bar(r - FR, t, r, b);
+    bar(l, t + WIN.transom, r, y0);
+    bar(l + WIN.side, t + WIN.transom, cx0, b);
+    bar(cx1, t + WIN.transom, r - WIN.side, b);
+    // the handles on the two sashes that open
+    bar(l + WIN.side - 7, (y0 + y1) / 2 - 12, l + WIN.side - 3, (y0 + y1) / 2 + 14, '#d6d0c9');
+    bar(r - WIN.side + 3, (y0 + y1) / 2 - 12, r - WIN.side + 7, (y0 + y1) / 2 + 14, '#d6d0c9');
+
+    // the sill, white, sticking out towards you, a water bottle on it
+    box(ctx, l - 24, r + 24, b, b + 10, 0, 0.035, { top: '#a39c94', front: '#7a746d' });
+    const bb = P(r - 46, b, 0.02);
+    const bt = P(r - 46, b - 44, 0.02);
+    ctx.fillStyle = 'rgba(190, 205, 215, 0.35)';
+    roundRect(ctx, bb[0] - 9, bt[1], 18, bb[1] - bt[1], 5);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(38, 26, 20, 0.95)';
-    ctx.lineWidth = 24;
-    trunk(ctx);
-    rnd = mulberry(12);
-    ctx.strokeStyle = 'rgba(46, 34, 30, 0.8)';
-    branch(ctx, x + 18, y + 230, 86, -1.0, 8, 6);
-    branch(ctx, x + 6, y + 150, 76, -0.5, 7, 6);
-    branch(ctx, x + w + 40, y + 170, 104, -2.4, 9, 6);
-    branch(ctx, x + w + 30, y + 300, 86, -2.9, 7, 5);
-    ctx.strokeStyle = 'rgba(60, 44, 40, 0.5)';
-    branch(ctx, x + w * 0.6, y + h * 0.58, 64, -1.7, 4, 5);
-    ctx.restore();
-    rnd = mulberry(21);
+    ctx.fillStyle = '#3d5d8a';
+    ctx.fillRect(bb[0] - 5, bt[1] - 6, 10, 7);
+  }
 
-    // the frame and the bars, in shadow (the light is behind them)
-    ctx.fillStyle = '#4a3526';
-    const bar = (a, bb) => fillPoly(ctx, a.concat(bb), '#4a3526');
-    const cw = (r - l) / 3;
-    const top = t + WIN.transom + 10;
-    const rh = (b - top) / 4;
-    [[l - 8, t - 8, r + 8, t + 4], [l - 8, b - 4, r + 8, b + 8], [l - 8, t - 8, l + 4, b + 8], [r - 4, t - 8, r + 8, b + 8], [l, t + WIN.transom, r, top]]
-      .forEach(([x0, y0, x1, y1]) => fillPoly(ctx, quad([[x0, y0, inset], [x1, y0, inset], [x1, y1, inset], [x0, y1, inset]]), '#4a3526'));
-    for (let c = 1; c < 3; c++) fillPoly(ctx, quad([[l + c * cw - 3.5, t, inset], [l + c * cw + 3.5, t, inset], [l + c * cw + 3.5, b, inset], [l + c * cw - 3.5, b, inset]]), '#4a3526');
-    for (let rr = 1; rr < 4; rr++) fillPoly(ctx, quad([[l, top + rr * rh - 3.5, inset], [r, top + rr * rh - 3.5, inset], [r, top + rr * rh + 3.5, inset], [l, top + rr * rh + 3.5, inset]]), '#4a3526');
-    void bar;
+  function paintRadiator(ctx) {
+    const { l, r, t, b, z0, z1 } = RAD;
+    soft(ctx, 16, 'rgba(0,0,0,0.45)', () => { path(ctx, quad([[l, t + 6, 0], [r, t + 6, 0], [r, b + 8, 0], [l, b + 8, 0]])); ctx.fill(); });
+    // pipes down to the floor
+    [l + 12, r - 12].forEach((X) => line(ctx, P(X, b, 0.012), P(X, ROOM.floor, 0.012), '#8e8881', 5));
+    box(ctx, l, r, t, b, z0, z1, { top: '#bcb6af', front: '#a29c95', left: '#8d8780', right: '#8d8780' });
+    const f = face(l, r, t, b, z0, z1, 'front');
+    const n = 14;
+    for (let k = 0; k < n; k++) {
+      const a = f[0][0] + (f[1][0] - f[0][0]) * (k / n);
+      const w = (f[1][0] - f[0][0]) / n;
+      ctx.fillStyle = lin(ctx, a, 0, a + w, 0, [[0, 'rgba(0,0,0,0.28)'], [0.35, 'rgba(255,255,255,0.1)'], [0.7, 'rgba(0,0,0,0.05)'], [1, 'rgba(0,0,0,0.3)']]);
+      ctx.fillRect(a, f[0][1] + 6, w, f[3][1] - f[0][1] - 12);
+    }
+  }
 
-    // the sill sticks out towards you: a thin box, its top in view
-    box(ctx, l - 26, r + 26, b + 4, b + 16, 0, 0.035, { top: '#6a4d38', front: '#3e2c1f' });
-    // a jar on the sill
-    const jb = P(r - 34, b + 4, 0.02);
-    const jt = P(r - 34, b - 40, 0.02);
-    ctx.fillStyle = 'rgba(200, 190, 170, 0.35)';
-    roundRect(ctx, jb[0] - 13, jt[1], 26, jb[1] - jt[1], 7);
-    ctx.fill();
-    ctx.fillStyle = '#6b4c2e';
-    ctx.fillRect(jb[0] - 11, jt[1] - 6, 22, 7);
+  // the blackout curtains: heavy, dark, pulled most of the way
+  function curtainPoly(side) {
+    const { top, z } = CUR;
+    const floor = ROOM.floor + 2;
+    return side === 'l'
+      ? quad([[CUR.lOut, top, z], [CUR.lInTop, top, z], [CUR.lInBot, floor, z + 0.012], [CUR.lOut - 6, floor, z + 0.012]])
+      : quad([[CUR.rInTop, top, z], [CUR.rOut, top, z], [CUR.rOut + 6, floor, z + 0.012], [CUR.rInBot, floor, z + 0.012]]);
+  }
 
-    // sheer curtains, hanging a little way out from the wall
-    [[l - 62, l - 8], [r + 8, r + 62]].forEach(([c0, c1]) => {
-      for (let k = 0; k < 5; k++) {
-        const X0 = c0 + (c1 - c0) * (k / 5);
-        const X1 = c0 + (c1 - c0) * ((k + 1) / 5);
-        const tl = P(X0, t - 36, 0.02);
-        const tr = P(X1, t - 36, 0.02);
-        const br = P(X1, 560, 0.02);
-        const bl = P(X0, 560, 0.02);
-        ctx.fillStyle = lin(ctx, tl[0], 0, tr[0], 0, [[0, 'rgba(90, 64, 44, 0)'], [0.5, `rgba(${118 + k * 6}, ${82 + k * 4}, 58, 0.5)`], [1, 'rgba(90, 64, 44, 0)']]);
-        ctx.beginPath();
-        ctx.moveTo(tl[0], tl[1]);
-        ctx.bezierCurveTo(tl[0] + 6, tl[1] + 150, tl[0] - 4, bl[1] - 120, bl[0], bl[1]);
-        ctx.lineTo(br[0], br[1]);
-        ctx.bezierCurveTo(tr[0] - 4, br[1] - 120, tr[0] + 6, tr[1] + 150, tr[0], tr[1]);
+  function paintCurtains(ctx) {
+    const rod = [P(430, 126, CUR.z), P(1180, 126, CUR.z)];
+    ['l', 'r'].forEach((side) => {
+      const poly = curtainPoly(side);
+      soft(ctx, 26, 'rgba(0,0,0,0.5)', () => { path(ctx, poly.map(([a, b2]) => [a + (side === 'l' ? 10 : -10), b2 + 4])); ctx.fill(); });
+      fillPoly(ctx, poly, '#2a2523');
+      // folds: soft vertical waves across the fabric
+      ctx.save();
+      path(ctx, poly);
+      ctx.clip();
+      const [tl, tr, br, bl] = poly;
+      const folds = 8;
+      for (let k = 0; k < folds; k++) {
+        const u0 = k / folds;
+        const u1 = (k + 1) / folds;
+        const at = (p, q2, u) => [p[0] + (q2[0] - p[0]) * u, p[1] + (q2[1] - p[1]) * u];
+        const a = at(tl, tr, u0);
+        const b2 = at(tl, tr, u1);
+        const c2 = at(bl, br, u1);
+        const d = at(bl, br, u0);
+        const midA = [(a[0] + d[0]) / 2, 0];
+        const midB = [(b2[0] + c2[0]) / 2, 0];
+        const lift = 0.1 + 0.08 * Math.sin(k * 2.3);
+        ctx.fillStyle = lin(ctx, midA[0], 0, midB[0], 0, [[0, 'rgba(0,0,0,0.38)'], [0.45, `rgba(150, 132, 118, ${lift})`], [1, 'rgba(0,0,0,0.3)']]);
+        path(ctx, [a, b2, c2, d]);
         ctx.fill();
       }
+      grain(ctx, 0.12, () => path(ctx, poly));
+      ctx.restore();
+      // the rings along the top
+      for (let k = 0; k <= 8; k++) {
+        const X = side === 'l' ? CUR.lOut + (CUR.lInTop - CUR.lOut) * (k / 8) : CUR.rInTop + (CUR.rOut - CUR.rInTop) * (k / 8);
+        const p = P(X, CUR.top - 2, CUR.z);
+        ctx.strokeStyle = 'rgba(120, 114, 108, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(p[0], p[1], 4, 3, 0, 0, 7);
+        ctx.stroke();
+      }
     });
-    const rodA = P(l - 90, t - 38, 0.02);
-    const rodB = P(r + 90, t - 38, 0.02);
-    ctx.strokeStyle = '#1e140d';
-    ctx.lineWidth = 5;
+    line(ctx, rod[0], rod[1], '#1b1918', 4);
+  }
+
+  // a socket low on the back wall, the fan's cable running out of it
+  function paintSocket(ctx) {
+    const a = P(300, 520, 0);
+    ctx.fillStyle = '#8f8a84';
+    ctx.fillRect(a[0] - 16, a[1] - 9, 32, 18);
+    ctx.fillStyle = '#2a2826';
+    [[-7, 0], [7, 0]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.arc(a[0] + dx, a[1] + dy, 2.4, 0, 7); ctx.fill(); });
+    const end = P(FAN.X - 10, ROOM.floor, FAN.z);
+    ctx.strokeStyle = '#161514';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(rodA[0], rodA[1]);
-    ctx.lineTo(rodB[0], rodB[1]);
+    ctx.moveTo(a[0] + 7, a[1]);
+    ctx.bezierCurveTo(a[0] + 10, a[1] + 90, end[0] - 90, end[1] - 20, end[0], end[1]);
     ctx.stroke();
   }
 
-  // the left wall: little photos in a loose grid, framed friends above, fairy lights
-  function paintPhotoWall(ctx, covers) {
-    const X = ROOM.l;
-    FRIENDS.forEach(([z0, z1, y0, y1], i) => {
-      const f = quad([[X, y0, z0], [X, y0, z1], [X, y1, z1], [X, y1, z0]]);
-      soft(ctx, 10, 'rgba(0,0,0,0.6)', () => { path(ctx, f.map(([a, b]) => [a + 4, b + 6])); ctx.fill(); });
-      fillPoly(ctx, f, '#1c130d');
-      const zi0 = z0 + (z1 - z0) * 0.12;
-      const zi1 = z1 - (z1 - z0) * 0.12;
-      const yi0 = y0 + (y1 - y0) * 0.1;
-      const yi1 = y1 - (y1 - y0) * 0.1;
-      const img = covers[(i + 3) % covers.length];
-      if (img) {
-        ctx.globalAlpha = 0.8;
-        imageQuad(ctx, img, P(X, yi0, zi0), P(X, yi0, zi1), P(X, yi1, zi0));
-        ctx.globalAlpha = 1;
-      }
-    });
-    let k = 0;
-    const cols = 9;
-    const rows = 6;
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        if (rnd() < 0.2) continue;
-        const za = PHOTOS.z0 + (PHOTOS.z1 - PHOTOS.z0) * (col / cols) + R(-0.003, 0.003);
-        const zb = za + (PHOTOS.z1 - PHOTOS.z0) / cols * 0.7;
-        const ya = PHOTOS.t + (PHOTOS.b - PHOTOS.t) * (row / rows) + R(-3, 3);
-        const yb = ya + (PHOTOS.b - PHOTOS.t) / rows * 0.72;
-        const q = quad([[X, ya, za], [X, ya, zb], [X, yb, zb], [X, yb, za]]);
-        fillPoly(ctx, q.map(([a, b]) => [a + 2, b + 3]), 'rgba(0,0,0,0.4)');
-        fillPoly(ctx, q, '#8a7462');
-        const img = covers[k % covers.length];
-        if (img && rnd() < 0.72) {
-          ctx.globalAlpha = 0.82;
-          const inset = 0.12;
-          const z0i = za + (zb - za) * inset;
-          const z1i = zb - (zb - za) * inset;
-          const y0i = ya + (yb - ya) * inset;
-          const y1i = yb - (yb - ya) * inset;
-          imageQuad(ctx, img, P(X, y0i, z0i), P(X, y0i, z1i), P(X, y1i, z0i));
+  // pictures on the back wall, right of the curtains: a painting of flowers by the sea, and two small ones
+  function paintFrames(ctx, covers) {
+    FRAMES.forEach(([x0, x1, y0, y1], i) => {
+      const q = quad([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]]);
+      soft(ctx, 10, 'rgba(0,0,0,0.55)', () => { path(ctx, q.map(([a, b]) => [a + 3, b + 6])); ctx.fill(); });
+      fillPoly(ctx, q, '#141312');
+      const pad = i ? 5 : 7;
+      const [a, b] = [P(x0 + pad, y0 + pad, 0), P(x1 - pad, y1 - pad, 0)];
+      if (i === 0) {
+        // the painting: sky, sea, a bunch of flowers in a vase
+        ctx.fillStyle = lin(ctx, 0, a[1], 0, b[1], [[0, '#8fa6c8'], [0.45, '#c7c9d8'], [0.5, '#3e6b9a'], [1, '#5a86b0']]);
+        ctx.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+        const fx = (a[0] + b[0]) / 2;
+        const fy = a[1] + (b[1] - a[1]) * 0.55;
+        ctx.fillStyle = '#6a4a38';
+        ctx.fillRect(fx - 10, fy + 10, 20, (b[1] - fy) - 14);
+        for (let k = 0; k < 26; k++) {
+          ctx.fillStyle = ['#e8a2a8', '#f2e6d8', '#d9674f', '#f0c05a', '#b98fc8', '#6d8a52'][k % 6];
+          ctx.beginPath();
+          ctx.arc(fx + R(-30, 30), fy + R(-34, 8), R(4, 9), 0, 7);
+          ctx.fill();
+        }
+        grain(ctx, 0.3, () => { ctx.beginPath(); ctx.rect(a[0], a[1], b[0] - a[0], b[1] - a[1]); });
+      } else {
+        const img = covers[(i * 5) % Math.max(1, covers.length)];
+        ctx.fillStyle = '#d8d0c4';
+        ctx.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+        if (img) {
+          ctx.globalAlpha = 0.85;
+          ctx.drawImage(img, a[0] + 3, a[1] + 3, b[0] - a[0] - 6, b[1] - a[1] - 6);
           ctx.globalAlpha = 1;
         }
-        fillPoly(ctx, q, 'rgba(30, 18, 10, 0.25)');
+      }
+    });
+  }
+
+  // the left wall above the bed: pictures, pinned up in a loose grid, fairy lights over them
+  function paintPhotoWall(ctx, covers) {
+    const X = ROOM.l;
+    let k = 0;
+    const cols = 6;
+    const rows = 4;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        if (rnd() < 0.15) continue;
+        const za = PHOTOS.z0 + (PHOTOS.z1 - PHOTOS.z0) * (col / cols) + R(-0.002, 0.002);
+        const zb = za + (PHOTOS.z1 - PHOTOS.z0) / cols * 0.72;
+        const ya = PHOTOS.t + (PHOTOS.b - PHOTOS.t) * (row / rows) + R(-3, 3);
+        const yb = ya + (PHOTOS.b - PHOTOS.t) / rows * 0.78;
+        const q = quad([[X, ya, za], [X, ya, zb], [X, yb, zb], [X, yb, za]]);
+        fillPoly(ctx, q.map(([a, b]) => [a + 2, b + 3]), 'rgba(0,0,0,0.4)');
+        fillPoly(ctx, q, '#b9b2a7');
+        const img = covers[k % Math.max(1, covers.length)];
+        if (img) {
+          ctx.globalAlpha = 0.85;
+          const zi0 = za + (zb - za) * 0.1;
+          const zi1 = zb - (zb - za) * 0.1;
+          const yi0 = ya + (yb - ya) * 0.08;
+          const yi1 = yb - (yb - ya) * 0.24;
+          imageQuad(ctx, img, P(X, yi0, zi0), P(X, yi0, zi1), P(X, yi1, zi0));
+          ctx.globalAlpha = 1;
+        }
+        fillPoly(ctx, q, 'rgba(30, 24, 20, 0.2)');
         k++;
       }
     }
-    ctx.strokeStyle = 'rgba(20, 14, 10, 0.8)';
+    ctx.strokeStyle = 'rgba(20, 16, 14, 0.8)';
     ctx.lineWidth = 1.3;
-    ctx.beginPath();
-    lightString().forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+    path(ctx, lightString(), false);
     ctx.stroke();
     lightBulbs().forEach(([bx, by]) => {
-      ctx.fillStyle = '#b8a888';
+      ctx.fillStyle = '#c4b89c';
       ctx.beginPath();
       ctx.ellipse(bx, by + 4, 3, 4.5, 0, 0, 7);
       ctx.fill();
     });
   }
 
-  // fairy lights sagging along the left wall
+  // fairy lights sagging along the left wall, over the pictures
   function lightString() {
     const pts = [];
     for (let k = 0; k <= 40; k++) {
-      const z = 0.03 + (k / 40) * 0.4;
-      const sag = Math.sin(((k % 20) / 20) * Math.PI) * 26;
-      pts.push(P(ROOM.l, 254 + sag, z));
+      const z = 0.01 + (k / 40) * 0.26;
+      const sag = Math.sin(((k % 13.34) / 13.34) * Math.PI) * 22;
+      pts.push(P(ROOM.l, 312 + sag, z));
     }
     return pts;
   }
   const lightBulbs = () => lightString().filter((_, i) => i % 3 === 1);
 
+  // a black shelf hung on the right wall, papers in it
+  function paintWallShelf(ctx) {
+    const { l, r, t, b, z0, z1 } = SHELF;
+    soft(ctx, 14, 'rgba(0,0,0,0.5)', () => { path(ctx, quad([[r, t + 10, z0], [r, t + 10, z1 + 0.02], [r, b + 24, z1 + 0.02], [r, b + 24, z0]])); ctx.fill(); });
+    box(ctx, l, r, t, b, z0, z1, { bottom: '#111010', left: '#0f0e0e', front: '#1c1a19' });
+    // the papers inside, seen through the open side
+    for (let k = 0; k < 5; k++) {
+      const y = b - 4 - k * 3;
+      fillPoly(ctx, quad([[l + 1, y - 2, z0 + 0.03 + k * 0.004], [l + 1, y - 2, z0 + 0.13 - k * 0.006], [l + 1, y, z0 + 0.13 - k * 0.006], [l + 1, y, z0 + 0.03 + k * 0.004]]), ['#bdb6ad', '#a79f95', '#c9c1b6'][k % 3]);
+    }
+    fillPoly(ctx, quad([[l + 1, t + 12, z0 + 0.16], [l + 1, t + 12, z0 + 0.2], [l + 1, b - 2, z0 + 0.2], [l + 1, b - 2, z0 + 0.16]]), '#3d4c63');
+  }
+
+  // the note taped to the wall under it
+  let noteCanvas = null;
   function paintNote(ctx) {
-    const q = quad([[NOTE.l, NOTE.t, 0], [NOTE.r, NOTE.t, 0], [NOTE.r, NOTE.b, 0], [NOTE.l, NOTE.b, 0]]);
-    soft(ctx, 8, 'rgba(0,0,0,0.6)', () => { path(ctx, q.map(([a, b]) => [a + 3, b + 5])); ctx.fill(); });
-    ctx.save();
-    const cx = (q[0][0] + q[2][0]) / 2;
-    const cy = (q[0][1] + q[2][1]) / 2;
-    ctx.translate(cx, cy);
-    ctx.rotate(0.05);
-    ctx.translate(-cx, -cy);
-    fillPoly(ctx, q, '#b3a38a');
-    ctx.fillStyle = 'rgba(200, 160, 110, 0.7)';
-    ctx.fillRect(cx - 14, q[0][1] - 5, 28, 10);
-    ctx.fillStyle = '#2e2226';
-    ctx.textAlign = 'center';
-    ctx.font = '600 17px Caveat, cursive';
-    ctx.fillText("hi, it's renn", cx, cy - 2);
-    ctx.font = '600 12px Caveat, cursive';
-    ctx.fillText('(come in)', cx, cy + 16);
-    ctx.restore();
+    if (!noteCanvas) {
+      noteCanvas = document.createElement('canvas');
+      noteCanvas.width = 200;
+      noteCanvas.height = 150;
+      const n = noteCanvas.getContext('2d');
+      n.fillStyle = '#cfc8bc';
+      n.fillRect(0, 0, 200, 150);
+      n.fillStyle = 'rgba(210, 180, 130, 0.8)';
+      n.fillRect(80, 0, 40, 12);
+      n.fillStyle = '#2e2828';
+      n.textAlign = 'center';
+      n.font = '600 32px Caveat, cursive';
+      n.fillText("hi, it's renn", 100, 66);
+      n.font = '600 22px Caveat, cursive';
+      n.fillText('(come in)', 100, 100);
+      n.strokeStyle = 'rgba(40, 36, 36, 0.35)';
+      n.lineWidth = 1.2;
+      for (let k = 0; k < 3; k++) {
+        n.beginPath();
+        n.moveTo(24, 118 + k * 9);
+        n.lineTo(24 + 60 + ((k * 47) % 90), 118 + k * 9);
+        n.stroke();
+      }
+    }
+    const X = ROOM.r;
+    const q = quad([[X, NOTE.t, NOTE.z0], [X, NOTE.t, NOTE.z1], [X, NOTE.b, NOTE.z1], [X, NOTE.b, NOTE.z0]]);
+    soft(ctx, 8, 'rgba(0,0,0,0.5)', () => { path(ctx, q.map(([a, b]) => [a - 3, b + 5])); ctx.fill(); });
+    imageQuad(ctx, noteCanvas, q[0], q[1], q[3]);
+    fillPoly(ctx, q, 'rgba(30, 26, 22, 0.18)');
   }
 
-  // a tall bookshelf against the right wall: we see its open side and its near end
-  function paintShelf(ctx) {
-    const { l, r, t, z0, z1 } = SHELF;
+  /* ---------- the wire lamp on the ceiling ---------- */
+  function lampArms() {
+    const { X, z, Y, arm } = LAMPC;
+    return [0, 1, 2, 3, 4].map((k) => {
+      const a = k * (Math.PI * 2 / 5) + 0.35;
+      return { a, end: [X + Math.cos(a) * arm, Y + 8, z + Math.sin(a) * arm / 1000] };
+    });
+  }
+
+  function paintChandelier(ctx) {
+    const { X, z, Y } = LAMPC;
+    const top = P(X, ROOM.ceil, z);
+    const hub = P(X, Y, z);
+    const s = sc(z);
+    ctx.fillStyle = '#141313';
+    ctx.beginPath();
+    ctx.ellipse(top[0], top[1] + 2, 12 * s, 3 * s, 0, 0, 7);
+    ctx.fill();
+    line(ctx, top, hub, '#141313', 2.5 * s);
+    // farthest arms first
+    lampArms().sort((p, q) => p.end[2] - q.end[2]).forEach(({ a, end }) => {
+      const e = P(...end);
+      const es = sc(end[2]);
+      line(ctx, hub, e, '#141313', 2 * es);
+      // the bulb
+      ctx.fillStyle = '#d8d2c8';
+      ctx.beginPath();
+      ctx.ellipse(e[0] + Math.cos(a) * 6 * es, e[1] + 2 * es, 5 * es, 6.5 * es, 0, 0, 7);
+      ctx.fill();
+      // the wire cage: two tilted squares around it
+      ctx.strokeStyle = 'rgba(16, 15, 15, 0.95)';
+      ctx.lineWidth = 1.1 * es;
+      const ang = Math.atan2(Math.sin(a) * 0.35, Math.cos(a));
+      [0, 0.45].forEach((tw) => {
+        ctx.save();
+        ctx.translate(e[0] + Math.cos(a) * 8 * es, e[1] + 2 * es);
+        ctx.rotate(ang + tw);
+        ctx.strokeRect(-15 * es, -11 * es, 30 * es, 22 * es);
+        ctx.restore();
+      });
+    });
+    ctx.fillStyle = '#141313';
+    ctx.beginPath();
+    ctx.arc(hub[0], hub[1], 4 * s, 0, 7);
+    ctx.fill();
+  }
+
+  /* ---------- the floor: a striped rug by the desk, a dark shaggy one in front ---------- */
+  function paintRugs(ctx) {
     const floor = ROOM.floor;
-    soft(ctx, 20, 'rgba(0,0,0,0.6)', () => { path(ctx, quad([[l - 10, t, z0], [l - 10, t, z1 + 0.02], [l - 10, floor, z1 + 0.02], [l - 10, floor, z0]])); ctx.fill(); });
-    // the inside (the back of the shelf is the wall itself)
-    fillPoly(ctx, quad([[l, t, z0], [l, t, z1], [l, floor, z1], [l, floor, z0]]), '#140d08');
-    // shelves, the books standing on them, spines towards the room
-    const song = Void.favorites || [];
-    let si = 0;
-    for (let row = 0; row < SHELF_ROWS.length - 1; row++) {
-      const top = SHELF_ROWS[row] + 12;
-      const bot = SHELF_ROWS[row + 1];
-      let z = z0 + 0.004;
-      const tapes = row === 3;
-      while (z < z1 - 0.01) {
-        const dz = tapes ? 0.0065 : R(0.006, 0.012);
-        const hgt = tapes ? (bot - top) * 0.62 : R((bot - top) * 0.55, (bot - top) * 0.92);
-        const q = quad([[l, bot - hgt, z], [l, bot - hgt, z + dz * 0.92], [l, bot, z + dz * 0.92], [l, bot, z]]);
-        let col;
-        if (tapes) { col = song[si % Math.max(1, song.length)]?.palette?.[3] || '#777'; si++; }
-        else col = ['#4b3a2e', '#5a3e34', '#3e4038', '#624a36', '#3b3440', '#6a5840'][Math.floor(rnd() * 6)];
-        fillPoly(ctx, q, col);
-        if (tapes) {
-          const lbl = quad([[l, bot - hgt * 0.85, z + dz * 0.2], [l, bot - hgt * 0.85, z + dz * 0.72], [l, bot - hgt * 0.15, z + dz * 0.72], [l, bot - hgt * 0.15, z + dz * 0.2]]);
-          fillPoly(ctx, lbl, 'rgba(240, 225, 200, 0.55)');
+    {
+      const { l, r, z0, z1 } = RUG;
+      const outline = quad([[l, floor, z0], [r, floor, z0], [r, floor, z1], [l, floor, z1]]);
+      soft(ctx, 6, 'rgba(0,0,0,0.35)', () => { path(ctx, outline); ctx.fill(); });
+      fillPoly(ctx, outline, '#b5b2ab');
+      ctx.save();
+      path(ctx, outline);
+      ctx.clip();
+      // chevron stripes
+      const n = 18;
+      for (let i = -2; i < n + 2; i += 2) {
+        const pts = [];
+        const back = [];
+        for (let k = 0; k <= 24; k++) {
+          const z = z0 + (z1 - z0) * (k / 24);
+          const zig = Math.abs(((k / 24) * 6) % 2 - 1) * 26;
+          const X = l + (r - l) * (i / n) + zig;
+          pts.push(P(X, floor, z));
+          back.unshift(P(X + (r - l) / n, floor, z));
         }
-        fillPoly(ctx, q, 'rgba(0,0,0,0.28)');
-        z += dz;
+        fillPoly(ctx, pts.concat(back), '#56606f');
       }
+      grain(ctx, 0.3, () => path(ctx, outline));
+      ctx.restore();
     }
-    // the shelf boards (seen edge-on, running away from you)
-    SHELF_ROWS.forEach((y) => fillPoly(ctx, quad([[l, y, z0], [l, y, z1], [l, y + 12, z1], [l, y + 12, z0]]), '#3a281b'));
-    // the near end panel, facing you
-    box(ctx, l, r, t, floor, z1, z1 + 0.012, { front: '#3a2a1e', left: '#2e2117' });
-    // a plant on top, trailing down the side
-    const pot = P(l + 60, t - 4, z0 + 0.1);
-    ctx.fillStyle = '#4a2e20';
-    ctx.fillRect(pot[0] - 20, pot[1] - 34, 40, 34);
-    ctx.strokeStyle = 'rgba(52, 64, 40, 0.9)';
-    ctx.lineWidth = 2;
-    for (let v = 0; v < 6; v++) {
-      const end = P(l, t + 60 + v * 26, z0 + 0.03 + v * 0.03);
-      ctx.beginPath();
-      ctx.moveTo(pot[0], pot[1] - 20);
-      ctx.quadraticCurveTo(pot[0] - 40, pot[1] + 10, end[0], end[1]);
-      ctx.stroke();
-      for (let lf = 0; lf < 5; lf++) {
-        const k2 = lf / 5;
-        ctx.fillStyle = 'rgba(64, 80, 46, 0.9)';
+    {
+      const { l, r, z0, z1 } = SHAG;
+      const pts = [];
+      for (let k = 0; k <= 60; k++) {
+        const u = k / 60;
+        let X; let z;
+        if (u < 0.25) { X = l + (r - l) * (u / 0.25); z = z0; }
+        else if (u < 0.5) { X = r; z = z0 + (z1 - z0) * ((u - 0.25) / 0.25); }
+        else if (u < 0.75) { X = r - (r - l) * ((u - 0.5) / 0.25); z = z1; }
+        else { X = l; z = z1 - (z1 - z0) * ((u - 0.75) / 0.25); }
+        pts.push(P(X + R(-5, 5), floor, z + R(-0.003, 0.003)));
+      }
+      soft(ctx, 12, 'rgba(0,0,0,0.5)', () => { path(ctx, pts); ctx.fill(); });
+      fillPoly(ctx, pts, '#2e2926');
+      ctx.save();
+      path(ctx, pts);
+      ctx.clip();
+      for (let i = 0; i < 1400; i++) {
+        const p = P(R(l, r), floor, R(z0, z1));
+        ctx.strokeStyle = rnd() < 0.5 ? 'rgba(90, 82, 76, 0.35)' : 'rgba(10, 8, 8, 0.4)';
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.ellipse(pot[0] + (end[0] - pot[0]) * k2 + R(-5, 5), pot[1] + (end[1] - pot[1]) * k2, 6, 3.5, R(0, 3), 0, 7);
-        ctx.fill();
+        ctx.moveTo(p[0], p[1]);
+        ctx.lineTo(p[0] + R(-3, 3), p[1] - R(3, 8));
+        ctx.stroke();
       }
+      ctx.restore();
     }
   }
 
-  function paintRug(ctx) {
-    const pts = [];
-    for (let k = 0; k < 48; k++) {
-      const a = (k / 48) * Math.PI * 2;
-      pts.push(P(875 + Math.cos(a) * 330, ROOM.floor, 0.5 + Math.sin(a) * 0.12));
-    }
-    fillPoly(ctx, pts, '#5a3a33');
-    const inner = pts.map(([x, y]) => {
-      const c = P(875, ROOM.floor, 0.5);
-      return [c[0] + (x - c[0]) * 0.86, c[1] + (y - c[1]) * 0.86];
-    });
-    path(ctx, inner);
-    ctx.strokeStyle = 'rgba(210, 170, 140, 0.45)';
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    grain(ctx, 0.25, () => path(ctx, pts));
-  }
-
-  function paintCrate(ctx) {
-    const { l, r, t, z0, z1 } = CRATE;
-    soft(ctx, 14, 'rgba(0,0,0,0.6)', () => { path(ctx, quad([[l - 8, ROOM.floor, z0], [r + 8, ROOM.floor, z0], [r + 8, ROOM.floor, z1 + 0.03], [l - 8, ROOM.floor, z1 + 0.03]])); ctx.fill(); });
-    // records standing in it, sticking out of the top
-    for (let i = 0; i < 6; i++) {
-      const z = z0 + 0.012 + i * 0.013;
-      fillPoly(ctx, quad([[l + 6, t - 40, z], [r - 6, t - 40, z], [r - 6, t, z], [l + 6, t, z]]), ['#2b2230', '#c2415f', '#5a78c8', '#f0b43a', '#3f8f86', '#1e1a24'][i]);
-    }
-    box(ctx, l, r, t, ROOM.floor, z0, z1, { top: '#5a3f2a', front: '#4a3322', left: '#3a281a' });
-    const f = boxFaces(l, r, t, ROOM.floor, z0, z1).find(([n]) => n === 'front')[1];
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-    ctx.lineWidth = 2;
-    for (let k = 1; k < 4; k++) {
-      const a = [f[0][0], f[0][1] + (f[3][1] - f[0][1]) * (k / 4)];
-      const b = [f[1][0], f[1][1] + (f[2][1] - f[1][1]) * (k / 4)];
-      ctx.beginPath();
-      ctx.moveTo(a[0], a[1]);
-      ctx.lineTo(b[0], b[1]);
-      ctx.stroke();
-    }
-  }
-
-  function paintNightstand(ctx) {
-    const { l, r, t, z0, z1 } = NIGHT;
-    soft(ctx, 14, 'rgba(0,0,0,0.6)', () => { path(ctx, quad([[l - 6, ROOM.floor, z0], [r + 10, ROOM.floor, z0], [r + 10, ROOM.floor, z1 + 0.02], [l - 6, ROOM.floor, z1 + 0.02]])); ctx.fill(); });
-    box(ctx, l, r, t, ROOM.floor, z0, z1, { top: '#5a3f2a', front: '#3a281c', right: '#2e2016' });
-    const f = boxFaces(l, r, t, ROOM.floor, z0, z1).find(([n]) => n === 'front')[1];
-    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
-    ctx.lineWidth = 1.5;
-    const d0 = [f[0][0] + 6, f[0][1] + 10];
-    ctx.strokeRect(d0[0], d0[1], f[1][0] - f[0][0] - 12, (f[3][1] - f[0][1]) * 0.35);
-    ctx.fillStyle = '#c9a15a';
-    ctx.fillRect((f[0][0] + f[1][0]) / 2 - 6, d0[1] + (f[3][1] - f[0][1]) * 0.16, 12, 2.5);
-    // the lamp, standing on it
-    const base = P(LAMP.x, t, LAMP.z);
-    const shadeTop = P(LAMP.x, t - 92, LAMP.z);
-    ctx.fillStyle = '#2a1e16';
-    ctx.beginPath();
-    ctx.ellipse(base[0], base[1], 20, 5, 0, 0, 7);
-    ctx.fill();
-    ctx.fillRect(base[0] - 2.5, shadeTop[1] + 40, 5, base[1] - shadeTop[1] - 40);
-    lampShade(ctx, lin(ctx, base[0] - 40, 0, base[0] + 40, 0, [[0, '#6e5438'], [0.5, '#8d6d48'], [1, '#5e4630']]));
-    // the letter, sealed, lying on top
-    const lt = quad([[r - 44, t, 0.035], [r - 14, t, 0.03], [r - 12, t, 0.09], [r - 42, t, 0.095]]);
-    fillPoly(ctx, lt, '#b7a78e');
-    const sc = P(r - 28, t, 0.062);
-    ctx.fillStyle = '#7d1f2c';
-    ctx.beginPath();
-    ctx.arc(sc[0], sc[1], 3.5, 0, 7);
-    ctx.fill();
-  }
-
-  function lampShade(ctx, fill) {
-    const a = P(LAMP.x - 12, NIGHT.t - 92, LAMP.z);
-    const b = P(LAMP.x + 12, NIGHT.t - 92, LAMP.z);
-    const c = P(LAMP.x + 22, NIGHT.t - 58, LAMP.z);
-    const d = P(LAMP.x - 22, NIGHT.t - 58, LAMP.z);
-    path(ctx, [a, b, c, d]);
-    ctx.fillStyle = fill;
-    ctx.fill();
-    return [a, b, c, d];
-  }
-
-  // the bed: a frame, a mattress, the duvet over it all, pillows at the head
-  function bedTop() {
-    return quad([[BED.l, BED.top, BED.fold], [BED.r, BED.top, BED.fold], [BED.r + 10, BED.top, BED.foot], [BED.l - 10, BED.top, BED.foot]]);
-  }
-
-  function paintBed(ctx) {
-    const { l, r, top, mat, base, head, foot, fold } = BED;
-    // its shadow on the floor
-    soft(ctx, 24, 'rgba(0,0,0,0.75)', () => { path(ctx, quad([[l - 20, base, head], [r + 20, base, head], [r + 26, base, foot + 0.05], [l - 26, base, foot + 0.05]])); ctx.fill(); });
-    // the frame, low, dark wood
-    box(ctx, l - 6, r + 6, 604, base, head, foot + 0.01, { top: '#2e1f15', front: '#3a281b' });
-    // the mattress
-    box(ctx, l, r, mat, 604, head, foot, { top: '#9d968d', front: '#7c756d' });
-    // the fitted sheet showing at the head, above the fold
-    fillPoly(ctx, quad([[l, mat, head], [r, mat, head], [r, mat, fold], [l, mat, fold]]), lin(ctx, 0, P(0, mat, head)[1], 0, P(0, mat, fold)[1], [[0, '#8f8880'], [1, '#aba399']]));
-
-    // pillows leaning on the wall
-    [[l + 14, l + 164, 0.012], [r - 164, r - 14, 0.015]].forEach(([x0, x1, z]) => {
-      const tl = P(x0, 500, z);
-      const br = P(x1, mat, z + 0.05);
-      soft(ctx, 10, 'rgba(0,0,0,0.55)', () => { roundRect(ctx, tl[0] + 4, tl[1] + 10, br[0] - tl[0], br[1] - tl[1], 18); ctx.fill(); });
-      roundRect(ctx, tl[0], tl[1], br[0] - tl[0], br[1] - tl[1], 18);
-      ctx.fillStyle = lin(ctx, 0, tl[1], 0, br[1], [[0, '#d4cdc3'], [0.55, '#b8b0a6'], [1, '#8a837b']]);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(70, 64, 60, 0.25)';
-      ctx.beginPath();
-      ctx.ellipse((tl[0] + br[0]) / 2 + 6, (tl[1] + br[1]) / 2 + 2, (br[0] - tl[0]) * 0.28, (br[1] - tl[1]) * 0.22, 0, 0, 7);
-      ctx.fill();
-    });
-
-    // the duvet: over the top from the fold down to the foot, hanging over the end
-    const dTop = bedTop();
-    const dFront = quad([[l - 10, top, foot], [r + 10, top, foot], [r + 10, 612, foot + 0.01], [l - 10, 612, foot + 0.01]]);
-    fillPoly(ctx, dTop, lin(ctx, 0, dTop[0][1], 0, dTop[2][1], [[0, '#8f949b'], [1, '#7b8087']]));
-    fillPoly(ctx, dFront, lin(ctx, 0, dFront[0][1], 0, dFront[2][1], [[0, '#6f747b'], [1, '#4f5358']]));
-    // soft folds on the top, running towards you (towards the vanishing point, like the bed)
-    ctx.save();
-    path(ctx, dTop);
-    ctx.clip();
-    [[760, 0.6], [870, -0.2], [985, 0.35], [1030, -0.5]].forEach(([X, lean]) => {
-      const a = P(X, top, fold + 0.02);
-      const b = P(X + lean * 40, top, foot);
-      ctx.lineCap = 'round';
-      ctx.lineWidth = 26;
-      ctx.strokeStyle = 'rgba(30, 30, 34, 0.22)';
-      ctx.beginPath();
-      ctx.moveTo(a[0] + 8, a[1]);
-      ctx.quadraticCurveTo((a[0] + b[0]) / 2 + lean * 30 + 8, (a[1] + b[1]) / 2, b[0] + 8, b[1]);
-      ctx.stroke();
-      ctx.lineWidth = 12;
-      ctx.strokeStyle = 'rgba(205, 208, 214, 0.18)';
-      ctx.beginPath();
-      ctx.moveTo(a[0] - 6, a[1]);
-      ctx.quadraticCurveTo((a[0] + b[0]) / 2 + lean * 30 - 6, (a[1] + b[1]) / 2, b[0] - 6, b[1]);
-      ctx.stroke();
-    });
-    ctx.restore();
-    // the folded-back edge: a thick soft roll across the bed
-    const f0 = P(l - 6, top - 6, fold - 0.01);
-    const f1 = P(r + 6, top - 6, fold - 0.01);
-    const f2 = P(r + 6, top, fold + 0.03);
-    const f3 = P(l - 6, top, fold + 0.03);
-    ctx.beginPath();
-    ctx.moveTo(f0[0], f0[1]);
-    ctx.quadraticCurveTo((f0[0] + f1[0]) / 2, f0[1] - 4, f1[0], f1[1]);
-    ctx.lineTo(f2[0], f2[1]);
-    ctx.quadraticCurveTo((f2[0] + f3[0]) / 2, f2[1] + 6, f3[0], f3[1]);
-    ctx.closePath();
-    ctx.fillStyle = lin(ctx, 0, f0[1], 0, f3[1], [[0, '#d2cbc1'], [0.6, '#b3aca3'], [1, '#7d7771']]);
-    ctx.fill();
-    crease(ctx, f3, f2, 6, 0.45);
-    // the edge where the top turns down into the foot
-    crease(ctx, dFront[0], dFront[1], 5, 0.3);
-    weave(ctx, dTop);
-    weave(ctx, dFront);
-  }
-
-  let weavePat = null;
-  function weave(ctx, pts) {
-    if (!weavePat) {
-      weavePat = document.createElement('canvas');
-      weavePat.width = weavePat.height = 8;
-      const w = weavePat.getContext('2d');
-      w.fillStyle = '#808080';
-      w.fillRect(0, 0, 8, 8);
-      w.fillStyle = 'rgba(255,255,255,0.35)';
-      for (let i = 0; i < 8; i += 2) w.fillRect(i, 0, 1, 8);
-      w.fillStyle = 'rgba(0,0,0,0.25)';
-      for (let i = 1; i < 8; i += 2) w.fillRect(0, i, 8, 1);
-    }
-    ctx.save();
-    path(ctx, pts);
-    ctx.clip();
-    ctx.globalAlpha = 0.07;
-    ctx.globalCompositeOperation = 'overlay';
-    ctx.fillStyle = ctx.createPattern(weavePat, 'repeat');
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-  }
-
-  // what's on the bed: the laptop (open, facing you), the cards, headphones
-  function laptopQuads() {
-    const { l, r, z0, z1 } = LAPTOP;
-    const y = BED.top - 2;
-    const baseQ = quad([[l, y, z0], [r, y, z0], [r, y, z1], [l, y, z1]]);
-    const lidQ = quad([[l, y - 70, z0 - 0.02], [r, y - 70, z0 - 0.02], [r, y, z0], [l, y, z0]]);
-    const screenQ = quad([[l + 6, y - 64, z0 - 0.017], [r - 6, y - 64, z0 - 0.017], [r - 6, y - 5, z0 - 0.001], [l + 6, y - 5, z0 - 0.001]]);
-    return { baseQ, lidQ, screenQ };
-  }
-
-  function paintOnBed(ctx) {
-    const { baseQ, lidQ, screenQ } = laptopQuads();
-    soft(ctx, 8, 'rgba(0,0,0,0.6)', () => { path(ctx, baseQ.map(([a, b]) => [a + 4, b + 5])); ctx.fill(); });
-    fillPoly(ctx, baseQ, '#6a6c72');
-    fillPoly(ctx, lidQ, '#4d4f56');
-    fillPoly(ctx, screenQ, '#141a26');
-    ctx.fillStyle = 'rgba(150, 180, 230, 0.22)';
-    for (let i = 0; i < 4; i++) {
-      const a = P(LAPTOP.l + 14, BED.top - 56 + i * 12, LAPTOP.z0 - 0.012);
-      ctx.fillRect(a[0], a[1], 26 + (i * 17) % 40, 3);
-    }
-    // cards, fanned, lying flat on the duvet
-    for (let i = 0; i < 5; i++) {
-      const x = CARDS.x + i * 13;
-      const z = CARDS.z + (i - 2) * 0.006;
-      const q = quad([[x, BED.top - 1, z - 0.03], [x + 22, BED.top - 1, z - 0.034], [x + 26, BED.top - 1, z + 0.02], [x + 4, BED.top - 1, z + 0.024]]);
-      fillPoly(ctx, q.map(([a, b]) => [a + 2, b + 2]), 'rgba(0,0,0,0.35)');
-      fillPoly(ctx, q, '#26143a');
-      path(ctx, q);
-      ctx.strokeStyle = '#a88f5a';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-    }
-    // headphones
-    const hp = P(880, BED.top - 2, 0.3);
-    ctx.strokeStyle = '#141216';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.ellipse(hp[0], hp[1], 30, 12, 0.15, Math.PI * 1.05, Math.PI * 1.95);
-    ctx.stroke();
-    ctx.fillStyle = '#141216';
-    ctx.beginPath(); ctx.ellipse(hp[0] - 28, hp[1] + 2, 9, 7, 0.15, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(hp[0] + 28, hp[1] + 6, 9, 7, 0.15, 0, 7); ctx.fill();
-  }
-
-  // the guitar, standing on the floor, leaning back against the end of the shelf
+  // the guitar, standing in the corner, leaning back against the wall
   function guitarOutline(ctx) {
     ctx.beginPath();
     ctx.moveTo(0, -238);
-    ctx.bezierCurveTo(28, -238, 46, -222, 46, -196);
-    ctx.bezierCurveTo(46, -172, 32, -160, 34, -144);
-    ctx.bezierCurveTo(36, -126, 62, -112, 62, -76);
-    ctx.bezierCurveTo(62, -30, 34, -6, 0, -6);
-    ctx.bezierCurveTo(-34, -6, -62, -30, -62, -76);
-    ctx.bezierCurveTo(-62, -112, -36, -126, -34, -144);
-    ctx.bezierCurveTo(-32, -160, -46, -172, -46, -196);
-    ctx.bezierCurveTo(-46, -222, -28, -238, 0, -238);
+    ctx.bezierCurveTo(30, -238, 50, -222, 50, -196);
+    ctx.bezierCurveTo(50, -172, 34, -160, 36, -144);
+    ctx.bezierCurveTo(38, -126, 68, -112, 68, -76);
+    ctx.bezierCurveTo(68, -28, 36, -6, 0, -6);
+    ctx.bezierCurveTo(-36, -6, -68, -28, -68, -76);
+    ctx.bezierCurveTo(-68, -112, -38, -126, -36, -144);
+    ctx.bezierCurveTo(-34, -160, -50, -172, -50, -196);
+    ctx.bezierCurveTo(-50, -222, -30, -238, 0, -238);
     ctx.closePath();
   }
 
-  // a real guitar is ~1 m tall: 190 wall units, scaled by how close it stands
+  // a real guitar is ~1 m tall: 200 wall units, scaled by how close it stands
   function guitarPlace(ctx) {
     const foot = P(GUITAR.X, ROOM.floor, GUITAR.z);
-    const s = (190 / (1 - GUITAR.z)) / 470;
-    ctx.translate(foot[0], foot[1] + 4);
-    ctx.rotate(0.13);
+    const s = (200 / (1 - GUITAR.z)) / 470;
+    ctx.translate(foot[0], foot[1] + 3);
+    ctx.rotate(0.1);
     ctx.scale(s, s);
   }
 
   function paintGuitar(ctx) {
     ctx.save();
     guitarPlace(ctx);
-    soft(ctx, 16, 'rgba(0,0,0,0.6)', () => { ctx.save(); ctx.translate(-20, 4); ctx.scale(1, 0.12); ctx.beginPath(); ctx.ellipse(0, 0, 90, 40, 0, 0, 7); ctx.fill(); ctx.restore(); });
+    soft(ctx, 16, 'rgba(0,0,0,0.6)', () => { ctx.save(); ctx.translate(-10, 4); ctx.scale(1, 0.12); ctx.beginPath(); ctx.ellipse(0, 0, 90, 40, 0, 0, 7); ctx.fill(); ctx.restore(); });
+    soft(ctx, 20, 'rgba(0,0,0,0.45)', () => { ctx.save(); ctx.translate(30, -10); guitarOutline(ctx); ctx.fill(); ctx.restore(); });
     guitarOutline(ctx);
-    ctx.fillStyle = '#2a160a';
+    ctx.fillStyle = '#2a1206';
     ctx.fill();
     ctx.save();
     ctx.translate(0, -122);
     ctx.scale(0.94, 0.965);
     ctx.translate(0, 122);
     guitarOutline(ctx);
-    ctx.fillStyle = rad(ctx, -24, -130, 8, 160, [[0, '#9a6a3c'], [0.6, '#6e4424'], [1, '#3e2210']]);
+    // orange sunburst
+    ctx.fillStyle = rad(ctx, -10, -110, 10, 140, [[0, '#d98a3a'], [0.5, '#b0561f'], [1, '#4a1c08']]);
     ctx.fill();
     ctx.restore();
-    ctx.strokeStyle = '#1a0e06';
+    ctx.strokeStyle = '#1a0a04';
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(0, -140, 23, 0, 7);
+    ctx.arc(0, -140, 24, 0, 7);
     ctx.stroke();
-    ctx.fillStyle = '#0e0703';
+    ctx.fillStyle = '#0e0603';
     ctx.beginPath();
-    ctx.arc(0, -140, 18, 0, 7);
+    ctx.arc(0, -140, 19, 0, 7);
     ctx.fill();
-    ctx.fillStyle = '#1a0e06';
-    roundRect(ctx, -24, -66, 48, 10, 3);
+    ctx.fillStyle = '#1a0a04';
+    roundRect(ctx, -26, -66, 52, 10, 3);
     ctx.fill();
-    ctx.fillStyle = '#23130a';
+    ctx.fillStyle = '#23120a';
     ctx.fillRect(-9, -414, 18, 178);
     ctx.fillStyle = 'rgba(200, 180, 140, 0.4)';
     for (let f = 0; f < 12; f++) ctx.fillRect(-9, -250 - f * 13.5, 18, 1.2);
@@ -881,109 +990,448 @@
     ctx.restore();
   }
 
+  // the standing fan by the curtain: black, round, a little turned
+  function paintFan(ctx) {
+    const { X, z, cy, r } = FAN;
+    const s = sc(z);
+    const [bx, by, brx, bry] = floorDisc(X, ROOM.floor, z, 44);
+    soft(ctx, 10, 'rgba(0,0,0,0.6)', () => { ctx.beginPath(); ctx.ellipse(bx + 6, by + 3, brx * 1.1, bry * 1.3, 0, 0, 7); ctx.fill(); });
+    ctx.fillStyle = lin(ctx, 0, by - bry, 0, by + bry, [[0, '#2a2828'], [1, '#0d0c0c']]);
+    ctx.beginPath();
+    ctx.ellipse(bx, by, brx, bry, 0, 0, 7);
+    ctx.fill();
+    const c = P(X, cy, z);
+    line(ctx, [bx, by], [c[0], c[1] + 30 * s], '#121111', 5 * s);
+    line(ctx, [bx, by - (by - c[1]) * 0.45], [bx + 5 * s, by - (by - c[1]) * 0.45], '#2a2828', 7 * s);
+    // the motor behind, and the cage
+    ctx.fillStyle = '#121111';
+    ctx.beginPath();
+    ctx.ellipse(c[0] - 10 * s, c[1], 18 * s, 20 * s, 0, 0, 7);
+    ctx.fill();
+    const rx = r * s * 0.82;
+    const ry = r * s;
+    ctx.fillStyle = 'rgba(18, 17, 17, 0.55)';
+    [0, 1, 2].forEach((k) => {
+      ctx.save();
+      ctx.translate(c[0], c[1]);
+      ctx.scale(0.82, 1);
+      ctx.rotate(k * 2.09 + 0.4);
+      ctx.beginPath();
+      ctx.ellipse(0, -ry * 0.48, ry * 0.26, ry * 0.46, 0.25, 0, 7);
+      ctx.fill();
+      ctx.restore();
+    });
+    ctx.strokeStyle = 'rgba(14, 13, 13, 0.95)';
+    ctx.lineWidth = 2.4 * s;
+    ctx.beginPath();
+    ctx.ellipse(c[0], c[1], rx, ry, 0, 0, 7);
+    ctx.stroke();
+    ctx.lineWidth = 0.8 * s;
+    [0.35, 0.62, 0.85].forEach((f) => { ctx.beginPath(); ctx.ellipse(c[0], c[1], rx * f, ry * f, 0, 0, 7); ctx.stroke(); });
+    for (let k = 0; k < 28; k++) {
+      const a = (k / 28) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(c[0] + Math.cos(a) * rx * 0.2, c[1] + Math.sin(a) * ry * 0.2);
+      ctx.lineTo(c[0] + Math.cos(a) * rx, c[1] + Math.sin(a) * ry);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#1c1b1b';
+    ctx.beginPath();
+    ctx.ellipse(c[0], c[1], rx * 0.18, ry * 0.18, 0, 0, 7);
+    ctx.fill();
+  }
+
+  /* ---------- the bed, along the left wall, running towards you ---------- */
+  function bedTopQuad() {
+    const { l, r, top, head, foot } = BED;
+    return quad([[l, top, head], [r, top, head], [r, top, foot], [l, top, foot]]);
+  }
+
+  function paintBed(ctx) {
+    const { l, r, top, rail, head, foot } = BED;
+    const floor = ROOM.floor;
+    soft(ctx, 24, 'rgba(0,0,0,0.7)', () => { path(ctx, quad([[l, floor, head], [r + 24, floor, head], [r + 24, floor, foot], [l, floor, foot]])); ctx.fill(); });
+    // the headboard: dark wood, grooved
+    box(ctx, l, r, 540, floor, head - 0.015, head, { top: '#4a3a2e', front: '#34281f', right: '#2a2019' });
+    const hf = face(l, r, 540, floor, head - 0.015, head, 'front');
+    for (let k = 1; k < 9; k++) {
+      const x = hf[0][0] + (hf[1][0] - hf[0][0]) * (k / 9);
+      line(ctx, [x, hf[0][1] + 6], [x, hf[3][1]], 'rgba(0,0,0,0.3)', 1.5);
+    }
+    // the frame and the side rail
+    box(ctx, l, r, rail, floor - 30, head, foot, { right: '#2e231b' });
+    // mattress under a white sheet
+    box(ctx, l, r - 2, top, rail, head, foot, { top: '#b4afa7', right: '#9a948c' });
+    const tq = bedTopQuad();
+    ctx.save();
+    path(ctx, tq);
+    ctx.clip();
+    // creases in the sheet
+    for (let k = 0; k < 26; k++) {
+      const z = R(head + 0.08, foot);
+      const X = R(l + 10, r - 10);
+      const a = P(X, top, z);
+      const b = P(X + R(-60, 60), top, z + R(0.02, 0.06));
+      const m = [(a[0] + b[0]) / 2 + R(-20, 20), (a[1] + b[1]) / 2 + R(-10, 10)];
+      ctx.lineWidth = R(3, 8) * sc(z);
+      ctx.strokeStyle = 'rgba(70, 66, 62, 0.22)';
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      ctx.quadraticCurveTo(m[0], m[1], b[0], b[1]);
+      ctx.stroke();
+      ctx.lineWidth *= 0.5;
+      ctx.strokeStyle = 'rgba(255, 252, 245, 0.16)';
+      ctx.beginPath();
+      ctx.moveTo(a[0] - 4, a[1] - 3);
+      ctx.quadraticCurveTo(m[0] - 4, m[1] - 3, b[0] - 4, b[1] - 3);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // a white pillow, and the plaid one in front of it
+    [[262, 500, head + 0.004, head + 0.05, '#c8c2b9', false], [270, 470, head + 0.03, head + 0.085, '#8e8c88', true]].forEach(([x0, x1, z0, z1, col, plaid]) => {
+      const tl = P(x0, top - 36, z0);
+      const br = P(x1, top + 2, z1);
+      soft(ctx, 10, 'rgba(0,0,0,0.5)', () => { roundRect(ctx, tl[0] + 5, tl[1] + 10, br[0] - tl[0], br[1] - tl[1], 16); ctx.fill(); });
+      roundRect(ctx, tl[0], tl[1], br[0] - tl[0], br[1] - tl[1], 16);
+      ctx.fillStyle = col;
+      ctx.fill();
+      if (plaid) {
+        ctx.save();
+        roundRect(ctx, tl[0], tl[1], br[0] - tl[0], br[1] - tl[1], 16);
+        ctx.clip();
+        for (let x = tl[0]; x < br[0]; x += 16) { ctx.fillStyle = 'rgba(40, 40, 46, 0.45)'; ctx.fillRect(x, tl[1], 5, br[1] - tl[1]); ctx.fillStyle = 'rgba(160, 60, 50, 0.3)'; ctx.fillRect(x + 9, tl[1], 1.5, br[1] - tl[1]); }
+        for (let y = tl[1]; y < br[1]; y += 16) { ctx.fillStyle = 'rgba(40, 40, 46, 0.4)'; ctx.fillRect(tl[0], y, br[0] - tl[0], 5); }
+        ctx.restore();
+      }
+      ctx.fillStyle = lin(ctx, 0, tl[1], 0, br[1], [[0, 'rgba(255,255,255,0.12)'], [0.6, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.3)']]);
+      roundRect(ctx, tl[0], tl[1], br[0] - tl[0], br[1] - tl[1], 16);
+      ctx.fill();
+    });
+
+    // the grey check blanket, kicked down over the end of the bed
+    const blanket = [];
+    for (let k = 0; k <= 16; k++) {
+      const u = k / 16;
+      blanket.push(P(l + (r + 6 - l) * u, top - 6 - Math.sin(u * 9) * 5, 0.42 + Math.sin(u * 7 + 1) * 0.025));
+    }
+    blanket.push(P(r + 8, top - 4, foot), P(l, top - 4, foot));
+    const side = [P(r + 6, top - 4, 0.44), P(r + 8, top, foot), P(r + 8, rail + 26, foot)];
+    for (let k = 10; k >= 0; k--) side.push(P(r + 8, rail + 24 + Math.sin(k * 1.3) * 3, 0.44 + (foot - 0.44) * (k / 10)));
+    [blanket, side].forEach((poly, i) => {
+      fillPoly(ctx, poly, i ? '#3e4045' : '#4e5157');
+      ctx.save();
+      path(ctx, poly);
+      ctx.clip();
+      for (let z = 0.4; z < foot; z += 0.012) line(ctx, P(l - 50, top - 6, z), P(r + 60, top - 6, z), 'rgba(205, 210, 220, 0.2)', 1.2 * sc(z));
+      for (let X = l - 40; X < r + 40; X += 12) line(ctx, P(X, top - 6, 0.4), P(X, top - 6, foot), 'rgba(205, 210, 220, 0.18)', 1.2);
+      ctx.fillStyle = lin(ctx, 0, P(0, top, 0.42)[1], 0, H, [[0, 'rgba(255,255,255,0.06)'], [1, 'rgba(0,0,0,0.35)']]);
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    });
+    crease(ctx, blanket[0], blanket[16], 8, 0.4);
+  }
+
+  // what's on the bed: the laptop (open, facing you), the cards
+  function laptopQuads() {
+    const { l, r, z0, z1 } = LAPTOP;
+    const y = BED.top - 2;
+    const baseQ = quad([[l, y, z0], [r, y, z0], [r, y, z1], [l, y, z1]]);
+    const lidQ = quad([[l, y - 64, z0 - 0.018], [r, y - 64, z0 - 0.018], [r, y, z0], [l, y, z0]]);
+    const screenQ = quad([[l + 5, y - 60, z0 - 0.016], [r - 5, y - 60, z0 - 0.016], [r - 5, y - 5, z0 - 0.001], [l + 5, y - 5, z0 - 0.001]]);
+    return { baseQ, lidQ, screenQ };
+  }
+
+  let screenCanvas = null;
+  function screenImage() {
+    if (screenCanvas) return screenCanvas;
+    screenCanvas = document.createElement('canvas');
+    screenCanvas.width = 160;
+    screenCanvas.height = 100;
+    const s = screenCanvas.getContext('2d');
+    s.fillStyle = lin(s, 0, 0, 160, 100, [[0, '#1c1f3a'], [1, '#2a1830']]);
+    s.fillRect(0, 0, 160, 100);
+    // a show, paused: a pink-haired girl against a blue city sky
+    s.fillStyle = lin(s, 0, 0, 0, 60, [[0, '#6f8fd0'], [1, '#c9b7c8']]);
+    s.fillRect(46, 8, 110, 52);
+    s.fillStyle = '#3d4466';
+    for (let k = 0; k < 9; k++) s.fillRect(50 + k * 12, 36 - (k * 7) % 18, 8, 30);
+    s.fillStyle = '#f07aa0';
+    s.beginPath(); s.arc(130, 44, 13, 0, 7); s.fill();
+    s.fillStyle = '#ff4f7c';
+    s.beginPath(); s.arc(119, 34, 5, 0, 7); s.arc(141, 34, 5, 0, 7); s.fill();
+    s.fillStyle = '#2b2b3b';
+    s.beginPath(); s.arc(96, 38, 9, 0, 7); s.fill();
+    s.fillStyle = 'rgba(255,255,255,0.8)';
+    s.fillRect(6, 10, 34, 4);
+    s.fillRect(6, 18, 26, 3);
+    s.fillStyle = '#f6c6d8';
+    s.fillRect(6, 8, 34, 44);
+    s.fillStyle = 'rgba(255,255,255,0.35)';
+    for (let k = 0; k < 3; k++) s.fillRect(6 + k * 50, 68, 44, 22);
+    s.fillStyle = 'rgba(120, 160, 255, 0.9)';
+    s.fillRect(0, 0, 160, 3);
+    return screenCanvas;
+  }
+
+  function paintOnBed(ctx) {
+    const { baseQ, lidQ, screenQ } = laptopQuads();
+    soft(ctx, 8, 'rgba(0,0,0,0.6)', () => { path(ctx, baseQ.map(([a, b]) => [a + 4, b + 5])); ctx.fill(); });
+    fillPoly(ctx, baseQ, '#3b3c42');
+    ctx.save();
+    path(ctx, baseQ);
+    ctx.clip();
+    for (let k = 1; k < 6; k++) line(ctx, P(LAPTOP.l, BED.top - 2, LAPTOP.z0 + (LAPTOP.z1 - LAPTOP.z0) * k / 8), P(LAPTOP.r, BED.top - 2, LAPTOP.z0 + (LAPTOP.z1 - LAPTOP.z0) * k / 8), 'rgba(0,0,0,0.45)', 1);
+    ctx.restore();
+    fillPoly(ctx, lidQ, '#26272c');
+    imageQuad(ctx, screenImage(), screenQ[0], screenQ[1], screenQ[3]);
+    // cards, fanned, lying flat on the sheet
+    for (let i = 0; i < 5; i++) {
+      const x = CARDS.x + i * 12;
+      const z = CARDS.z + (i - 2) * 0.004;
+      const q = quad([[x, BED.top - 1, z - 0.024], [x + 20, BED.top - 1, z - 0.027], [x + 24, BED.top - 1, z + 0.016], [x + 4, BED.top - 1, z + 0.019]]);
+      fillPoly(ctx, q.map(([a, b]) => [a + 2, b + 2]), 'rgba(0,0,0,0.35)');
+      fillPoly(ctx, q, '#26143a');
+      path(ctx, q);
+      ctx.strokeStyle = '#a88f5a';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+  }
+
+  // the white nightstand beside the bed: the green alarm clock, and the letter
+  function paintNightstand(ctx) {
+    const { l, r, t, z0, z1 } = NIGHT;
+    const floor = ROOM.floor;
+    soft(ctx, 14, 'rgba(0,0,0,0.6)', () => { path(ctx, quad([[l - 6, floor, z0], [r + 10, floor, z0], [r + 10, floor, z1 + 0.02], [l - 6, floor, z1 + 0.02]])); ctx.fill(); });
+    box(ctx, l, r, t, floor, z0, z1, { top: '#a39d94', front: '#7d7770', right: '#6b655f' });
+    const f = face(l, r, t, floor, z0, z1, 'front');
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(f[0][0] + 6, f[0][1] + 8, f[1][0] - f[0][0] - 12, (f[3][1] - f[0][1]) * 0.3);
+    // the letter, sealed
+    const lt = quad([[l + 8, t, z0 + 0.02], [l + 42, t, z0 + 0.016], [l + 44, t, z0 + 0.07], [l + 10, t, z0 + 0.074]]);
+    fillPoly(ctx, lt.map(([a, b]) => [a + 2, b + 2]), 'rgba(0,0,0,0.3)');
+    fillPoly(ctx, lt, '#c9bda6');
+    const seal = P(l + 26, t, z0 + 0.045);
+    ctx.fillStyle = '#7d1f2c';
+    ctx.beginPath();
+    ctx.arc(seal[0], seal[1], 3.5, 0, 7);
+    ctx.fill();
+    // the alarm clock: green, two bells
+    const s = sc(CLOCK.z);
+    const base = P(CLOCK.X, t, CLOCK.z);
+    const cr = CLOCK.r * s;
+    const c = [base[0], base[1] - cr - 6 * s];
+    soft(ctx, 8, 'rgba(0,0,0,0.5)', () => { ctx.beginPath(); ctx.ellipse(base[0] + 4, base[1], cr, 5 * s, 0, 0, 7); ctx.fill(); });
+    ctx.strokeStyle = '#b39a55';
+    ctx.lineWidth = 2 * s;
+    [-0.6, 0.6].forEach((d) => { ctx.beginPath(); ctx.moveTo(c[0] + d * cr, c[1] + cr * 0.7); ctx.lineTo(c[0] + d * cr * 1.25, base[1]); ctx.stroke(); });
+    ctx.beginPath();
+    ctx.arc(c[0], c[1] - cr * 1.05, cr * 0.6, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+    ctx.fillStyle = '#23483a';
+    [-0.55, 0.55].forEach((d) => { ctx.beginPath(); ctx.arc(c[0] + d * cr, c[1] - cr * 0.85, cr * 0.36, Math.PI, 0); ctx.fill(); });
+    ctx.fillStyle = rad(ctx, c[0] - cr * 0.3, c[1] - cr * 0.3, 1, cr * 1.2, [[0, '#3c7a5e'], [1, '#1c3a2e']]);
+    ctx.beginPath();
+    ctx.arc(c[0], c[1], cr, 0, 7);
+    ctx.fill();
+    ctx.fillStyle = '#d8d2c6';
+    ctx.beginPath();
+    ctx.arc(c[0], c[1], cr * 0.78, 0, 7);
+    ctx.fill();
+    ctx.strokeStyle = '#2a2826';
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(c[0] + Math.cos(a) * cr * 0.62, c[1] + Math.sin(a) * cr * 0.62);
+      ctx.lineTo(c[0] + Math.cos(a) * cr * 0.72, c[1] + Math.sin(a) * cr * 0.72);
+      ctx.stroke();
+    }
+    // 5:47
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.moveTo(c[0], c[1]);
+    ctx.lineTo(c[0] + Math.cos(Math.PI * 2 * (5.78 / 12) - Math.PI / 2) * cr * 0.4, c[1] + Math.sin(Math.PI * 2 * (5.78 / 12) - Math.PI / 2) * cr * 0.4);
+    ctx.moveTo(c[0], c[1]);
+    ctx.lineTo(c[0] + Math.cos(Math.PI * 2 * (47 / 60) - Math.PI / 2) * cr * 0.6, c[1] + Math.sin(Math.PI * 2 * (47 / 60) - Math.PI / 2) * cr * 0.6);
+    ctx.stroke();
+  }
+
+  /* ---------- the desk against the right wall ---------- */
+  function tapeSlots() {
+    const song = Void.favorites || [];
+    const out = [];
+    let z = DESK.z0 + 0.03;
+    let i = 0;
+    while (z < DESK.z0 + 0.15) {
+      out.push({ z, dz: 0.0085, col: song[i % Math.max(1, song.length)]?.palette?.[3] || '#777' });
+      z += 0.0095;
+      i++;
+    }
+    return out;
+  }
+
+  function paintDesk(ctx) {
+    const { l, r, t, z0, z1 } = DESK;
+    const floor = ROOM.floor;
+    soft(ctx, 20, 'rgba(0,0,0,0.5)', () => { path(ctx, quad([[l, floor, z0], [r, floor, z0], [r, floor, z1], [l, floor, z1]])); ctx.fill(); });
+    // the hutch: a side panel at the back, two shelves
+    box(ctx, HUTCH.l, r, HUTCH.top, t, z0, z0 + 0.012, { left: '#8a7255', front: '#9c8262', bottom: '#6d5a44' });
+    // tapes standing in the hutch, spines to the room
+    tapeSlots().forEach(({ z, dz, col }) => {
+      const x = HUTCH.l + 4;
+      const q = quad([[x, HUTCH.shelf + 22, z], [x, HUTCH.shelf + 22, z + dz], [x, t, z + dz], [x, t, z]]);
+      fillPoly(ctx, q, col);
+      fillPoly(ctx, quad([[x, HUTCH.shelf + 32, z + dz * 0.2], [x, HUTCH.shelf + 32, z + dz * 0.75], [x, t - 12, z + dz * 0.75], [x, t - 12, z + dz * 0.2]]), 'rgba(240, 225, 200, 0.55)');
+      fillPoly(ctx, q, 'rgba(0,0,0,0.25)');
+    });
+    // mugs on the shelf
+    [[0.26, '#5d8a66'], [0.3, '#d6d0c6'], [0.35, '#5d8a66']].forEach(([z, col]) => {
+      const a = P(HUTCH.l + 20, HUTCH.shelf - 34, z);
+      const b = P(HUTCH.l + 20, HUTCH.shelf, z + 0.02);
+      ctx.fillStyle = col;
+      ctx.fillRect(a[0] - 8 * sc(z), a[1], 18 * sc(z), b[1] - a[1]);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.fillRect(a[0] + 4 * sc(z), a[1], 6 * sc(z), b[1] - a[1]);
+    });
+    [HUTCH.shelf, HUTCH.top].forEach((y) => box(ctx, HUTCH.l, r, y, y + 8, z0, z1, { left: '#8a7255', bottom: '#6d5a44', top: '#a88f6e', front: '#7d6750' }));
+    // chrome legs
+    [[l + 10, z0 + 0.01], [l + 10, z1 - 0.01]].forEach(([X, z]) => {
+      const a = P(X, t + 15, z);
+      const b = P(X, floor, z);
+      const w = 7 * sc(z);
+      ctx.fillStyle = lin(ctx, a[0] - w / 2, 0, a[0] + w / 2, 0, [[0, '#5a5856'], [0.4, '#c8c4be'], [1, '#3a3836']]);
+      ctx.fillRect(a[0] - w / 2, a[1], w, b[1] - a[1]);
+    });
+    // the top: light wood
+    box(ctx, l, r, t, t + 15, z0, z1, { top: '#a88f6e', left: '#7d6750', front: '#7d6750' });
+    // a white desk lamp bending over it
+    const lb = P(DESK.l + 55, t, 0.27);
+    const s = sc(0.27);
+    ctx.fillStyle = '#d0cac2';
+    ctx.beginPath();
+    ctx.ellipse(lb[0], lb[1], 16 * s, 4 * s, 0, 0, 7);
+    ctx.fill();
+    ctx.strokeStyle = '#cfc9c1';
+    ctx.lineWidth = 3.5 * s;
+    ctx.beginPath();
+    ctx.moveTo(lb[0], lb[1]);
+    ctx.quadraticCurveTo(lb[0] - 4 * s, lb[1] - 95 * s, lb[0] - 34 * s, lb[1] - 88 * s);
+    ctx.stroke();
+    fillPoly(ctx, deskLampHead(), '#dcd6ce');
+  }
+  function deskLampHead() {
+    const lb = P(DESK.l + 55, DESK.t, 0.27);
+    const s = sc(0.27);
+    return [[lb[0] - 26 * s, lb[1] - 94 * s], [lb[0] - 44 * s, lb[1] - 86 * s], [lb[0] - 48 * s, lb[1] - 70 * s], [lb[0] - 22 * s, lb[1] - 80 * s]];
+  }
+
+  // the keyboard bench: a black padded seat on crossed legs
+  function paintBench(ctx) {
+    const { l, r, t, z0, z1 } = BENCH;
+    const floor = ROOM.floor;
+    soft(ctx, 12, 'rgba(0,0,0,0.5)', () => { path(ctx, quad([[l, floor, z0], [r, floor, z0], [r, floor, z1], [l, floor, z1]])); ctx.fill(); });
+    [z0 + 0.008, z1 - 0.008].forEach((z) => {
+      const w = 5 * sc(z);
+      line(ctx, P(l + 8, t + 14, z), P(r - 8, floor, z), '#121111', w);
+      line(ctx, P(r - 8, t + 14, z), P(l + 8, floor, z), '#121111', w);
+    });
+    [l + 8, r - 8].forEach((X) => line(ctx, P(X, floor - 3, z0), P(X, floor - 3, z1), '#121111', 5 * sc(z1)));
+    box(ctx, l, r, t, t + 14, z0, z1, { top: '#26242a', front: '#141316', left: '#1a191c' });
+    const tp = face(l, r, t, t + 14, z0, z1, 'top');
+    ctx.fillStyle = lin(ctx, 0, tp[0][1], 0, tp[2][1], [[0, 'rgba(255,255,255,0.08)'], [1, 'rgba(0,0,0,0)']]);
+    path(ctx, tp);
+    ctx.fill();
+  }
+
   /* ==========================================================
      THE LIGHT
      ========================================================== */
-  // the window's lower panes, pushed along the sunlight onto a horizontal plane
+  // the open panes, pushed along the sunlight onto a horizontal plane
   function panesOnPlane(Yp) {
-    return panes().map(([x, y, w, h]) => [onPlane(x, y + h, Yp), onPlane(x + w, y + h, Yp), onPlane(x + w, y, Yp), onPlane(x, y, Yp)].map((p) => P(...p)));
-  }
-  function panesOnFace(zp) {
-    return panes().map(([x, y, w, h]) => [onFace(x, y, zp), onFace(x + w, y, zp), onFace(x + w, y + h, zp), onFace(x, y + h, zp)].map((p) => P(...p)));
+    return openPanes().map(([x, y, w, h]) => [onPlane(x, y + h, Yp), onPlane(x + w, y + h, Yp), onPlane(x + w, y, Yp), onPlane(x, y, Yp)].map((p) => P(...p)));
   }
 
   function paintSun(ctx) {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
-    const { l, r, top, foot } = BED;
+    const floor = ROOM.floor;
+    const q = shellQuads();
 
-    // on the floor in front of the bed…
+    // the window, lying on the floor
     ctx.save();
-    path(ctx, quad([[ROOM.l, ROOM.floor, 0], [ROOM.r, ROOM.floor, 0], [ROOM.r, ROOM.floor, NEAR], [ROOM.l, ROOM.floor, NEAR]]));
+    path(ctx, q.ground);
     ctx.clip();
-    panesOnPlane(ROOM.floor).forEach((q) => soft(ctx, 6, 'rgba(255,0,0,0.66)', () => { path(ctx, q); ctx.fill(); }));
-    ctx.restore();
-    // …the bed is in the way of the floor behind it
-    ctx.globalCompositeOperation = 'source-over';
-    fillPoly(ctx, quad([[l - 10, top, 0], [r + 10, top, 0], [r + 10, top, foot], [l - 10, top, foot]]), '#000');
-    fillPoly(ctx, quad([[l - 10, top, foot], [r + 10, top, foot], [r + 10, ROOM.floor, foot + 0.01], [l - 10, ROOM.floor, foot + 0.01]]), '#000');
-    ctx.globalCompositeOperation = 'lighter';
-    // …on the duvet
-    ctx.save();
-    path(ctx, bedTop());
-    ctx.clip();
-    panesOnPlane(top).forEach((q) => soft(ctx, 5, 'rgba(255,0,0,0.58)', () => { path(ctx, q); ctx.fill(); }));
-    ctx.restore();
-    // …and down the foot of the bed
-    ctx.save();
-    path(ctx, quad([[l - 10, top, foot], [r + 10, top, foot], [r + 10, 612, foot + 0.01], [l - 10, 612, foot + 0.01]]));
-    ctx.clip();
-    panesOnFace(foot).forEach((q) => soft(ctx, 5, 'rgba(255,0,0,0.5)', () => { path(ctx, q); ctx.fill(); }));
+    panesOnPlane(floor).forEach((p) => soft(ctx, 7, 'rgba(255,0,0,0.72)', () => { path(ctx, p); ctx.fill(); }));
     ctx.restore();
 
-    // rim light: the sill, the tops of the pillows, the rolled edge, the guitar, the shelf's end
-    const sill = quad([[WIN.l - 26, WIN.b + 4, 0], [WIN.r + 26, WIN.b + 4, 0], [WIN.r + 26, WIN.b + 4, 0.035], [WIN.l - 26, WIN.b + 4, 0.035]]);
-    soft(ctx, 5, 'rgba(255,0,0,0.9)', () => { path(ctx, sill); ctx.fill(); });
-    [[l + 14, l + 164, 0.012], [r - 164, r - 14, 0.015]].forEach(([x0, x1, z]) => {
-      const a = P(x0 + 10, 502, z);
-      const b = P(x1 - 10, 502, z);
-      soft(ctx, 6, 'rgba(255,0,0,0.9)', () => { ctx.beginPath(); ctx.ellipse((a[0] + b[0]) / 2, a[1] + 3, (b[0] - a[0]) / 2, 5, 0, 0, 7); ctx.fill(); });
+    // the bounce off that patch: onto the ceiling, the wall under the window, the curtains' hems
+    const patch = P(800, floor, 0.3);
+    soft(ctx, 140, 'rgba(255,0,0,0.16)', () => { path(ctx, quad([[ROOM.cl + 60, ROOM.ceil, 0.02], [ROOM.cr - 60, ROOM.ceil, 0.02], [ROOM.cr - 60, ROOM.ceil, 0.25], [ROOM.cl + 60, ROOM.ceil, 0.25]])); ctx.fill(); });
+    soft(ctx, 90, 'rgba(255,0,0,0.16)', () => { ctx.beginPath(); ctx.ellipse(patch[0], P(0, 640, 0)[1], 300, 70, 0, 0, 7); ctx.fill(); });
+
+    // rim light: the sill, the left side of the recess, the curtains' inner edges, the fan, the bench
+    const sill = quad([[WIN.l - 24, WIN.b, 0], [WIN.r + 24, WIN.b, 0], [WIN.r + 24, WIN.b, 0.035], [WIN.l - 24, WIN.b, 0.035]]);
+    soft(ctx, 5, 'rgba(255,0,0,0.85)', () => { path(ctx, sill); ctx.fill(); });
+    soft(ctx, 10, 'rgba(255,0,0,0.5)', () => { path(ctx, [P(WIN.l, WIN.t + 60, 0), P(WIN.l, WIN.t + 60, WIN.inset), P(WIN.l, WIN.b, WIN.inset), P(WIN.l, WIN.b, 0)]); ctx.fill(); });
+    [[CUR.lInTop, CUR.lInBot, -1], [CUR.rInTop, CUR.rInBot, 1]].forEach(([a, b, dir]) => {
+      const p0 = P(a, WIN.t, CUR.z);
+      const p1 = P(b + (a - b) * 0.2, ROOM.floor - 60, CUR.z + 0.01);
+      ctx.lineWidth = 3;
+      soft(ctx, 4, 'rgba(255,0,0,0.85)', () => { ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke(); });
+      // light soaking through the fabric near the gap
+      ctx.lineWidth = 40;
+      soft(ctx, 26, 'rgba(255,0,0,0.3)', () => { ctx.beginPath(); ctx.moveTo(p0[0] + dir * 22, p0[1] + 40); ctx.lineTo(p1[0] + dir * 22, p1[1] - 60); ctx.stroke(); });
     });
-    const fe = [P(l, top - 6, BED.fold - 0.01), P(r, top - 6, BED.fold - 0.01)];
-    ctx.lineWidth = 4;
-    soft(ctx, 5, 'rgba(255,0,0,0.75)', () => { ctx.beginPath(); ctx.moveTo(fe[0][0], fe[0][1]); ctx.lineTo(fe[1][0], fe[1][1]); ctx.stroke(); });
+    const fc = P(FAN.X, FAN.cy, FAN.z);
+    const fs = sc(FAN.z);
+    ctx.lineWidth = 3;
+    soft(ctx, 4, 'rgba(255,0,0,0.6)', () => { ctx.beginPath(); ctx.ellipse(fc[0], fc[1], FAN.r * fs * 0.82, FAN.r * fs, 0, -1.2, 1.0); ctx.stroke(); });
     ctx.save();
     guitarPlace(ctx);
     ctx.lineWidth = 4;
-    soft(ctx, 5, 'rgba(255,0,0,0.8)', () => {
+    soft(ctx, 6, 'rgba(255,0,0,0.35)', () => {
       ctx.beginPath();
-      ctx.moveTo(-40, -200);
-      ctx.bezierCurveTo(-46, -180, -34, -160, -34, -144);
-      ctx.bezierCurveTo(-36, -126, -62, -112, -62, -76);
-      ctx.bezierCurveTo(-62, -50, -52, -30, -40, -20);
+      ctx.moveTo(-44, -200);
+      ctx.bezierCurveTo(-50, -180, -36, -160, -36, -144);
+      ctx.bezierCurveTo(-38, -126, -68, -112, -68, -76);
       ctx.stroke();
     });
     ctx.restore();
-    const se = [P(SHELF.l, SHELF.t, SHELF.z1 + 0.012), P(SHELF.l, ROOM.floor, SHELF.z1 + 0.012)];
+    // the top of the headboard and the pillows
+    const hb = [P(BED.l, 540, BED.head), P(BED.r, 540, BED.head)];
     ctx.lineWidth = 3;
-    soft(ctx, 5, 'rgba(255,0,0,0.4)', () => { ctx.beginPath(); ctx.moveTo(se[0][0], se[0][1]); ctx.lineTo(se[1][0], se[1][1]); ctx.stroke(); });
-    const ns = quad([[NIGHT.l, NIGHT.t, NIGHT.z0], [NIGHT.r, NIGHT.t, NIGHT.z0], [NIGHT.r, NIGHT.t, NIGHT.z1], [NIGHT.l, NIGHT.t, NIGHT.z1]]);
-    soft(ctx, 8, 'rgba(255,0,0,0.35)', () => { path(ctx, ns); ctx.fill(); });
-    // the curtains glow where the sun comes through them
-    [[WIN.l - 60, WIN.l - 12], [WIN.r + 12, WIN.r + 60]].forEach(([a, b]) => soft(ctx, 22, 'rgba(255,0,0,0.45)', () => { path(ctx, quad([[a, WIN.t + 90, 0.02], [b, WIN.t + 90, 0.02], [b, 520, 0.02], [a, 520, 0.02]])); ctx.fill(); }));
-    // the photos on the left wall catch a little of the bounce
-    soft(ctx, 40, 'rgba(255,0,0,0.3)', () => { path(ctx, quad([[ROOM.l, PHOTOS.t + 40, 0.2], [ROOM.l, PHOTOS.t + 40, 0.34], [ROOM.l, PHOTOS.b, 0.34], [ROOM.l, PHOTOS.b, 0.2]])); ctx.fill(); });
+    soft(ctx, 5, 'rgba(255,0,0,0.45)', () => { ctx.beginPath(); ctx.moveTo(hb[0][0], hb[0][1]); ctx.lineTo(hb[1][0], hb[1][1]); ctx.stroke(); });
 
-    // G — the beam: the window pushed out along the light, a shaft coming at you
+    // G — the beam: the open window pushed out along the light, a shaft coming down at you
     const shaft = [];
-    [[WIN.l, WIN.t], [WIN.r, WIN.t], [WIN.r, WIN.b], [WIN.l, WIN.b]].forEach(([x, y]) => {
+    [[CUR.lIn, WIN.t], [CUR.rIn, WIN.t], [CUR.rIn, WIN.b], [CUR.lIn, WIN.b]].forEach(([x, y]) => {
       shaft.push(P(x, y, 0));
-      shaft.push(P(...onFace(x, y, 0.42)));
+      shaft.push(P(...onPlane(x, y, floor)));
     });
     const hull = convexHull(shaft);
-    const g0 = P(830, 380, 0);
-    const g1 = P(...onFace(830, 380, 0.42));
+    const g0 = P(800, 360, 0);
+    const g1 = P(...onPlane(800, 360, floor));
     ctx.save();
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.85;
     const gg = ctx.createLinearGradient(g0[0], g0[1], g1[0], g1[1]);
-    gg.addColorStop(0, 'rgba(0,120,0,1)');
-    gg.addColorStop(1, 'rgba(0,0,0,1)');
+    gg.addColorStop(0, 'rgba(0,130,0,1)');
+    gg.addColorStop(1, 'rgba(0,20,0,1)');
     ctx.filter = 'blur(18px)';
     path(ctx, hull);
     ctx.fillStyle = gg;
     ctx.fill();
     ctx.restore();
-    soft(ctx, 80, 'rgba(0,255,0,0.3)', () => { ctx.beginPath(); ctx.ellipse(SUN[0], SUN[1] - 30, 190, 220, 0, 0, 7); ctx.fill(); });
+    soft(ctx, 80, 'rgba(0,255,0,0.28)', () => { ctx.beginPath(); ctx.ellipse(SUN[0], SUN[1] + 20, 170, 190, 0, 0, 7); ctx.fill(); });
 
-    // B — branch shadows drift through the light on the bed and the floor
+    // B — the branch's shadow drifts through the light on the floor
     ctx.save();
     ctx.filter = 'blur(20px)';
-    path(ctx, bedTop());
     ctx.fillStyle = 'rgb(0,0,255)';
-    ctx.fill();
-    path(ctx, quad([[BED.l - 60, ROOM.floor, BED.foot], [BED.r + 120, ROOM.floor, BED.foot], [BED.r + 160, ROOM.floor, NEAR], [BED.l - 60, ROOM.floor, NEAR]]));
-    ctx.fill();
+    panesOnPlane(floor).forEach((p) => { path(ctx, p); ctx.fill(); });
     ctx.restore();
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -998,38 +1446,54 @@
     return lower.slice(0, -1).concat(upper.slice(0, -1));
   }
 
+  function bulbs() {
+    return lampArms().map(({ a, end }) => {
+      const e = P(...end);
+      const es = sc(end[2]);
+      return [e[0] + Math.cos(a) * 6 * es, e[1] + 2 * es, es];
+    });
+  }
+
   function paintEmit(ctx) {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
-    // R: the lamp's shade, and the pool it throws on the nightstand and the wall
-    soft(ctx, 4, 'rgba(255,0,0,1)', () => { path(ctx, lampShade(ctx, '#000')); ctx.fill(); });
-    const lamp = P(LAMP.x, NIGHT.t - 70, LAMP.z);
-    soft(ctx, 60, 'rgba(255,0,0,0.6)', () => { ctx.beginPath(); ctx.ellipse(lamp[0], lamp[1] + 60, 130, 60, 0, 0, 7); ctx.fill(); });
-    soft(ctx, 90, 'rgba(255,0,0,0.35)', () => { ctx.beginPath(); ctx.ellipse(lamp[0], lamp[1] - 40, 150, 130, 0, 0, 7); ctx.fill(); });
-    // G: the laptop screen, and its blue on the duvet
+    // R: the wire lamp's bulbs, their glow on the ceiling; the desk lamp and its pool
+    bulbs().forEach(([x, y, s]) => soft(ctx, 4, 'rgba(255,0,0,1)', () => { ctx.beginPath(); ctx.ellipse(x, y, 5 * s, 6.5 * s, 0, 0, 7); ctx.fill(); }));
+    const hub = P(LAMPC.X, LAMPC.Y, LAMPC.z);
+    soft(ctx, 50, 'rgba(255,0,0,0.5)', () => { ctx.beginPath(); ctx.ellipse(hub[0], hub[1], 110, 60, 0, 0, 7); ctx.fill(); });
+    soft(ctx, 140, 'rgba(255,0,0,0.3)', () => { ctx.beginPath(); ctx.ellipse(hub[0], hub[1] + 40, 420, 200, 0, 0, 7); ctx.fill(); });
+    soft(ctx, 4, 'rgba(255,0,0,1)', () => { path(ctx, deskLampHead()); ctx.fill(); });
+    const pool = P(DESK.l + 25, DESK.t, 0.27);
+    soft(ctx, 40, 'rgba(255,0,0,0.6)', () => { ctx.beginPath(); ctx.ellipse(pool[0], pool[1], 90, 22, 0, 0, 7); ctx.fill(); });
+    // G: the laptop screen, and its light on the sheet
     const { screenQ } = laptopQuads();
     soft(ctx, 3, 'rgba(0,255,0,1)', () => { path(ctx, screenQ); ctx.fill(); });
-    const sc = [(screenQ[0][0] + screenQ[2][0]) / 2, (screenQ[0][1] + screenQ[2][1]) / 2];
-    soft(ctx, 60, 'rgba(0,255,0,0.45)', () => { ctx.beginPath(); ctx.ellipse(sc[0], sc[1] + 30, 150, 70, 0, 0, 7); ctx.fill(); });
+    const scr = [(screenQ[0][0] + screenQ[2][0]) / 2, (screenQ[0][1] + screenQ[2][1]) / 2];
+    soft(ctx, 60, 'rgba(0,255,0,0.45)', () => { ctx.beginPath(); ctx.ellipse(scr[0], scr[1] + 40, 150, 70, 0, 0, 7); ctx.fill(); });
     // B: fairy lights
     lightBulbs().forEach(([bx, by]) => soft(ctx, 6, 'rgba(0,0,255,1)', () => { ctx.beginPath(); ctx.arc(bx, by + 4, 5, 0, 7); ctx.fill(); }));
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  // R: the glass you see out of · G: sky only · B: the windows across the street
   function paintGlass(ctx) {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#fff';
-    panes().map(toGlass).forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+    const rects = panes().map(toGlass);
+    ctx.fillStyle = '#ffff00';
+    rects.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
     ctx.save();
     ctx.beginPath();
-    ctx.rect(GLASS.x, GLASS.y, GLASS.w, GLASS.h);
+    rects.forEach(([x, y, w, h]) => ctx.rect(x, y, w, h));
     ctx.clip();
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 24;
-    trunk(ctx);
+    houseShape(ctx);
+    ctx.fillStyle = '#ff0000';
+    ctx.fill();
+    ctx.fillStyle = '#ff00ff';
+    OUT.windows.forEach(([wx, wy, ww, wh]) => ctx.fillRect(wx, wy, ww, wh));
     ctx.restore();
+    ['l', 'r'].forEach((side) => fillPoly(ctx, curtainPoly(side), '#000'));
   }
 
   function paintForeground(ctx) {
@@ -1040,49 +1504,47 @@
   // edge that should run into it — if something's off, it shows
   function paintGuides(ctx) {
     ctx.clearRect(0, 0, W, H);
-    const line = (a, b, color, width = 1.4, dash = []) => {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
+    const ln = (a, b, color, width = 1.4, dash = []) => {
       ctx.setLineDash(dash);
-      ctx.beginPath();
-      ctx.moveTo(a[0], a[1]);
-      ctx.lineTo(b[0], b[1]);
-      ctx.stroke();
+      line(ctx, a, b, color, width);
     };
-    const toVP = (X, Y, z = NEAR + 0.2, color = 'rgba(80, 255, 170, 0.9)') => line(P(X, Y, 0), P(X, Y, z), color);
+    const toVP = (X, Y, color = 'rgba(80, 255, 170, 0.9)') => ln(P(X, Y, 0), P(X, Y, NEAR + 0.2), color);
+    const { l, r, floor, knee, ceil, cl, cr } = ROOM;
     // horizon (eye level) and the vanishing point
-    line([0, VP[1]], [W, VP[1]], 'rgba(255, 90, 90, 0.95)', 2, [10, 8]);
+    ln([0, VP[1]], [W, VP[1]], 'rgba(255, 90, 90, 0.95)', 2, [10, 8]);
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255, 90, 90, 1)';
     ctx.beginPath();
     ctx.arc(VP[0], VP[1], 7, 0, 7);
     ctx.fill();
-    // the room's four corner lines
-    [[ROOM.l, ROOM.ceil], [ROOM.r, ROOM.ceil], [ROOM.l, ROOM.floor], [ROOM.r, ROOM.floor]].forEach(([X, Y]) => toVP(X, Y));
+    // the room's edges: floor corners, the knee line, the slopes' tops
+    [[l, floor], [r, floor], [l, knee], [r, knee], [cl, ceil], [cr, ceil]].forEach(([X, Y]) => toVP(X, Y));
     // the back wall
-    const bw = quad([[ROOM.l, ROOM.ceil, 0], [ROOM.r, ROOM.ceil, 0], [ROOM.r, ROOM.floor, 0], [ROOM.l, ROOM.floor, 0]]);
     ctx.setLineDash([]);
-    path(ctx, bw);
+    path(ctx, shellQuads().back);
     ctx.strokeStyle = 'rgba(80, 200, 255, 0.9)';
+    ctx.lineWidth = 1.4;
     ctx.stroke();
-    // a floor grid
-    for (let X = ROOM.l; X <= ROOM.r; X += 115) toVP(X, ROOM.floor, NEAR, 'rgba(80, 200, 255, 0.35)');
-    for (let z = 0.1; z < NEAR; z += 0.1) line(P(ROOM.l, ROOM.floor, z), P(ROOM.r, ROOM.floor, z), 'rgba(80, 200, 255, 0.35)');
-    // the bed, the shelf, the nightstand and the crate: their edges, extended to the vanishing point
-    const edges = (x0, x1, y0, y1, z1) => {
-      [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].forEach(([X, Y]) => line(P(X, Y, z1), VP, 'rgba(255, 220, 90, 0.55)', 1, [4, 5]));
-      boxFaces(x0, x1, y0, y1, 0, z1).forEach(([, pts]) => { ctx.setLineDash([]); path(ctx, pts); ctx.strokeStyle = 'rgba(255, 220, 90, 0.95)'; ctx.lineWidth = 1.6; ctx.stroke(); });
+    // a floor grid, a metre apart
+    for (let X = l; X <= r; X += 200) toVP(X, floor, 'rgba(80, 200, 255, 0.35)');
+    for (let z = 0.1; z < NEAR; z += 0.1) ln(P(l, floor, z), P(r, floor, z), 'rgba(80, 200, 255, 0.35)');
+    // the furniture: box edges, extended to the vanishing point
+    const edges = (x0, x1, y0, y1, z0, z1) => {
+      [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].forEach(([X, Y]) => ln(P(X, Y, z1), VP, 'rgba(255, 220, 90, 0.5)', 1, [4, 5]));
+      boxFaces(x0, x1, y0, y1, z0, z1).forEach(([, pts]) => { ctx.setLineDash([]); path(ctx, pts); ctx.strokeStyle = 'rgba(255, 220, 90, 0.95)'; ctx.lineWidth = 1.6; ctx.stroke(); });
     };
-    edges(BED.l, BED.r, BED.top, ROOM.floor, BED.foot);
-    edges(SHELF.l, SHELF.r, SHELF.t, ROOM.floor, SHELF.z1);
-    edges(NIGHT.l, NIGHT.r, NIGHT.t, ROOM.floor, NIGHT.z1);
-    edges(CRATE.l, CRATE.r, CRATE.t, ROOM.floor, CRATE.z1);
-    // the window and the sunlight's direction through its corners
+    edges(BED.l, BED.r, BED.top, floor, BED.head, 0.6);
+    edges(NIGHT.l, NIGHT.r, NIGHT.t, floor, NIGHT.z0, NIGHT.z1);
+    edges(DESK.l, DESK.r, DESK.t, floor, DESK.z0, DESK.z1);
+    edges(BENCH.l, BENCH.r, BENCH.t, floor, BENCH.z0, BENCH.z1);
+    edges(RAD.l, RAD.r, RAD.t, RAD.b, RAD.z0, RAD.z1);
+    edges(SHELF.l, SHELF.r, SHELF.t, SHELF.b, SHELF.z0, SHELF.z1);
+    // the window, and the sunlight's path through its corners
     ctx.setLineDash([]);
     path(ctx, quad([[WIN.l, WIN.t, 0], [WIN.r, WIN.t, 0], [WIN.r, WIN.b, 0], [WIN.l, WIN.b, 0]]));
     ctx.strokeStyle = 'rgba(255, 150, 60, 0.95)';
     ctx.stroke();
-    [[WIN.l, WIN.b], [WIN.r, WIN.b], [WIN.l, WIN.b - 90], [WIN.r, WIN.b - 90]].forEach(([x, y]) => line(P(x, y, 0), P(...onPlane(x, y, ROOM.floor)), 'rgba(255, 150, 60, 0.8)', 1.2, [6, 4]));
+    [[CUR.lIn, WIN.b], [CUR.rIn, WIN.b], [CUR.lIn, WIN.t], [CUR.rIn, WIN.t]].forEach(([x, y]) => ln(P(x, y, 0), P(...onPlane(x, y, floor)), 'rgba(255, 150, 60, 0.8)', 1.2, [6, 4]));
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.font = '600 15px system-ui, sans-serif';
@@ -1100,23 +1562,25 @@
   }
 
   function hotspots() {
-    const shelfSide = SHELF_ROWS[3];
     const guitarFoot = P(GUITAR.X, ROOM.floor, GUITAR.z);
-    const gH = (190 / (1 - GUITAR.z));
+    const gH = 200 / (1 - GUITAR.z);
     const { baseQ, lidQ } = laptopQuads();
-    const list = [
-      { id: 'wishes', label: 'the window', ...bounds(quad([[WIN.l, WIN.t, 0], [WIN.r, WIN.t, 0], [WIN.r, WIN.b, 0], [WIN.l, WIN.b, 0]])) },
+    const tapes = tapeSlots();
+    const tz0 = tapes[0].z;
+    const tz1 = tapes[tapes.length - 1].z + 0.01;
+    const lampPts = bulbs().map(([x, y]) => [x, y]).concat([P(LAMPC.X, ROOM.ceil, LAMPC.z)]);
+    return [
+      { id: 'wishes', label: 'the window', ...bounds(quad([[CUR.lIn, WIN.t, WIN.inset], [CUR.rIn, WIN.t, WIN.inset], [CUR.rIn, WIN.b, WIN.inset], [CUR.lIn, WIN.b, WIN.inset]])) },
       { id: 'gallery', label: 'pictures i took', ...bounds(quad([[ROOM.l, PHOTOS.t, PHOTOS.z0], [ROOM.l, PHOTOS.t, PHOTOS.z1], [ROOM.l, PHOTOS.b, PHOTOS.z1], [ROOM.l, PHOTOS.b, PHOTOS.z0]])) },
-      { id: 'favoomfs', label: 'my friends', ...bounds(quad([[ROOM.l, 150, 0.1], [ROOM.l, 150, 0.34], [ROOM.l, 250, 0.34], [ROOM.l, 250, 0.1]])) },
-      { id: 'about', label: 'a note on the wall', ...bounds(quad([[NOTE.l, NOTE.t, 0], [NOTE.r, NOTE.t, 0], [NOTE.r, NOTE.b, 0], [NOTE.l, NOTE.b, 0]]), 12) },
-      { id: 'interests', label: 'the tapes', ...bounds(quad([[SHELF.l, shelfSide, SHELF.z0], [SHELF.l, shelfSide, SHELF.z1], [SHELF.l, SHELF_ROWS[4], SHELF.z1], [SHELF.l, SHELF_ROWS[4], SHELF.z0]])) },
-      { id: 'guitar', label: 'my guitar', x: guitarFoot[0] - 26, y: guitarFoot[1] - gH - 6, w: 80, h: gH + 10 },
+      { id: 'favoomfs', label: 'my friends', ...bounds(FRAMES.flatMap(([x0, x1, y0, y1]) => quad([[x0, y0, 0], [x1, y1, 0]]))) },
+      { id: 'about', label: 'a note on the wall', ...bounds(quad([[ROOM.r, NOTE.t, NOTE.z0], [ROOM.r, NOTE.b, NOTE.z1]]), 12) },
+      { id: 'interests', label: 'the tapes', ...bounds(quad([[HUTCH.l, HUTCH.shelf + 20, tz0], [HUTCH.l, DESK.t, tz1]]), 8) },
+      { id: 'guitar', label: 'my guitar', x: guitarFoot[0] - 40, y: guitarFoot[1] - gH, w: 96, h: gH + 6 },
       { id: 'games', label: 'my laptop', ...bounds(baseQ.concat(lidQ), 10) },
-      { id: 'send', label: 'a letter for you', ...bounds(quad([[NIGHT.r - 48, NIGHT.t, 0.03], [NIGHT.r - 8, NIGHT.t, 0.03], [NIGHT.r - 8, NIGHT.t, 0.1], [NIGHT.r - 48, NIGHT.t, 0.1]]), 12) },
-      { id: 'lamp', label: 'the lamp', ...bounds([P(LAMP.x - 24, NIGHT.t - 92, LAMP.z), P(LAMP.x + 24, NIGHT.t, LAMP.z)], 8), action: 'lamp' },
-      { id: 'oracle', label: 'the cards on my bed', ...bounds(quad([[CARDS.x - 4, BED.top, CARDS.z - 0.04], [CARDS.x + 80, BED.top, CARDS.z - 0.04], [CARDS.x + 80, BED.top, CARDS.z + 0.04], [CARDS.x - 4, BED.top, CARDS.z + 0.04]]), 12) }
+      { id: 'send', label: 'a letter for you', ...bounds(quad([[NIGHT.l + 8, NIGHT.t, NIGHT.z0 + 0.016], [NIGHT.l + 44, NIGHT.t, NIGHT.z0 + 0.074]]), 14) },
+      { id: 'lamp', label: 'the lamp', ...bounds(lampPts, 18), action: 'lamp' },
+      { id: 'oracle', label: 'the cards on my bed', ...bounds(quad([[CARDS.x - 4, BED.top, CARDS.z - 0.03], [CARDS.x + 76, BED.top, CARDS.z + 0.03]]), 12) }
     ];
-    return list;
   }
 
   /* ==========================================================
@@ -1125,6 +1589,7 @@
   async function paint({ scale = 1.5 } = {}) {
     S = scale;
     try { await Promise.all([document.fonts.load('600 20px Caveat'), document.fonts.load('italic 300 30px Fraunces')]); } catch { /* fine */ }
+    noteCanvas = null;
     const coverNames = ['veil', 'deep-love', 'memory', 'anthems', 'march-5', 'sun-and-moon', 'treehouse', 'milk', 'county', 'harvest', 'boy', 'odoriko', 'time', 'september'];
     const covers = (await Promise.all(coverNames.map((n) => loadImg(`assets/covers/${n}.jpg`)))).filter(Boolean);
 

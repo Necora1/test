@@ -3,8 +3,11 @@
 renn's website: one room, one afternoon, rewound to 0:00:00 and played back.
 
 It opens like a tape. The counter spins back from somewhere far to
-**0:00:00**, the title plays, and you're in renn's room at 5:47 pm, facing a
-window with the sun going down behind bare trees. There is no menu: the
+**0:00:00**, the title plays, and you're in renn's room at 5:47 pm: the
+real attic room, remembered a little softer. The slatted ceiling slopes
+down on both sides, the blackout curtains are half drawn, and the sun is
+going down behind the brick house across the street. A window-shaped
+patch of light lies on the floor. There is no menu: the
 things in the room are the way around. Click the guitar and the camera drifts
 to it while the light changes, and the guitar "track" surfaces over it. Every
 room is a track on the tape (side a, track 01…), and the counter in the corner
@@ -74,10 +77,12 @@ server/
 ## The room
 
 - **Where things go:** the window → out into the night sea, to make a wish ·
-  the photo wall → pictures · the framed photos → friends · the note by the
-  shelf → about · the tapes on the shelf → songs · the guitar → guitar · the
-  laptop on the bed → games (at night) · the letter on the nightstand → write
-  to me (lamp on) · the cards on the bed → fortune (3am) · the lamp → on/off.
+  the pictures over the bed → pictures · the frames by the corner → friends ·
+  the note under the black shelf → about · the tapes on the desk → songs ·
+  the guitar in the corner → guitar · the laptop on the bed → games (at
+  night) · the letter by the alarm clock → write to me (lamp on) · the cards
+  on the bed → fortune (3am) · the wire lamp on the ceiling → on/off. At
+  night the windows across the street light up.
   The light and caption of each track are `PRESETS` in
   `js/memory/engine.js`; the camera aims at wherever the thing ends up in
   the painting.
