@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>zeroed my world</title>
-  <meta name="description" content="renn's room, one afternoon, rewound to 0:00:00 and played back.">
+  <meta name="description" content="knock on renn's door. inside, the world is rewound to 0:00:00 and it's always 5:47 pm.">
   <meta name="theme-color" content="#1a110b">
   <meta property="og:title" content="zeroed my world">
-  <meta property="og:description" content="one room, one afternoon, rewound to 0:00:00.">
+  <meta property="og:description" content="knock on the door. inside, the world is back to 0:00:00.">
   <meta property="og:type" content="website">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
@@ -16,8 +16,9 @@
   <link rel="stylesheet" href="css/dream.css">
   <link rel="stylesheet" href="css/rooms.css">
   <link rel="stylesheet" href="css/memory.css">
+  <link rel="stylesheet" href="css/door.css">
 
-  <script>document.documentElement.classList.add('js');</script>
+  <script>document.documentElement.classList.add('js');try{if(!sessionStorage.getItem('zeroed_inside')&&!(location.hash&&location.hash!=='#home')&&!/[?&]nodoor\b/.test(location.search))document.documentElement.classList.add('at-door')}catch(e){}</script>
 </head>
 <body class="is-asleep" data-view="home">
   <canvas id="memory" class="memory-canvas" aria-hidden="true"></canvas>
@@ -53,7 +54,7 @@
     <div class="title-card" id="titleCard">
       <p class="rewind" aria-hidden="true"><span class="rw-sign">&#9664;&#9664;</span> <span id="rewindCount">4:17:32</span></p>
       <h1 class="dream-title"><span class="t-name">zeroed</span> <span class="t-rest">my world</span></h1>
-      <p class="dream-sub">one room, one afternoon, rewound to 0:00:00</p>
+      <p class="dream-sub">close the door, and the world goes back to 0:00:00</p>
     </div>
 
     <nav class="hotspots" id="hotspots" aria-label="Things in my room"></nav>
@@ -375,6 +376,7 @@
         <dt><kbd>M</kbd></dt><dd>mute the room's own sounds</dd>
         <dt><kbd>Esc</kbd></dt><dd>back to the sky</dd>
         <dt>type <b>again</b></dt><dd>rewind the whole thing to zero</dd>
+        <dt>type <b>leave</b></dt><dd>step back out into the hall</dd>
         <dt>type <b>wish</b></dt><dd>the wish jar</dd>
         <dt>the window</dt><dd>go out of it at night; catch a shooting star</dd>
         <dt>the lamp</dt><dd>click it</dd>
@@ -403,7 +405,15 @@
 
   <p class="dream-toast" id="dreamToast" role="status" aria-live="polite" hidden></p>
 
-  <div class="eyelids" aria-hidden="true"><i></i><i></i></div>
+  <!-- ======================= THE DOOR ======================= -->
+  <div class="door-scene" id="doorScene" role="dialog" aria-label="Outside renn's door">
+    <canvas class="door-hall" aria-hidden="true"></canvas>
+    <canvas class="door-spill" aria-hidden="true"></canvas>
+    <button type="button" class="door-leaf" id="doorLeaf" aria-label="Knock on the door, and come in"><canvas aria-hidden="true"></canvas></button>
+    <p class="door-outside" aria-hidden="true"><span>outside</span> <b id="doorClock">0:00:00</b></p>
+    <p class="door-hint">knock to come in <span>(or press enter)</span></p>
+    <p class="door-reply" aria-live="polite">come in.</p>
+  </div>
 
   <!-- the basics: settings, the message relay, spotify, pinterest, song search, the letter and the sketchbook -->
   <script src="js/config.js" defer></script>
@@ -437,6 +447,7 @@
   <script src="js/games/memory.js" defer></script>
   <script src="js/games/quiz.js" defer></script>
   <script src="js/games/lanterns.js" defer></script>
+  <script src="js/door.js" defer></script>
   <script src="js/extras.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

@@ -1,7 +1,8 @@
 /* ==========================================================
    scene.js — home is renn's room (memory/engine.js paints it)
-   · it opens like a tape: the counter rewinds from somewhere far
-     to 0:00:00, then the title plays, then the room
+   · it opens like a tape: you come in through the door (door.js),
+     the counter rewinds from the real time outside to 0:00:00,
+     then the title plays, then the room
    · the counter in the corner then runs for as long as you stay
    · every room is a track on the tape (side a, track 01…)
    · the things in the room are the way around: an invisible
@@ -157,7 +158,7 @@
   }
 
   function tickCounter() {
-    if (rewinding) return;
+    if (rewinding || !Void.dream.door.inside) return;
     const corner = $('#tapeCounter');
     if (corner) corner.textContent = hms((performance.now() - playingFrom) / 1000);
   }
@@ -182,8 +183,9 @@
       if (!finePointer && hint) hint.textContent = 'drag sideways to look around. tap on things.';
       wirePan();
       Void.dream.onFrame(frame);
-      // once the eyes are open, the tape winds back to zero and plays
-      setTimeout(() => rewind({ ms: 2800 }), Void.motion.reduced ? 0 : 1300);
+      // once you're through the door, the outside world's clock winds back to zero, and the tape plays
+      Void.dream.door.entered.then(({ from }) => setTimeout(() => rewind({ from, ms: 2800 }), Void.motion.reduced ? 0 : 300));
+      Void.on('door:again', ({ from }) => setTimeout(() => rewind({ from, ms: 2800 }), 300));
       setInterval(tickCounter, 500);
 
       Void.on('view', ({ id, prev }) => {

@@ -105,7 +105,8 @@
   let typed = '';
   const WORDS = {
     wish: () => { location.hash = 'wishes'; },
-    again: collapse
+    again: collapse,
+    leave: () => Void.dream.door.leave()
   };
 
   // "again": the whole room is wound back to zero, and plays again

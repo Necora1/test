@@ -105,6 +105,76 @@
     out(g, 0.3);
   }
 
+  // a short burst of noise through a filter: knuckles on wood, a latch
+  function noiseHit({ vol = 0.5, dur = 0.12, freq = 900, type = 'lowpass', q = 1, when = 0, wet = 0.25 } = {}) {
+    const c = ensure();
+    if (!c || muted) return;
+    const t = c.currentTime + when;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const f = c.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const g = c.createGain();
+    g.gain.value = vol;
+    src.connect(f);
+    f.connect(g);
+    src.start(t);
+    out(g, wet);
+  }
+
+  // a knock on a door: the knuckle, and the hollow of the door behind it
+  function knock({ when = 0, vol = 0.7 } = {}) {
+    const c = ensure();
+    if (!c || muted) return;
+    noiseHit({ vol, dur: 0.07, freq: 700, q: 2.5, type: 'bandpass', when });
+    const t = c.currentTime + when;
+    const o = c.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(80, t + 0.12);
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol * 0.8, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g);
+    o.start(t);
+    o.stop(t + 0.2);
+    out(g, 0.35);
+  }
+
+  // the room's air coming out through the open door: a soft swell of noise
+  function swell({ dur = 2.4, vol = 0.12 } = {}) {
+    const c = ensure();
+    if (!c || muted) return;
+    const t = c.currentTime;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const f = c.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(200, t);
+    f.frequency.exponentialRampToValueAtTime(1400, t + dur * 0.5);
+    f.frequency.exponentialRampToValueAtTime(300, t + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.45);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f);
+    f.connect(g);
+    src.start(t);
+    out(g, 0.5);
+  }
+
   // Karplus–Strong: a burst of noise going round a short delay line,
   // averaged a little each time, which is what a string does
   function stringBuffer(freq, bright) {
@@ -159,6 +229,9 @@
     step,
     chime,
     thud,
+    knock,
+    latch: () => noiseHit({ vol: 0.35, dur: 0.03, freq: 2600, type: 'highpass', wet: 0.1 }),
+    swell,
     pluck,
     wake: ensure,
     // how big the room sounds (0 dry … 1 cathedral)

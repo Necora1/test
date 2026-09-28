@@ -2,8 +2,14 @@
 
 renn's website: one room, one afternoon, rewound to 0:00:00 and played back.
 
-It opens like a tape. The counter spins back from somewhere far to
-**0:00:00**, the title plays, and you're in renn's room at 5:47 pm: the
+It starts outside renn's door, at night. The door has a brass **0** on it
+and a note taped under it ("~~the void~~ zeroed my world · knock first"),
+warm light leaks round its edges, and in the corner the real time runs:
+the outside world's clock. Knock (click the door, or Enter): after a
+moment someone says "come in", the door swings open, the sunset spills out
+over the hallway floor and you walk through. Closing the door behind you
+zeroes the world: the clock rewinds from the real time to **0:00:00**, the
+title plays, and you're in renn's room at 5:47 pm: the
 real attic room, remembered a little softer. The slatted ceiling slopes
 down on both sides, the blackout curtains are half drawn, and the sun is
 going down behind the brick house across the street. A window-shaped
@@ -38,6 +44,7 @@ css/
   dream.css           the basics: tokens, fonts, rooms, letter, tapes, walkman
   rooms.css           games, guitar, cards, wishes, lucid, "again"
   memory.css          the room as home: hotspots, captions, title, camera panel
+  door.css            the hallway and the door
   panel.css           renn's door
 js/
   config.js           ← settings you'll actually edit (see below)
@@ -51,6 +58,7 @@ js/
   memory/paint.js     the room, painted in code, in layers
   memory/engine.js    lights it on the GPU, the film look, the camera's travels
   memory/camera.js    the camera panel (looks, effects, time of day, photos)
+  door.js             outside renn's door: the hallway, the knock, the way in
   scene.js            the room's hotspots, the tape intro, the counter, captions
   views.js            the tracks: the camera travels, then the room surfaces
   palette.js          which song each track is tuned to; colours that glide
@@ -105,9 +113,13 @@ server/
   800t, black & white, clean — and a slider for every effect, the time of day,
   "let time pass" (a whole day in four minutes), birds, resolution, and "take
   a photo" to save the frame as a PNG. Remembered per browser (`dream_camera`).
+- **The door:** `js/door.js` paints the hallway and the door in code and
+  opens it. Type `leave` in the room to step back out into the hall (and
+  knock again). Links straight to a room (`#guitar`…), coming back in the
+  same tab, or `?nodoor` skip the door.
 - **Keys:** `?` lists them. `1`–`9` go to a track, `0` steps back, `L` lucid
   (the room folds into a kaleidoscope), `R` rain on the window, `M` mute,
-  `C` the camera. Type `again` to rewind the whole thing to zero, or `wish`.
+  `C` the camera. Type `again` to rewind the whole thing to zero, `leave` to go back out, or `wish`.
   Stay still for a minute and the memory fades.
 
 ## Editing

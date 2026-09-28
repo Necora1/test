@@ -16,6 +16,7 @@
   // the room, and everything in it
   Void.dream.sky.init();
   Void.dream.life.init();
+  Void.dream.door.init();
   Void.dream.scene.init();
   Void.dream.tapes.init();
   Void.dream.pictures.init();
