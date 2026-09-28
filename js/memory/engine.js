@@ -41,16 +41,16 @@
     favoomfs: { x: 220, y: 300, zoom: 2.4, tod: 0.25, lamp: 0, screen: 0.15, lights: 0.7, dof: 0.7, dim: 0.3, caption: 'the people who stayed' },
     about: { x: 1088, y: 342, zoom: 2.6, tod: 0.05, lamp: 0, screen: 0.15, lights: 0.35, dof: 0.75, dim: 0.25, caption: 'the note i left for whoever comes in' },
     interests: { x: 1350, y: 500, zoom: 2.2, tod: 0.18, lamp: 0.2, screen: 0.15, lights: 0.5, dof: 0.7, dim: 0.32, caption: 'every tape i wore out' },
-    guitar: { x: 1110, y: 620, zoom: 1.9, tod: 0.08, lamp: 0, screen: 0.15, lights: 0.4, dof: 0.6, dim: 0.28, caption: 'it is always a little out of tune' },
-    games: { x: 430, y: 750, zoom: 2.4, tod: 0.8, lamp: 0, screen: 1.5, lights: 0.7, dof: 0.8, dim: 0.32, caption: 'the laptop, way past midnight' },
+    guitar: { x: 1290, y: 610, zoom: 2.3, tod: 0.08, lamp: 0, screen: 0.15, lights: 0.4, dof: 0.6, dim: 0.28, caption: 'it is always a little out of tune' },
+    games: { x: 800, y: 860, zoom: 2.4, tod: 0.8, lamp: 0, screen: 1.5, lights: 0.7, dof: 0.8, dim: 0.32, caption: 'the laptop, way past midnight' },
     send: { x: 640, y: 590, zoom: 2.6, tod: 0.88, lamp: 1, screen: 0.3, lights: 0.9, dof: 0.8, dim: 0.32, caption: 'writing things i never send' },
-    oracle: { x: 822, y: 850, zoom: 2.4, tod: 1, lamp: 0.45, screen: 0.2, lights: 1.3, dof: 0.8, dim: 0.32, caption: 'cards on the bed at 3am' }
+    oracle: { x: 1120, y: 840, zoom: 2.4, tod: 1, lamp: 0.45, screen: 0.2, lights: 1.3, dof: 0.8, dim: 0.32, caption: 'cards on the bed at 3am' }
   };
 
 
   /* ---------- the camera's settings (the settings panel changes these) ---------- */
   const LOOKS = {
-    candy: { grade: 1, exposure: -0.2, hdr: 0.85, bloom: 0.85, rays: 0.7, flare: 0.8, anamorphic: 0.4, dirt: 0.5, dust: 1.4, grain: 0.45, ca: 0.6, dreamy: 0.35, vignette: 0.8, leaks: 0.7, adapt: 1 },
+    candy: { grade: 1, exposure: -0.2, hdr: 0.85, bloom: 0.85, rays: 0.7, flare: 0.8, anamorphic: 0.4, dirt: 0.5, dust: 1.4, grain: 0.45, ca: 0.5, dreamy: 0.12, vignette: 0.8, leaks: 0.7, adapt: 1 },
     memory: { grade: 0, exposure: 0, hdr: 0.3, bloom: 1, rays: 0.8, flare: 1, anamorphic: 0.15, dirt: 0.35, dust: 1, grain: 1, ca: 1, dreamy: 1, vignette: 1, leaks: 1, adapt: 0.6 },
     super8: { grade: 2, exposure: 0.05, hdr: 0.2, bloom: 1.1, rays: 0.7, flare: 0.9, anamorphic: 0, dirt: 0.2, dust: 1, grain: 2, ca: 1.3, dreamy: 1.2, vignette: 1.5, leaks: 1.4, adapt: 0.3 },
     vhs: { grade: 3, exposure: 0, hdr: 0, bloom: 0.8, rays: 0.5, flare: 0.6, anamorphic: 0, dirt: 0, dust: 0.8, grain: 0.8, ca: 2, dreamy: 0.5, vignette: 0.9, leaks: 0.3, adapt: 0.4 },
@@ -58,7 +58,7 @@
     mono: { grade: 5, exposure: 0, hdr: 0.8, bloom: 0.9, rays: 1, flare: 0.8, anamorphic: 0.1, dirt: 0.5, dust: 1.2, grain: 1.4, ca: 0, dreamy: 0.6, vignette: 1.2, leaks: 0, adapt: 0.7 },
     clean: { grade: 0, exposure: 0, hdr: 0.2, bloom: 0.6, rays: 0.5, flare: 0.5, anamorphic: 0, dirt: 0, dust: 0.6, grain: 0.2, ca: 0, dreamy: 0, vignette: 0.4, leaks: 0, adapt: 0.4 }
   };
-  const DEFAULTS = { v: 2, look: 'candy', ...LOOKS.candy, birds: 1, time: 0, timePasses: false, sway: 1, quality: 1 };
+  const DEFAULTS = { v: 3, look: 'candy', ...LOOKS.candy, birds: 1, time: 0, timePasses: false, sway: 1, quality: 1 };
   const SETTINGS_KEY = 'dream_camera';
   const saved = Void.store.get(SETTINGS_KEY, {}) || {};
   const settings = { ...DEFAULTS, ...(saved.v === DEFAULTS.v ? saved : {}) };

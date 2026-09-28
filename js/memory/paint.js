@@ -16,7 +16,7 @@
    emit     R: the lamp   G: the laptop screen   B: fairy lights
    glass    white where you see through the window (the engine puts
             the sun there, and the night later)
-   fg       dark, out-of-focus folds of duvet right in front of you
+   fg       (empty for now) anything right in front of the camera
 
    The room is designed on a 1600 × 1000 board; HOTSPOTS and SUN
    are in those units.
@@ -41,11 +41,11 @@
     { id: 'favoomfs', label: 'my friends', x: 84, y: 206, w: 280, h: 204 },
     { id: 'about', label: 'a note on the wall', x: 1036, y: 292, w: 104, h: 104 },
     { id: 'interests', label: 'the tapes', x: 1196, y: 470, w: 300, h: 76 },
-    { id: 'guitar', label: 'my guitar', x: 1058, y: 404, w: 110, h: 400 },
-    { id: 'games', label: 'my laptop', x: 318, y: 694, w: 220, h: 130 },
+    { id: 'guitar', label: 'my guitar', x: 1240, y: 452, w: 120, h: 316 },
+    { id: 'games', label: 'my laptop', x: 700, y: 800, w: 200, h: 124 },
     { id: 'send', label: 'a letter for you', x: 574, y: 594, w: 112, h: 52 },
     { id: 'lamp', label: 'the lamp', x: 586, y: 470, w: 88, h: 124, action: 'lamp' },
-    { id: 'oracle', label: 'the cards on my bed', x: 736, y: 812, w: 170, h: 90 }
+    { id: 'oracle', label: 'the cards on my bed', x: 1040, y: 800, w: 170, h: 90 }
   ];
 
   /* ---------- helpers ---------- */
@@ -167,39 +167,16 @@
     return out;
   }
 
-  /* ---------- the duvet: shared by the paint and the light ----------
-     A real duvet is a few big soft billows, with creases fanning out
-     from wherever it got bunched up, and a seam running across it. */
-  let LUMPS = [];
-  let CREASES = [];
-  function makeFolds() {
-    const r = mulberry(31);
-    const rr = (a, b) => a + r() * (b - a);
-    LUMPS = [
-      [120, 760, 260, 90], [430, 742, 250, 70], [700, 770, 230, 80], [960, 745, 250, 76],
-      [1230, 735, 240, 70], [1480, 760, 230, 90], [250, 900, 330, 120], [640, 930, 300, 110],
-      [1000, 900, 330, 120], [1390, 910, 320, 130], [860, 840, 200, 70], [480, 850, 210, 70]
-    ].map(([x, y, rx, ry]) => ({ x: x + rr(-20, 20), y: y + rr(-10, 10), rx, ry, rot: rr(-0.12, 0.12) }));
-    CREASES = [];
-    // where it got bunched up: soft creases wander out from these
-    [[330, 830, 5], [760, 870, 5], [1120, 820, 5], [560, 780, 3], [1380, 820, 4], [150, 960, 3], [960, 980, 3]].forEach(([px, py, n]) => {
-      for (let i = 0; i < n; i++) {
-        const ang = rr(-0.5, 0.5) + (r() < 0.5 ? 0 : Math.PI);
-        const len = rr(90, 210) * (0.7 + (py - 700) / 500);
-        const sx = px + rr(-60, 60);
-        const sy = py + rr(-26, 26);
-        CREASES.push({
-          x0: sx,
-          y0: sy,
-          x1: sx + Math.cos(ang) * len,
-          y1: sy + Math.sin(ang) * len * 0.4 + rr(-20, 20),
-          bend: rr(-0.25, 0.25),
-          width: rr(10, 20) * (0.7 + (py - 700) / 400),
-          lit: r() < 0.5
-        });
-      }
-    });
-  }
+  /* ---------- the bed: head against the wall under the window, foot
+     towards you (cut off by the bottom of the picture). Its sides run
+     towards the vanishing point, so it sits in the room properly. ---------- */
+  const FLOOR_Y = 690;
+  const HEAD_Y = 688;
+  const bedL = (y) => 690 - 0.835 * (y - HEAD_Y);    // left edge of the mattress top
+  const bedR = (y) => 1150 + 1.275 * (y - HEAD_Y);   // right edge
+  const FOLD = (x) => 770 + Math.sin(x * 0.012) * 6 + (x - 900) * 0.01;   // where the duvet is folded back
+
+  function makeFolds() { /* the bed is drawn directly now */ }
 
   let weave = null;
   function fabric(ctx) {
@@ -225,23 +202,59 @@
     ctx.restore();
   }
 
-  function creasePath(ctx, c, lift = 0) {
-    const mx = (c.x0 + c.x1) / 2 - (c.y1 - c.y0) * c.bend;
-    const my = (c.y0 + c.y1) / 2 + (c.x1 - c.x0) * c.bend * 0.45 - lift;
+  // the top of the bed (duvet and all), plus a little of it hanging over the sides
+  function bedShape(ctx, over = 0) {
     ctx.beginPath();
-    ctx.moveTo(c.x0, c.y0 - lift);
-    ctx.quadraticCurveTo(mx, my, c.x1, c.y1 - lift);
+    ctx.moveTo(bedL(HEAD_Y) - over * 0.2, HEAD_Y);
+    ctx.lineTo(bedR(HEAD_Y) + over * 0.2, HEAD_Y);
+    ctx.lineTo(bedR(1010) + over, 1010);
+    ctx.lineTo(bedL(1010) - over, 1010);
+    ctx.closePath();
   }
 
-  function bedShape(ctx) {
+  function duvetShape(ctx) {
     ctx.beginPath();
-    ctx.moveTo(-20, 1020);
-    ctx.lineTo(-20, 700);
-    ctx.bezierCurveTo(200, 668, 380, 700, 560, 684);
-    ctx.bezierCurveTo(760, 668, 980, 700, 1180, 672);
-    ctx.bezierCurveTo(1350, 652, 1480, 640, 1620, 650);
-    ctx.lineTo(1620, 1020);
+    ctx.moveTo(bedL(FOLD(bedL(770))) - 4, FOLD(bedL(770)));
+    for (let x = bedL(770); x <= bedR(770); x += 20) ctx.lineTo(x, FOLD(x));
+    ctx.lineTo(bedR(1010) + 50, 1010);
+    ctx.lineTo(bedL(1010) - 50, 1010);
     ctx.closePath();
+  }
+
+  function paintFloor(ctx) {
+    // old wooden boards, running away from you
+    ctx.fillStyle = lin(ctx, 0, FLOOR_Y, 0, H, [[0, '#2a1b12'], [1, '#3b2618']]);
+    ctx.fillRect(0, FLOOR_Y, W, H - FLOOR_Y);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, FLOOR_Y, W, H - FLOOR_Y);
+    ctx.clip();
+    for (let i = -30; i <= 40; i++) {
+      const x0 = 872 + i * 30;
+      const x1 = 872 + i * 30 * ((H - 470) / (FLOOR_Y - 470));
+      ctx.strokeStyle = 'rgba(10, 5, 2, 0.45)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x0, FLOOR_Y);
+      ctx.lineTo(x1, H);
+      ctx.stroke();
+    }
+    ctx.restore();
+    grain(ctx, 0.12, () => { ctx.beginPath(); ctx.rect(0, FLOOR_Y, W, H - FLOOR_Y); });
+    // skirting board
+    ctx.fillStyle = '#3a2a1e';
+    ctx.fillRect(0, FLOOR_Y - 14, W, 14);
+    ctx.fillStyle = 'rgba(255, 220, 170, 0.08)';
+    ctx.fillRect(0, FLOOR_Y - 14, W, 2);
+    // a crate of records by the shelf
+    ctx.fillStyle = '#4a3322';
+    ctx.fillRect(1400, 800, 150, 96);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    for (let yy = 818; yy < 896; yy += 20) ctx.fillRect(1400, yy, 150, 3);
+    ['#2b2230', '#c2415f', '#5a78c8', '#f0b43a', '#3f8f86'].forEach((c, i) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(1410 + i * 27, 766 + (i % 2) * 5, 24, 40);
+    });
   }
 
   /* ==========================================================
@@ -270,6 +283,7 @@
     ctx.fillStyle = 'rgba(10, 6, 4, 0.5)';
     ctx.fillRect(0, 0, W, 34);
 
+    paintFloor(ctx);
     paintWindow(ctx);
     paintPhotoWall(ctx, covers);
     paintNightstand(ctx);
@@ -571,9 +585,9 @@
   }
 
   function guitarPlace(ctx) {
-    ctx.translate(1112, 828);
-    ctx.rotate(-0.09);
-    ctx.scale(0.95, 0.95);
+    ctx.translate(1300, 760);
+    ctx.rotate(-0.11);
+    ctx.scale(0.64, 0.64);
   }
 
   function paintGuitar(ctx) {
@@ -620,63 +634,90 @@
   }
 
   function paintBed(ctx) {
-    ctx.save();
-    bedShape(ctx);
-    // an off-white duvet in a dim room: cool grey, not sand
-    ctx.fillStyle = lin(ctx, 0, 650, 0, 1000, [[0, '#8a847d'], [0.45, '#6a6560'], [1, '#3a3532']]);
+    // a shadow on the floor and the wall where the bed meets them
+    soft(ctx, 26, 'rgba(0, 0, 0, 0.7)', () => { bedShape(ctx, 70); ctx.fill(); });
+    // the duvet hanging down over both sides, in shadow
+    ctx.fillStyle = lin(ctx, 0, HEAD_Y, 0, H, [[0, '#2e2a28'], [1, '#1c1816']]);
+    bedShape(ctx, 58);
     ctx.fill();
+    // the mattress top: the fitted sheet at the head
+    ctx.fillStyle = lin(ctx, 0, HEAD_Y, 0, 800, [[0, '#8f8880'], [1, '#a59d93']]);
     bedShape(ctx);
-    ctx.clip();
-    // the billows: each one rounded, lighter on the side facing the window
-    LUMPS.forEach((l) => {
+    ctx.fill();
+
+    // pillows against the wall, under the window
+    [[818, 716, 100, 30, -0.03], [1032, 713, 108, 32, 0.04]].forEach(([px, py, pw, ph, rot]) => {
       ctx.save();
-      ctx.translate(l.x, l.y);
-      ctx.rotate(l.rot);
-      soft(ctx, l.ry * 1.2, 'rgba(10, 8, 8, 0.28)', () => { ctx.beginPath(); ctx.ellipse(l.rx * 0.08, l.ry * 0.55, l.rx * 0.8, l.ry * 0.55, 0, 0, 7); ctx.fill(); });
-      const g = ctx.createRadialGradient(-l.rx * 0.22, -l.ry * 0.45, l.ry * 0.1, 0, 0, l.rx);
-      g.addColorStop(0, 'rgba(214, 206, 196, 0.95)');
-      g.addColorStop(0.3, 'rgba(176, 168, 160, 0.8)');
-      g.addColorStop(0.62, 'rgba(126, 120, 114, 0.4)');
-      g.addColorStop(1, 'rgba(90, 84, 80, 0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, l.rx, l.ry, 0, 0, 7);
+      ctx.translate(px, py);
+      ctx.rotate(rot);
+      soft(ctx, 10, 'rgba(0, 0, 0, 0.55)', () => { roundRect(ctx, -pw + 6, -ph + 12, pw * 2, ph * 2, ph); ctx.fill(); });
+      roundRect(ctx, -pw, -ph, pw * 2, ph * 2, ph * 0.95);
+      ctx.fillStyle = lin(ctx, 0, -ph, 0, ph, [[0, '#d4cdc3'], [0.55, '#b8b0a6'], [1, '#8a837b']]);
       ctx.fill();
+      // the dip where a head was
+      ctx.fillStyle = 'rgba(70, 64, 60, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(8, 2, pw * 0.45, ph * 0.4, 0, 0, 7);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(60, 54, 50, 0.35)';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, -pw + 5, -ph + 5, pw * 2 - 10, ph * 2 - 10, ph * 0.8);
+      ctx.stroke();
       ctx.restore();
     });
-    // creases: a shadowed valley, with a thin lit lip beside it
-    CREASES.forEach((c) => {
+
+    // the duvet: pulled up to just below the pillows, folded back at the top
+    ctx.save();
+    bedShape(ctx, 58);
+    ctx.clip();
+    duvetShape(ctx);
+    ctx.fillStyle = lin(ctx, 0, 770, 0, H, [[0, '#8e939a'], [0.5, '#7a7f86'], [1, '#5c6066']]);
+    ctx.fill();
+    // long soft folds running down towards you
+    [[760, 0.25, 34], [930, -0.1, 40], [1080, -0.3, 36], [640, 0.45, 30], [1240, -0.5, 38]].forEach(([x0, lean, w]) => {
+      ctx.save();
+      duvetShape(ctx);
+      ctx.clip();
+      const pts = (off) => {
+        ctx.beginPath();
+        ctx.moveTo(x0 + off, 790);
+        ctx.bezierCurveTo(x0 + off + lean * 60, 860, x0 + off + lean * 140, 930, x0 + off + lean * 230, 1010);
+      };
       ctx.lineCap = 'round';
-      ctx.lineWidth = c.width;
-      soft(ctx, c.width * 1.1, 'rgba(24, 20, 18, 0.45)', () => { creasePath(ctx, c); ctx.stroke(); });
-      ctx.lineWidth = c.width * 0.6;
-      soft(ctx, c.width * 0.9, 'rgba(220, 212, 200, 0.12)', () => { creasePath(ctx, c, c.width * 0.35); ctx.stroke(); });
+      ctx.lineWidth = w;
+      ctx.strokeStyle = 'rgba(30, 30, 34, 0.28)';
+      pts(w * 0.35);
+      ctx.stroke();
+      ctx.lineWidth = w * 0.45;
+      ctx.strokeStyle = 'rgba(200, 204, 210, 0.2)';
+      pts(-w * 0.2);
+      ctx.stroke();
+      ctx.restore();
     });
-    // the duvet cover's seam, running across and following the billows
-    ctx.setLineDash([7, 6]);
-    ctx.lineWidth = 1.4;
-    ctx.strokeStyle = 'rgba(40, 34, 30, 0.35)';
+    // the folded-back edge: the other side of the cover, a thick soft roll
     ctx.beginPath();
-    ctx.moveTo(-20, 846);
-    ctx.bezierCurveTo(300, 812, 520, 872, 760, 836);
-    ctx.bezierCurveTo(1000, 800, 1240, 858, 1620, 812);
+    const l = bedL(770) - 30;
+    const r = bedR(770) + 30;
+    ctx.moveTo(l, FOLD(l) - 4);
+    for (let x = l; x <= r; x += 20) ctx.lineTo(x, FOLD(x) - 4);
+    for (let x = r; x >= l; x -= 20) ctx.lineTo(x, FOLD(x) + 24 + Math.sin(x * 0.03) * 3);
+    ctx.closePath();
+    ctx.fillStyle = lin(ctx, 0, 764, 0, 796, [[0, '#cfc8be'], [0.6, '#b3aca3'], [1, '#7d7771']]);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(20, 20, 24, 0.45)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let x = l; x <= r; x += 20) (x === l ? ctx.moveTo(x, FOLD(x) + 25) : ctx.lineTo(x, FOLD(x) + 25 + Math.sin(x * 0.03) * 3));
     ctx.stroke();
-    ctx.setLineDash([]);
-    // pillows at the head of the bed, on the right: plump, pale
-    [[1300, 668, 150, 46], [1470, 660, 150, 52]].forEach(([px, py, pw, ph]) => {
-      soft(ctx, 14, 'rgba(10, 8, 8, 0.5)', () => { ctx.beginPath(); ctx.ellipse(px + 6, py + 14, pw, ph, -0.05, 0, 7); ctx.fill(); });
-      ctx.fillStyle = rad(ctx, px - 40, py - 22, 10, pw * 1.1, [[0, '#cfc8be'], [0.6, '#96908a'], [1, '#55504c']]);
-      ctx.beginPath();
-      ctx.ellipse(px, py, pw, ph, -0.05, 0, 7);
-      ctx.fill();
-    });
     ctx.restore();
     fabric(ctx);
 
     // the laptop, open on the bed
     ctx.save();
-    ctx.translate(430, 800);
-    ctx.rotate(-0.05);
+    ctx.translate(800, 900);
+    ctx.rotate(-0.08);
+    ctx.scale(0.85, 0.85);
+    soft(ctx, 10, 'rgba(0,0,0,0.6)', () => { fillPoly(ctx, [[-100, 6], [100, 6], [114, 30], [-114, 30]], '#000'); });
     fillPoly(ctx, [[-96, 0], [96, 0], [110, 22], [-110, 22]], '#6a6c72');
     fillPoly(ctx, [[-88, -108], [88, -108], [96, 0], [-96, 0]], '#55575e');
     fillPoly(ctx, [[-80, -100], [80, -100], [87, -8], [-87, -8]], '#141a26');
@@ -686,7 +727,7 @@
 
     // tarot cards spilled on the duvet
     ctx.save();
-    ctx.translate(822, 866);
+    ctx.translate(1120, 850);
     for (let i = 0; i < 5; i++) {
       ctx.save();
       ctx.rotate((i - 2) * 0.24);
@@ -708,11 +749,11 @@
     ctx.strokeStyle = '#141216';
     ctx.lineWidth = 7;
     ctx.beginPath();
-    ctx.ellipse(1060, 760, 38, 22, 0.25, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.ellipse(640, 830, 38, 22, 0.25, Math.PI * 1.05, Math.PI * 1.95);
     ctx.stroke();
     ctx.fillStyle = '#141216';
-    ctx.beginPath(); ctx.ellipse(1026, 770, 11, 15, 0.25, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(1098, 780, 11, 15, 0.25, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(606, 840, 11, 15, 0.25, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(678, 850, 11, 15, 0.25, 0, 7); ctx.fill();
   }
 
   /* ==========================================================
@@ -723,33 +764,26 @@
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
 
-    // R — the low sun: broad light on the tops of the billows facing it,
-    // and a thin gold edge on the creases that catch it
+    // R — the low sun throws the window across the bed, stretched towards you:
+    // three long panes with the shadows of the bars between them
     ctx.save();
-    bedShape(ctx);
+    bedShape(ctx, 58);
     ctx.clip();
-    LUMPS.forEach((l) => {
-      const toward = Math.max(0, 1 - Math.abs(l.x - SUN[0]) / 950) * (l.y < 860 ? 1 : 0.75);
-      if (toward <= 0.05) return;
-      ctx.save();
-      ctx.translate(l.x, l.y);
-      ctx.rotate(l.rot);
-      soft(ctx, l.ry * 0.35, `rgba(255,0,0,${(0.35 + toward * 0.55).toFixed(2)})`, () => {
-        ctx.beginPath();
-        ctx.ellipse(-l.rx * 0.08, -l.ry * 0.5, l.rx * 0.62, l.ry * 0.28, 0, 0, 7);
-        ctx.fill();
+    const cols = [[748, 830, 590, 790], [842, 922, 810, 1000], [934, 1000, 1020, 1190]];
+    const bands = [[700, 742], [756, 812], [826, 902], [918, 1010]];
+    cols.forEach(([t0, t1, b0, b1]) => {
+      bands.forEach(([y0, y1]) => {
+        const at = (y, a, b) => a + (b - a) * ((y - HEAD_Y) / (1010 - HEAD_Y));
+        const q = [[at(y0, t0, b0), y0], [at(y0, t1, b1), y0], [at(y1, t1, b1), y1], [at(y1, t0, b0), y1]];
+        soft(ctx, 7, 'rgba(255,0,0,0.85)', () => { path(ctx, q); ctx.fill(); });
       });
-      ctx.restore();
     });
-    CREASES.forEach((c) => {
-      if (!c.lit) return;
-      const toward = Math.max(0, 1 - Math.abs((c.x0 + c.x1) / 2 - SUN[0]) / 900);
-      if (toward <= 0.1) return;
-      ctx.lineWidth = c.width * 0.5;
-      soft(ctx, c.width * 0.9, `rgba(255,0,0,${(0.12 + toward * 0.22).toFixed(2)})`, () => { creasePath(ctx, c, c.width * 0.35); ctx.stroke(); });
-    });
-    soft(ctx, 18, 'rgba(255,0,0,0.8)', () => { ctx.beginPath(); ctx.ellipse(870, 694, 260, 16, 0, 0, 7); ctx.fill(); });
+    // the tops of the pillows and the rolled edge catch it hardest
+    soft(ctx, 8, 'rgba(255,0,0,0.9)', () => { ctx.beginPath(); ctx.ellipse(818, 692, 90, 7, 0, 0, 7); ctx.ellipse(1032, 688, 96, 7, 0, 0, 7); ctx.fill(); });
+    soft(ctx, 6, 'rgba(255,0,0,0.7)', () => { ctx.fillRect(700, 766, 420, 6); });
     ctx.restore();
+    // and the floor beside the bed
+    soft(ctx, 22, 'rgba(255,0,0,0.35)', () => { path(ctx, [[560, 700], [680, 700], [520, 1000], [300, 1000]]); ctx.fill(); });
 
     // rim light: the sill, the guitar's edge, the side of the shelf
     soft(ctx, 6, 'rgba(255,0,0,0.9)', () => { ctx.fillRect(WIN.x - 30, WIN.y + WIN.h + 6, WIN.w + 60, 5); });
@@ -766,6 +800,7 @@
     });
     ctx.restore();
     soft(ctx, 6, 'rgba(255,0,0,0.35)', () => ctx.fillRect(1190, 250, 5, 400));
+    soft(ctx, 10, 'rgba(255,0,0,0.25)', () => ctx.fillRect(0, FLOOR_Y - 14, W, 3));
     // the curtains glow where the sun comes through them
     soft(ctx, 26, 'rgba(255,0,0,0.5)', () => { ctx.fillRect(WIN.x - 60, WIN.y + 120, 40, 340); ctx.fillRect(WIN.x + WIN.w + 20, WIN.y + 120, 40, 340); });
     // a patch of light thrown onto the photos on the left
@@ -790,7 +825,7 @@
     });
 
     // B — where branch shadows sway through the light
-    soft(ctx, 40, 'rgba(0,0,255,1)', () => { ctx.beginPath(); ctx.ellipse(880, 820, 620, 190, 0, 0, 7); ctx.fill(); });
+    soft(ctx, 40, 'rgba(0,0,255,1)', () => { ctx.beginPath(); ctx.ellipse(880, 860, 360, 170, 0, 0, 7); ctx.fill(); });
     soft(ctx, 30, 'rgba(0,0,255,1)', () => { path(ctx, [[330, 470], [470, 440], [500, 600], [352, 632]]); ctx.fill(); });
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -805,8 +840,9 @@
     soft(ctx, 100, 'rgba(255,0,0,0.35)', () => { ctx.beginPath(); ctx.ellipse(630, 470, 190, 150, 0, 0, 7); ctx.fill(); });
     // G: the laptop screen, and its blue on the duvet
     ctx.save();
-    ctx.translate(430, 800);
-    ctx.rotate(-0.05);
+    ctx.translate(800, 900);
+    ctx.rotate(-0.08);
+    ctx.scale(0.85, 0.85);
     soft(ctx, 3, 'rgba(0,255,0,1)', () => { path(ctx, [[-80, -100], [80, -100], [87, -8], [-87, -8]]); ctx.fill(); });
     soft(ctx, 70, 'rgba(0,255,0,0.45)', () => { ctx.beginPath(); ctx.ellipse(0, -30, 190, 110, 0, 0, 7); ctx.fill(); });
     ctx.restore();
@@ -832,29 +868,8 @@
   }
 
   function paintForeground(ctx) {
+    // kept empty: the room is seen clearly, nothing smudged in front of it
     ctx.clearRect(0, 0, W, H);
-    // folds of duvet right against the camera: dark, soft, out of focus
-    ctx.save();
-    ctx.filter = 'blur(16px)';
-    ctx.fillStyle = 'rgba(14, 9, 6, 0.92)';
-    ctx.beginPath();
-    ctx.moveTo(-60, 1060);
-    ctx.lineTo(-60, 900);
-    ctx.bezierCurveTo(120, 860, 260, 900, 380, 960);
-    ctx.bezierCurveTo(460, 1000, 520, 1040, 560, 1060);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(1660, 1060);
-    ctx.lineTo(1660, 880);
-    ctx.bezierCurveTo(1500, 900, 1380, 950, 1300, 1060);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255, 190, 120, 0.35)';
-    ctx.beginPath();
-    ctx.ellipse(230, 885, 140, 8, -0.12, 0, 7);
-    ctx.fill();
-    ctx.restore();
   }
 
   /* ==========================================================
