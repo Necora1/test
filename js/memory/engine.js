@@ -50,7 +50,7 @@
 
   /* ---------- the camera's settings (the settings panel changes these) ---------- */
   const LOOKS = {
-    candy: { grade: 1, exposure: -0.15, hdr: 0.85, bloom: 1.15, rays: 1.1, flare: 1.2, anamorphic: 0.6, dirt: 0.7, dust: 1.4, grain: 0.45, ca: 0.6, dreamy: 0.35, vignette: 0.8, leaks: 0.7, adapt: 1 },
+    candy: { grade: 1, exposure: -0.2, hdr: 0.85, bloom: 0.85, rays: 0.7, flare: 0.8, anamorphic: 0.4, dirt: 0.5, dust: 1.4, grain: 0.45, ca: 0.6, dreamy: 0.35, vignette: 0.8, leaks: 0.7, adapt: 1 },
     memory: { grade: 0, exposure: 0, hdr: 0.3, bloom: 1, rays: 0.8, flare: 1, anamorphic: 0.15, dirt: 0.35, dust: 1, grain: 1, ca: 1, dreamy: 1, vignette: 1, leaks: 1, adapt: 0.6 },
     super8: { grade: 2, exposure: 0.05, hdr: 0.2, bloom: 1.1, rays: 0.7, flare: 0.9, anamorphic: 0, dirt: 0.2, dust: 1, grain: 2, ca: 1.3, dreamy: 1.2, vignette: 1.5, leaks: 1.4, adapt: 0.3 },
     vhs: { grade: 3, exposure: 0, hdr: 0, bloom: 0.8, rays: 0.5, flare: 0.6, anamorphic: 0, dirt: 0, dust: 0.8, grain: 0.8, ca: 2, dreamy: 0.5, vignette: 0.9, leaks: 0.3, adapt: 0.4 },
@@ -58,9 +58,10 @@
     mono: { grade: 5, exposure: 0, hdr: 0.8, bloom: 0.9, rays: 1, flare: 0.8, anamorphic: 0.1, dirt: 0.5, dust: 1.2, grain: 1.4, ca: 0, dreamy: 0.6, vignette: 1.2, leaks: 0, adapt: 0.7 },
     clean: { grade: 0, exposure: 0, hdr: 0.2, bloom: 0.6, rays: 0.5, flare: 0.5, anamorphic: 0, dirt: 0, dust: 0.6, grain: 0.2, ca: 0, dreamy: 0, vignette: 0.4, leaks: 0, adapt: 0.4 }
   };
-  const DEFAULTS = { look: 'candy', ...LOOKS.candy, birds: 1, time: 0, timePasses: false, sway: 1, quality: 1 };
+  const DEFAULTS = { v: 2, look: 'candy', ...LOOKS.candy, birds: 1, time: 0, timePasses: false, sway: 1, quality: 1 };
   const SETTINGS_KEY = 'dream_camera';
-  const settings = { ...DEFAULTS, ...(Void.store.get(SETTINGS_KEY, {}) || {}) };
+  const saved = Void.store.get(SETTINGS_KEY, {}) || {};
+  const settings = { ...DEFAULTS, ...(saved.v === DEFAULTS.v ? saved : {}) };
   let readBuf = null;
   let snap = null;          // a photo was asked for: taken right after the next frame
   let frameNo = 0;
@@ -227,7 +228,7 @@
       // the window: lit from outside, the sun low in it; a night sky later on
       float glass = texture2D(uGlass, uv).r;
       if (glass > 0.001) {
-        vec3 outside = alb * mix(1.45, 1.0, smoothstep(0.0, 0.7, uTod)) * mix(vec3(1.0), vec3(0.62, 0.5, 0.62), smoothstep(0.2, 0.7, uTod));
+        vec3 outside = alb * mix(1.05, 0.9, smoothstep(0.0, 0.7, uTod)) * mix(vec3(1.0), vec3(0.62, 0.5, 0.62), smoothstep(0.2, 0.7, uTod));
         vec2 wp = uv * vec2(420.0, 260.0);
         float star = step(0.985, hash(floor(wp))) * smoothstep(0.32, 0.05, length(fract(wp) - 0.5)) * (0.5 + 0.5 * sin(uTime * 2.0 + hash(floor(wp) + 3.0) * 20.0));
         vec3 sky = mix(vec3(0.02, 0.03, 0.09), vec3(0.12, 0.1, 0.24), smoothstep(0.2, 0.62, uv.y)) + star * 0.8 + alb * 0.08;
@@ -258,8 +259,8 @@
       vec2 sd = (uv - uSunB) * vec2(1.6, 1.0);
       float sdist = length(sd);
       float disk = smoothstep(0.0115, 0.0085, sdist);
-      float corona = exp(-sdist * sdist * 3000.0) * 1.6 + exp(-sdist * 40.0) * 0.3;
-      col += glass * (disk * 6.0 + corona * 2.0) * vec3(1.0, 0.84, 0.58) * sunAmt;
+      float corona = exp(-sdist * sdist * 4000.0) * 1.0 + exp(-sdist * 55.0) * 0.12;
+      col += glass * (disk * 2.6 + corona * 1.1) * vec3(1.0, 0.84, 0.58) * sunAmt;
       col += (1.0 - glass) * exp(-sdist * 9.0) * 0.08 * sunCol * sunAmt;
 
       // what you're pointing at glows a little
@@ -450,7 +451,7 @@
           rays += texture2D(uBloom, p).rgb * decay;
           decay *= 0.955;
         }
-        col += rays / 40.0 * vec3(1.0, 0.78, 0.5) * 1.7 * uRays * uSunVis;
+        col += rays / 40.0 * vec3(1.0, 0.78, 0.5) * 1.0 * uRays * uSunVis;
       }
 
       // the lens flare: a streak up through the sun, and ghosts across the frame
@@ -459,7 +460,7 @@
         float asp = uRes.x / uRes.y;
         vec2 fs = (uv - uSunS) * vec2(asp, 1.0);
         float up = fs.y > 0.0 ? 1.8 : 10.0;
-        float streak = exp(-abs(fs.x) * 70.0) * exp(-abs(fs.y) * up) * 0.42;
+        float streak = exp(-abs(fs.x) * 70.0) * exp(-abs(fs.y) * up) * 0.26;
         streak += exp(-abs(fs.y) * 160.0) * exp(-abs(fs.x) * 7.0) * 0.08;
         flare = vec3(1.0, 0.72, 0.36) * streak;
         vec2 axis = vec2(0.5) - uSunS;
@@ -783,7 +784,7 @@
     gl.useProgram(progs.bright.p);
     bindTex(0, fbo.scene.t, progs.bright.loc.uTex);
     gl.uniform2f(progs.bright.loc.uTexel, 1 / RW, 1 / RH);
-    gl.uniform1f(progs.bright.loc.uThreshold, 0.72 - lucid * 0.2 - (settings.grade === 1 ? 0.08 : 0));
+    gl.uniform1f(progs.bright.loc.uThreshold, 0.8 - lucid * 0.2);
     draw(fbo.b1, BW, BH);
     const B = progs.blur;
     gl.useProgram(B.p);
