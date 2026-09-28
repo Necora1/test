@@ -1,0 +1,656 @@
+/* ==========================================================
+   memory/engine.js — the room, lit, and remembered
+   Takes the painted layers (paint.js) and lights them on the GPU
+   every frame, then runs them through a "memory" pass:
+
+   scene   sun through the window (leaf shadows drifting across
+           it), beams in the air with dust turning in them, the
+           lamp, the laptop, fairy lights, night in the window,
+           rain on the glass, a warm glow under whatever you point at
+   bloom   bright parts bleed light (plus a red halation, like film)
+   post    zoom blur while the camera moves, chromatic fringes,
+           soft-focus edges, light leaks, a faded warm grade,
+           vignette, grain and a slight gate weave
+
+   The camera never cuts: every room is somewhere in this one
+   room, and going there is a slow move with the light changing
+   on the way. goTo(id) resolves when it's nearly there.
+
+   Void.dream.memory = { init, goTo, setHover, toScreen, setRain,
+                         setLucid, pulseVoid, toggleLamp, setVisible,
+                         pan, current }
+   ========================================================== */
+(() => {
+  const Void = window.Void;
+  const html = document.documentElement;
+  const canvas = document.getElementById('memory');
+  const reduced = () => html.classList.contains('reduce-motion');
+  const BOARD = { W: 1600, H: 1000 };
+  const IA = BOARD.W / BOARD.H;
+
+  /* ---------- where each room is, and what the light is like there ---------- */
+  // x, y: the point looked at (board px) · zoom · tod: 0 afternoon → 1 night
+  // lamp, screen, lights: how bright · dof: blur around the point · dim: darker behind a room
+  const PRESETS = {
+    home: { x: 800, y: 500, zoom: 1, tod: 0, lamp: 0, screen: 0.12, lights: 0.3, dof: 0, dim: 0 },
+    about: { x: 518, y: 250, zoom: 2.1, tod: 0.04, lamp: 0, screen: 0.12, lights: 0.3, dof: 0.75, dim: 0.28, caption: 'the note i left for whoever comes in' },
+    interests: { x: 470, y: 290, zoom: 2.0, tod: 0.18, lamp: 0.2, screen: 0.12, lights: 0.5, dof: 0.7, dim: 0.34, caption: 'every tape i wore out' },
+    games: { x: 478, y: 532, zoom: 2.7, tod: 0.78, lamp: 0, screen: 1.4, lights: 0.6, dof: 0.8, dim: 0.34, caption: 'the laptop, way past midnight' },
+    send: { x: 590, y: 580, zoom: 2.5, tod: 0.86, lamp: 1, screen: 0.3, lights: 0.8, dof: 0.8, dim: 0.34, caption: 'writing things i never send' },
+    guitar: { x: 700, y: 560, zoom: 1.75, tod: 0.1, lamp: 0, screen: 0.12, lights: 0.4, dof: 0.6, dim: 0.3, caption: 'it is always a little out of tune' },
+    gallery: { x: 1170, y: 222, zoom: 2.1, tod: 0.42, lamp: 0.3, screen: 0.12, lights: 1.1, dof: 0.7, dim: 0.34, caption: 'pictures of when it was warm' },
+    oracle: { x: 1110, y: 660, zoom: 2.5, tod: 1, lamp: 0.45, screen: 0.2, lights: 1.3, dof: 0.8, dim: 0.34, caption: 'cards on the bed at 3am' },
+    favoomfs: { x: 1490, y: 360, zoom: 2.2, tod: 0.3, lamp: 0, screen: 0.12, lights: 0.6, dof: 0.7, dim: 0.3, caption: 'the people who stayed' },
+    wishes: { x: 128, y: 330, zoom: 3.4, tod: 1, lamp: 0.2, screen: 0.12, lights: 1, dof: 0.2, dim: 0, caption: 'out the window, and up' }
+  };
+
+  let gl = null;
+  let layers = null;
+  let progs = {};
+  let tex = {};
+  let fbo = {};
+  let quad = null;
+  let RW = 0;
+  let RH = 0;
+  let BW = 0;
+  let BH = 0;
+  let visible = true;
+  let fallback = null;
+
+  // the camera and the light, as they are right now
+  const cur = { ...PRESETS.home };
+  let from = { ...cur };
+  let to = { ...cur };
+  let move = null;          // { t, dur, resolve, arrived }
+  let view = 'home';
+  let panX = 0;             // phones: looking left and right around the room
+  let hover = { x: 0.5, y: 0.5, r: 0.06, a: 0, ta: 0 };
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0, bx: 0.5, by: 0.5 };
+  let lampToggle = 0;
+  let rain = 0;
+  let rainT = 0;
+  let lucid = 0;
+  let lucidT = 0;
+  let voidAmt = 0;
+  let voidT = -1;
+  let fade = 0;
+  let flash = 0;
+  let zoomBlur = 0;
+  let clock = 0;
+  let last = 0;
+  let aspect = 1;
+
+  /* ---------- shaders ---------- */
+  const VERT = `
+    attribute vec2 aPos;
+    varying vec2 vUv;
+    void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+  const COMMON = `
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+    varying vec2 vUv;
+    float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+    float noise(vec2 p) {
+      vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+    }
+    float fbm(vec2 p) { float v = 0.0; float a = 0.5; for (int i = 0; i < 4; i++) { v += a * noise(p); p = p * 2.07 + 13.1; a *= 0.5; } return v; }
+  `;
+
+  const SCENE = COMMON + `
+    uniform sampler2D uAlb; uniform sampler2D uBlur; uniform sampler2D uSun; uniform sampler2D uEmit; uniform sampler2D uFg;
+    uniform vec4 uView;          // centre x, y and visible width, height (board uv)
+    uniform vec2 uFgShift;
+    uniform float uAspect;
+    uniform float uTime; uniform float uTod; uniform float uLamp; uniform float uScreen; uniform float uLights;
+    uniform float uRain; uniform float uDof; uniform float uDim; uniform float uLucid; uniform float uVoid; uniform float uFade;
+    uniform vec2 uFocus;
+    uniform vec4 uHover;
+    uniform vec2 uW0; uniform vec2 uW1; uniform vec2 uW2; uniform vec2 uW3;
+    uniform vec2 uMouseB;
+
+    float edge(vec2 a, vec2 b, vec2 p) { vec2 e = b - a; vec2 q = p - a; return (e.x * q.y - e.y * q.x) / length(e); }
+    float inWindow(vec2 p) {
+      float d = min(min(edge(uW0, uW1, p), edge(uW1, uW2, p)), min(edge(uW2, uW3, p), edge(uW3, uW0, p)));
+      return smoothstep(0.0, 0.004, d);
+    }
+
+    float dust(vec2 uv) {
+      float d = 0.0;
+      vec2 m = uv - uMouseB;
+      uv += normalize(m + 1e-5) * 0.03 * exp(-dot(m * vec2(1.6, 1.0), m * vec2(1.6, 1.0)) * 180.0);
+      for (int i = 0; i < 2; i++) {
+        float sc = i == 0 ? 70.0 : 130.0;
+        vec2 p = uv * vec2(sc * 1.6, sc) + vec2(uTime * (0.12 + float(i) * 0.1), -uTime * (0.05 + float(i) * 0.04));
+        vec2 id = floor(p);
+        vec2 f = fract(p) - 0.5;
+        float h = hash(id);
+        vec2 o = vec2(hash(id + 7.3), hash(id + 1.9)) - 0.5;
+        o += 0.22 * vec2(sin(uTime * 0.6 + h * 20.0), cos(uTime * 0.45 + h * 13.0));
+        float r = length(f - o * 0.7);
+        float size = mix(0.035, 0.09, hash(id + 3.1)) * (i == 0 ? 1.0 : 0.7);
+        float on = step(0.6, hash(id + 11.0));
+        d += on * smoothstep(size, 0.0, r) * (0.55 + 0.45 * sin(uTime * 1.7 + h * 30.0));
+      }
+      return d;
+    }
+
+    void main() {
+      vec2 c = vec2(vUv.x - 0.5, 0.5 - vUv.y);
+
+      // "void": everything turns and falls into the middle
+      if (uVoid > 0.001) {
+        vec2 a = c * vec2(uAspect, 1.0);
+        float r = length(a);
+        float ang = uVoid * 7.0 * exp(-r * 2.2);
+        float s = sin(ang); float co = cos(ang);
+        a = mat2(co, s, -s, co) * a;
+        a *= 1.0 + uVoid * 3.0 * exp(-r * 3.0);
+        c = a / vec2(uAspect, 1.0);
+      }
+      // lucid: the room folds into a kaleidoscope
+      if (uLucid > 0.001) {
+        vec2 a = c * vec2(uAspect, 1.0);
+        float r = length(a);
+        float ang = atan(a.y, a.x) + uTime * 0.05;
+        float seg = 6.2831853 / 8.0;
+        ang = mod(ang, seg);
+        ang = abs(ang - seg * 0.5);
+        r *= 1.0 + 0.06 * sin(r * 16.0 - uTime * 1.4);
+        vec2 k = r * vec2(cos(ang), sin(ang)) / vec2(uAspect, 1.0);
+        c = mix(c, k * 0.9, uLucid);
+      }
+
+      vec2 uv = uView.xy + c * uView.zw;
+
+      vec3 alb = texture2D(uAlb, uv).rgb;
+      vec3 soft = texture2D(uBlur, uv).rgb;
+      float fd = length((uv - uFocus) * vec2(1.6, 1.0));
+      float dof = clamp(uDof * smoothstep(0.03, 0.22, fd) + uFade * 0.85, 0.0, 1.0);
+      alb = mix(alb, soft, dof);
+
+      vec3 st = texture2D(uSun, uv).rgb;
+      float light = st.r;
+      float air = st.g;
+      // leaves outside the window, moving in the light
+      vec2 lp = uv * vec2(15.0, 9.0) + vec2(sin(uTime * 0.31) * 0.7 + uTime * 0.025, cos(uTime * 0.23) * 0.5);
+      float leaf = fbm(lp) + 0.25 * noise(lp * 3.0 + uTime * 0.2);
+      light *= 1.0 - smoothstep(0.66, 0.84, leaf) * st.b * 0.8;
+      light *= 0.95 + 0.05 * sin(uTime * 1.1 + uv.x * 18.0);
+
+      float sunAmt = (1.0 - smoothstep(0.0, 0.72, uTod)) * (1.0 - uRain * 0.85);
+      float moonAmt = smoothstep(0.72, 1.0, uTod) * (1.0 - uRain * 0.6);
+      float night = smoothstep(0.35, 1.0, uTod);
+      vec3 sunCol = vec3(1.0, 0.7, 0.4);
+      vec3 moonCol = vec3(0.42, 0.55, 0.95);
+
+      vec3 amb = mix(vec3(0.9, 0.8, 0.72), vec3(0.62, 0.48, 0.64), smoothstep(0.0, 0.6, uTod));
+      amb = mix(amb, vec3(0.14, 0.15, 0.27), smoothstep(0.55, 1.0, uTod));
+      amb = mix(amb, amb * vec3(0.78, 0.84, 0.95), uRain);
+
+      vec3 col = alb * amb;
+      col += alb * light * (sunCol * 1.75 * sunAmt + moonCol * 0.55 * moonAmt);
+      col += air * (sunCol * 0.3 * sunAmt + moonCol * 0.08 * moonAmt);
+      col += dust(uv) * (air * 2.6 + light * 0.5) * (sunCol * sunAmt + moonCol * moonAmt * 0.4) * 0.9;
+
+      vec3 em = texture2D(uEmit, uv).rgb;
+      vec3 lampCol = vec3(1.0, 0.64, 0.32);
+      col += em.r * lampCol * uLamp * 1.3 + alb * em.r * uLamp * lampCol * 1.4;
+      vec3 scr = vec3(0.45, 0.66, 1.0);
+      col += em.g * scr * uScreen * 1.2 + alb * em.g * uScreen * scr * 0.7;
+      float tw = 0.6 + 0.4 * sin(uTime * 2.2 + hash(floor(uv * vec2(220.0, 140.0))) * 6.28);
+      col += em.b * vec3(1.0, 0.8, 0.52) * uLights * tw * (0.9 + night * 1.6);
+
+      // the window: a night sky later on, rain on the glass when it rains
+      float win = inWindow(uv);
+      if (win > 0.0) {
+        vec2 wp = uv * vec2(420.0, 260.0);
+        float star = step(0.985, hash(floor(wp))) * (0.5 + 0.5 * sin(uTime * 2.0 + hash(floor(wp) + 3.0) * 20.0));
+        vec3 sky = mix(vec3(0.02, 0.03, 0.09), vec3(0.14, 0.13, 0.3), smoothstep(0.1, 0.62, uv.y)) + star * 0.8;
+        sky += vec3(0.95, 0.9, 0.75) * smoothstep(0.012, 0.0, length((uv - vec2(0.09, 0.2)) * vec2(1.6, 1.0))) ;
+        col = mix(col, sky + alb * 0.06, win * night);
+        float lane = floor(uv.x * 380.0);
+        float drop = step(0.9, hash(vec2(lane, floor(uv.y * 26.0 + uTime * (3.0 + hash(vec2(lane, 1.0)) * 5.0)))));
+        col += win * uRain * drop * vec3(0.5, 0.55, 0.6) * 0.35;
+        col = mix(col, col * vec3(0.7, 0.75, 0.85), win * uRain * 0.5);
+      }
+
+      // what you're pointing at glows a little
+      float hd = length((uv - uHover.xy) * vec2(1.6, 1.0));
+      col += uHover.w * exp(-(hd * hd) / (uHover.z * uHover.z)) * vec3(1.0, 0.78, 0.5) * 0.22;
+      // and the mouse carries a faint warmth
+      vec2 mm = (uv - uMouseB) * vec2(1.6, 1.0);
+      col += exp(-dot(mm, mm) * 90.0) * vec3(1.0, 0.8, 0.6) * 0.04 * (1.0 - uDim);
+
+      // the curtain in front, closer, so it moves more
+      vec4 fg = texture2D(uFg, uv + uFgShift + vec2(sin(uTime * 0.6 + uv.y * 3.0) * 0.003, 0.0));
+      vec3 fgLit = fg.rgb * (amb * 0.8 + sunCol * sunAmt * 1.1 + vec3(0.2, 0.25, 0.4) * night);
+      col = mix(col, fgLit, fg.a * (1.0 - uFade * 0.5));
+
+      col *= 1.0 - uDim;
+      gl_FragColor = vec4(col, 1.0);
+    }`;
+
+  const BRIGHT = COMMON + `
+    uniform sampler2D uTex; uniform vec2 uTexel; uniform float uThreshold;
+    void main() {
+      vec3 c = vec3(0.0);
+      c += texture2D(uTex, vUv + uTexel * vec2(-1.0, -1.0)).rgb;
+      c += texture2D(uTex, vUv + uTexel * vec2(1.0, -1.0)).rgb;
+      c += texture2D(uTex, vUv + uTexel * vec2(-1.0, 1.0)).rgb;
+      c += texture2D(uTex, vUv + uTexel * vec2(1.0, 1.0)).rgb;
+      c *= 0.25;
+      float l = max(c.r, max(c.g, c.b));
+      gl_FragColor = vec4(c * smoothstep(uThreshold, uThreshold + 0.45, l), 1.0);
+    }`;
+
+  const BLUR = COMMON + `
+    uniform sampler2D uTex; uniform vec2 uDir;
+    void main() {
+      vec3 c = texture2D(uTex, vUv).rgb * 0.2270270270;
+      c += texture2D(uTex, vUv + uDir * 1.3846153846).rgb * 0.3162162162;
+      c += texture2D(uTex, vUv - uDir * 1.3846153846).rgb * 0.3162162162;
+      c += texture2D(uTex, vUv + uDir * 3.2307692308).rgb * 0.0702702703;
+      c += texture2D(uTex, vUv - uDir * 3.2307692308).rgb * 0.0702702703;
+      gl_FragColor = vec4(c, 1.0);
+    }`;
+
+  const POST = COMMON + `
+    uniform sampler2D uScene; uniform sampler2D uBloom; uniform sampler2D uBloomWide;
+    uniform vec2 uRes; uniform float uTime; uniform float uFlash; uniform float uZoomBlur;
+    uniform float uLucid; uniform float uFade; uniform vec3 uLeak;
+    void main() {
+      vec2 uv = vUv;
+      // the film shivers in the gate, very slightly
+      float ft = floor(uTime * 12.0);
+      uv += (vec2(hash(vec2(ft, 1.0)), hash(vec2(ft, 2.0))) - 0.5) * 0.0012;
+
+      vec3 col;
+      if (uZoomBlur > 0.002) {
+        col = vec3(0.0);
+        for (int i = 0; i < 10; i++) {
+          float k = float(i) / 9.0;
+          col += texture2D(uScene, mix(uv, vec2(0.5), k * uZoomBlur * 0.12)).rgb;
+        }
+        col /= 10.0;
+      } else {
+        col = texture2D(uScene, uv).rgb;
+      }
+      vec2 d = uv - 0.5;
+      float e = dot(d, d);
+      float ca = 0.012 * (1.0 - uZoomBlur * 0.7);
+      col.r = mix(col.r, texture2D(uScene, uv - d * e * ca).r, 0.8);
+      col.b = mix(col.b, texture2D(uScene, uv + d * e * ca).b, 0.8);
+
+      vec3 bloom = texture2D(uBloom, uv).rgb;
+      vec3 wide = texture2D(uBloomWide, uv).rgb;
+      col += bloom * 0.55 + wide * 0.45;
+      col += (bloom + wide) * vec3(1.0, 0.42, 0.22) * 0.2;          // halation
+      col = mix(col, col * 0.6 + wide * 1.2 + bloom * 0.3, smoothstep(0.1, 0.32, e) * 0.35); // soft edges
+
+      // light leaks drifting through the corners
+      vec2 lk = uv - vec2(1.02 + 0.06 * sin(uTime * 0.11), 0.95 + 0.05 * cos(uTime * 0.08));
+      col += uLeak * exp(-dot(lk, lk) * 5.0) * (0.22 + 0.08 * sin(uTime * 0.5));
+      vec2 lk2 = uv - vec2(-0.08, 0.12 + 0.1 * sin(uTime * 0.07));
+      col += vec3(1.0, 0.55, 0.3) * exp(-dot(lk2, lk2) * 8.0) * 0.12;
+
+      // drifting off: the memory washes out
+      float g = dot(col, vec3(0.3, 0.59, 0.11));
+      col = mix(col, vec3(g) * vec3(1.05, 1.0, 0.92) + 0.08, uFade * 0.6);
+
+      col = col * (1.0 + uFlash * 0.9) + uFlash * vec3(0.1, 0.07, 0.05);
+      // the grade: a soft shoulder, lifted and faded blacks, warm highlights
+      col = col / (col + vec3(0.9)) * 1.75;
+      col = mix(vec3(0.05, 0.04, 0.065), vec3(1.0, 0.965, 0.9), col);
+      col = pow(max(col, 0.0), vec3(0.98, 1.0, 1.04));
+
+      if (uLucid > 0.001) {
+        float r = length(d * vec2(uRes.x / uRes.y, 1.0));
+        vec3 rainbow = 0.55 + 0.45 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + r * 1.4 - uTime * 0.09));
+        col = mix(col, col * rainbow * 1.55, uLucid * 0.7);
+      }
+
+      col *= 1.0 - 1.1 * dot(d * vec2(0.9, 1.1), d * vec2(0.9, 1.1));
+      float gr = hash(uv * uRes + ft * 17.13) - 0.5;
+      col += gr * 0.07;
+      // a speck of dust on the film, now and then
+      vec2 sg = uv * vec2(90.0, 56.0);
+      float sp = step(0.9992, hash(floor(sg) + ft)) * smoothstep(0.22, 0.05, length(fract(sg) - 0.5));
+      col = mix(col, col * 0.55, sp * 0.7);
+      gl_FragColor = vec4(col, 1.0);
+    }`;
+
+  /* ---------- GL plumbing ---------- */
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+
+  function program(frag, uniforms) {
+    const p = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, frag));
+    gl.bindAttribLocation(p, 0, 'aPos');
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const loc = {};
+    uniforms.forEach((u) => { loc[u] = gl.getUniformLocation(p, u); });
+    return { p, loc };
+  }
+
+  function texture(source) {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    if (source) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    return t;
+  }
+
+  function target(w, h) {
+    const t = texture(null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    const f = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { t, f, w, h };
+  }
+
+  function bindTex(unit, t, loc) {
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.uniform1i(loc, unit);
+  }
+
+  function draw(targetFb, w, h) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, targetFb ? targetFb.f : null);
+    gl.viewport(0, 0, w, h);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  function setup() {
+    gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
+    if (!gl) throw new Error('no WebGL');
+    quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+    progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uW0', 'uW1', 'uW2', 'uW3', 'uMouseB']);
+    progs.bright = program(BRIGHT, ['uTex', 'uTexel', 'uThreshold']);
+    progs.blur = program(BLUR, ['uTex', 'uDir']);
+    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak']);
+
+    tex.alb = texture(layers.albedo);
+    tex.blur = texture(layers.blur);
+    tex.sun = texture(layers.sun);
+    tex.emit = texture(layers.emit);
+    tex.fg = texture(layers.fg);
+  }
+
+  function resize() {
+    const cw = window.innerWidth;
+    const ch = window.innerHeight;
+    aspect = cw / ch;
+    if (!gl) return;
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    const budget = 1300000;
+    const s = Math.min(dpr, Math.sqrt(budget / (cw * ch)));
+    RW = Math.max(64, Math.round(cw * s));
+    RH = Math.max(64, Math.round(ch * s));
+    canvas.width = RW;
+    canvas.height = RH;
+    BW = Math.max(16, Math.round(RW / 4));
+    BH = Math.max(16, Math.round(RH / 4));
+    Object.values(fbo).forEach((f) => { gl.deleteFramebuffer(f.f); gl.deleteTexture(f.t); });
+    fbo = {
+      scene: target(RW, RH),
+      b1: target(BW, BH),
+      b2: target(BW, BH),
+      w1: target(Math.max(8, BW >> 2), Math.max(8, BH >> 2)),
+      w2: target(Math.max(8, BW >> 2), Math.max(8, BH >> 2))
+    };
+  }
+
+  /* ---------- the camera ---------- */
+  // how much of the board fits on screen at zoom 1 ("cover")
+  function baseVis() {
+    return aspect > IA ? [1, IA / aspect] : [aspect / IA, 1];
+  }
+
+  function viewRect() {
+    const [bw, bh] = baseVis();
+    const breathe = reduced() ? 0 : Math.sin(clock * 0.07) * 0.012;
+    const zoom = cur.zoom * (1 + breathe * 0.5) * (1 + hover.a * 0.025) * (1 - fade * 0.06);
+    const vw = bw / zoom;
+    const vh = bh / zoom;
+    let cx = cur.x / BOARD.W;
+    let cy = cur.y / BOARD.H;
+    if (view === 'home') cx += panX;
+    // lean a little towards what you're pointing at, and with the mouse
+    cx += (hover.x - cx) * hover.a * 0.03 + mouse.x * 0.008 / cur.zoom + (reduced() ? 0 : Math.sin(clock * 0.05) * 0.004);
+    cy += (hover.y - cy) * hover.a * 0.03 + mouse.y * 0.006 / cur.zoom;
+    cx = Math.min(1 - vw / 2, Math.max(vw / 2, cx));
+    cy = Math.min(1 - vh / 2, Math.max(vh / 2, cy));
+    return [cx, cy, vw, vh];
+  }
+
+  // board px → CSS px, for the hotspots
+  function toScreen(bx, by) {
+    const [cx, cy, vw, vh] = viewRect();
+    return [((bx / BOARD.W - cx) / vw + 0.5) * window.innerWidth, ((by / BOARD.H - cy) / vh + 0.5) * window.innerHeight];
+  }
+
+  const ease = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+  const KEYS = ['x', 'y', 'zoom', 'tod', 'lamp', 'screen', 'lights', 'dof', 'dim'];
+
+  function goTo(id, { instant = false } = {}) {
+    const preset = PRESETS[id] || PRESETS.home;
+    view = PRESETS[id] ? id : 'home';
+    if (move?.resolve) move.resolve();
+    from = { ...cur };
+    to = { ...preset };
+    if (view === 'home') panX = 0;
+    if (instant || reduced()) {
+      KEYS.forEach((k) => { cur[k] = to[k]; });
+      move = null;
+      return Promise.resolve();
+    }
+    // a longer trip for a longer move
+    const dist = Math.hypot((to.x - from.x) / BOARD.W, (to.y - from.y) / BOARD.H) + Math.abs(Math.log(to.zoom / from.zoom)) * 0.5;
+    const dur = Math.min(3.2, 1.5 + dist * 1.8);
+    return new Promise((resolve) => { move = { t: 0, dur, resolve, arrived: false }; });
+  }
+
+  /* ---------- the loop ---------- */
+  function frame(t, dt, now) {
+    const realDt = last ? Math.min(0.25, (now - last) / 1000) : 1 / 60;
+    last = now;
+    const step = reduced() ? realDt : realDt;
+    clock += reduced() ? 0 : step;
+
+    if (move) {
+      move.t += step / move.dur;
+      const k = Math.min(1, move.t);
+      const e = ease(k);
+      KEYS.forEach((key) => { cur[key] = from[key] + (to[key] - from[key]) * e; });
+      // the zoom itself travels on a log scale, so it feels even
+      cur.zoom = Math.exp(Math.log(from.zoom) + (Math.log(to.zoom) - Math.log(from.zoom)) * e);
+      const speed = Math.sin(k * Math.PI);
+      zoomBlur = speed * 0.9;
+      flash = speed * speed * 0.35;
+      if (!move.arrived && k > 0.72) { move.arrived = true; move.resolve(); }
+      if (k >= 1) move = null;
+    } else {
+      zoomBlur *= 0.8;
+      flash *= 0.85;
+    }
+
+    mouse.x += (mouse.tx - mouse.x) * Math.min(1, step * 3);
+    mouse.y += (mouse.ty - mouse.y) * Math.min(1, step * 3);
+    hover.a += (hover.ta - hover.a) * Math.min(1, step * 5);
+    rain += (rainT - rain) * Math.min(1, step * 0.8);
+    lucid += (lucidT - lucid) * Math.min(1, step * 0.9);
+    fade += ((html.classList.contains('is-drifting') ? 1 : 0) - fade) * Math.min(1, step * 0.25);
+    if (voidT >= 0) {
+      voidT += step;
+      voidAmt = voidT < 1 ? Math.pow(voidT, 2) : Math.max(0, 1 - (voidT - 1) * 1.6);
+      if (voidT > 1.8) { voidT = -1; voidAmt = 0; }
+    }
+
+    const [cx, cy, vw, vh] = viewRect();
+    mouse.bx = cx + mouse.tx * 0.5 * vw;
+    mouse.by = cy + mouse.ty * 0.5 * vh;
+
+    if (!gl) { drawFallback(cx, cy, vw, vh); return; }
+    if (!visible) return;
+
+    // 1. the lit room
+    const S = progs.scene;
+    gl.useProgram(S.p);
+    bindTex(0, tex.alb, S.loc.uAlb);
+    bindTex(1, tex.blur, S.loc.uBlur);
+    bindTex(2, tex.sun, S.loc.uSun);
+    bindTex(3, tex.emit, S.loc.uEmit);
+    bindTex(4, tex.fg, S.loc.uFg);
+    gl.uniform4f(S.loc.uView, cx, cy, vw, vh);
+    gl.uniform2f(S.loc.uFgShift, -mouse.x * 0.02 / cur.zoom, -mouse.y * 0.012 / cur.zoom);
+    gl.uniform1f(S.loc.uAspect, aspect);
+    gl.uniform1f(S.loc.uTime, clock);
+    gl.uniform1f(S.loc.uTod, Math.min(1, cur.tod + rain * 0.25));
+    gl.uniform1f(S.loc.uLamp, Math.min(1.4, cur.lamp + lampToggle));
+    gl.uniform1f(S.loc.uScreen, cur.screen);
+    gl.uniform1f(S.loc.uLights, cur.lights);
+    gl.uniform1f(S.loc.uRain, rain);
+    gl.uniform1f(S.loc.uDof, cur.dof);
+    gl.uniform1f(S.loc.uDim, cur.dim);
+    gl.uniform1f(S.loc.uLucid, lucid);
+    gl.uniform1f(S.loc.uVoid, voidAmt);
+    gl.uniform1f(S.loc.uFade, fade);
+    gl.uniform2f(S.loc.uFocus, cur.x / BOARD.W, cur.y / BOARD.H);
+    gl.uniform4f(S.loc.uHover, hover.x, hover.y, hover.r, hover.a);
+    const w = layers.window;
+    gl.uniform2f(S.loc.uW0, w[0][0] / BOARD.W, w[0][1] / BOARD.H);
+    gl.uniform2f(S.loc.uW1, w[1][0] / BOARD.W, w[1][1] / BOARD.H);
+    gl.uniform2f(S.loc.uW2, w[2][0] / BOARD.W, w[2][1] / BOARD.H);
+    gl.uniform2f(S.loc.uW3, w[3][0] / BOARD.W, w[3][1] / BOARD.H);
+    gl.uniform2f(S.loc.uMouseB, mouse.bx, mouse.by);
+    draw(fbo.scene, RW, RH);
+
+    // 2. bloom: what's bright, shrunk and blurred, then shrunk and blurred again, wider
+    gl.useProgram(progs.bright.p);
+    bindTex(0, fbo.scene.t, progs.bright.loc.uTex);
+    gl.uniform2f(progs.bright.loc.uTexel, 1 / RW, 1 / RH);
+    gl.uniform1f(progs.bright.loc.uThreshold, 0.72 - lucid * 0.2);
+    draw(fbo.b1, BW, BH);
+    const B = progs.blur;
+    gl.useProgram(B.p);
+    [[fbo.b1, fbo.b2, 1, 0], [fbo.b2, fbo.b1, 0, 1], [fbo.b1, fbo.b2, 2, 0], [fbo.b2, fbo.b1, 0, 2]].forEach(([src, dst, dx, dy]) => {
+      bindTex(0, src.t, B.loc.uTex);
+      gl.uniform2f(B.loc.uDir, dx / BW, dy / BH);
+      draw(dst, BW, BH);
+    });
+    const ww = fbo.w1.w;
+    const wh = fbo.w1.h;
+    [[fbo.b1, fbo.w1, 1, 0], [fbo.w1, fbo.w2, 0, 1], [fbo.w2, fbo.w1, 2, 0], [fbo.w1, fbo.w2, 0, 2]].forEach(([src, dst, dx, dy]) => {
+      bindTex(0, src.t, B.loc.uTex);
+      gl.uniform2f(B.loc.uDir, dx / ww, dy / wh);
+      draw(dst, ww, wh);
+    });
+
+    // 3. the memory of it
+    const P = progs.post;
+    gl.useProgram(P.p);
+    bindTex(0, fbo.scene.t, P.loc.uScene);
+    bindTex(1, fbo.b1.t, P.loc.uBloom);
+    bindTex(2, fbo.w2.t, P.loc.uBloomWide);
+    gl.uniform2f(P.loc.uRes, RW, RH);
+    gl.uniform1f(P.loc.uTime, clock);
+    gl.uniform1f(P.loc.uFlash, flash);
+    gl.uniform1f(P.loc.uZoomBlur, reduced() ? 0 : zoomBlur);
+    gl.uniform1f(P.loc.uLucid, lucid);
+    gl.uniform1f(P.loc.uFade, fade);
+    const glow = Void.dream.palette.current.glow;
+    gl.uniform3f(P.loc.uLeak, 0.6 + glow[0] * 0.4, 0.35 + glow[1] * 0.25, 0.2 + glow[2] * 0.2);
+    draw(null, RW, RH);
+  }
+
+  /* ---------- without WebGL: the painting, moved by CSS ---------- */
+  function drawFallback(cx, cy, vw, vh) {
+    if (!fallback) return;
+    const sx = window.innerWidth / (vw * layers.albedo.width);
+    const sy = window.innerHeight / (vh * layers.albedo.height);
+    const tx = -(cx - vw / 2) * layers.albedo.width * sx;
+    const ty = -(cy - vh / 2) * layers.albedo.height * sy;
+    fallback.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
+    fallback.style.filter = `brightness(${1 - cur.dim}) blur(${cur.dof * 3}px)`;
+  }
+
+  /* ---------- public ---------- */
+  Void.dream.memory = {
+    PRESETS,
+    current: () => view,
+    toScreen,
+    goTo,
+    async init() {
+      const mobile = Math.min(screen.width, screen.height) < 700;
+      layers = await Void.dream.memoryPaint.paint({ scale: mobile ? 1.1 : 1.5 });
+      aspect = window.innerWidth / window.innerHeight;
+      try {
+        setup();
+      } catch (err) {
+        console.warn('[dream] memory without WebGL:', err.message);
+        gl = null;
+        html.classList.add('no-webgl');
+        fallback = layers.albedo;
+        fallback.className = 'memory-fallback';
+        canvas.replaceWith(fallback);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      window.addEventListener('pointermove', (e) => {
+        mouse.tx = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.ty = (e.clientY / window.innerHeight) * 2 - 1;
+      }, { passive: true });
+      if (gl) {
+        canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); gl = null; });
+        canvas.addEventListener('webglcontextrestored', () => { try { setup(); resize(); } catch { /* stays dark */ } });
+      }
+      Void.dream.onFrame(frame);
+      html.classList.add('memory-ready');
+      return layers;
+    },
+    setHover(spot) {
+      if (spot) {
+        hover.x = (spot.x + spot.w / 2) / BOARD.W;
+        hover.y = (spot.y + spot.h / 2) / BOARD.H;
+        hover.r = Math.max(spot.w, spot.h) / BOARD.W * 0.9;
+        hover.ta = 1;
+      } else hover.ta = 0;
+    },
+    // phones look around the room by dragging sideways
+    pan(dx) {
+      const [bw] = baseVis();
+      const limit = Math.max(0, (1 - bw) / 2);
+      panX = Math.max(-limit, Math.min(limit, panX + dx));
+    },
+    setRain(on) { rainT = on ? 1 : 0; },
+    setLucid(on) { lucidT = on ? 1 : 0; },
+    pulseVoid() { if (!reduced()) voidT = 0; },
+    toggleLamp() { lampToggle = lampToggle ? 0 : 1; return !!lampToggle; },
+    setVisible(v) { visible = v; canvas.classList.toggle('is-hidden', !v); }
+  };
+})();
