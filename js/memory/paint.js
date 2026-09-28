@@ -167,26 +167,70 @@
     return out;
   }
 
-  /* ---------- the bed's folds, shared by the paint and the light ---------- */
-  let FOLDS = [];
+  /* ---------- the duvet: shared by the paint and the light ----------
+     A real duvet is a few big soft billows, with creases fanning out
+     from wherever it got bunched up, and a seam running across it. */
+  let LUMPS = [];
+  let CREASES = [];
   function makeFolds() {
     const r = mulberry(31);
     const rr = (a, b) => a + r() * (b - a);
-    FOLDS = [];
-    for (let i = 0; i < 150; i++) {
-      const y = rr(690, 1010);
-      const depth = (y - 690) / 320;
-      FOLDS.push({
-        x: rr(-60, 1660),
-        y,
-        rx: rr(40, 130) * (0.5 + depth * 1.2),
-        ry: rr(7, 20) * (0.5 + depth * 1.3),
-        rot: rr(-0.5, 0.5),
-        bend: rr(-0.5, 0.5),
-        lit: r() < 0.6
-      });
+    LUMPS = [
+      [120, 760, 260, 90], [430, 742, 250, 70], [700, 770, 230, 80], [960, 745, 250, 76],
+      [1230, 735, 240, 70], [1480, 760, 230, 90], [250, 900, 330, 120], [640, 930, 300, 110],
+      [1000, 900, 330, 120], [1390, 910, 320, 130], [860, 840, 200, 70], [480, 850, 210, 70]
+    ].map(([x, y, rx, ry]) => ({ x: x + rr(-20, 20), y: y + rr(-10, 10), rx, ry, rot: rr(-0.12, 0.12) }));
+    CREASES = [];
+    // where it got bunched up: soft creases wander out from these
+    [[330, 830, 5], [760, 870, 5], [1120, 820, 5], [560, 780, 3], [1380, 820, 4], [150, 960, 3], [960, 980, 3]].forEach(([px, py, n]) => {
+      for (let i = 0; i < n; i++) {
+        const ang = rr(-0.5, 0.5) + (r() < 0.5 ? 0 : Math.PI);
+        const len = rr(90, 210) * (0.7 + (py - 700) / 500);
+        const sx = px + rr(-60, 60);
+        const sy = py + rr(-26, 26);
+        CREASES.push({
+          x0: sx,
+          y0: sy,
+          x1: sx + Math.cos(ang) * len,
+          y1: sy + Math.sin(ang) * len * 0.4 + rr(-20, 20),
+          bend: rr(-0.25, 0.25),
+          width: rr(10, 20) * (0.7 + (py - 700) / 400),
+          lit: r() < 0.5
+        });
+      }
+    });
+  }
+
+  let weave = null;
+  function fabric(ctx) {
+    // a fine cotton weave, much finer and calmer than sand
+    if (!weave) {
+      weave = document.createElement('canvas');
+      weave.width = weave.height = 8;
+      const w = weave.getContext('2d');
+      w.fillStyle = '#808080';
+      w.fillRect(0, 0, 8, 8);
+      w.fillStyle = 'rgba(255,255,255,0.35)';
+      for (let i = 0; i < 8; i += 2) { w.fillRect(i, 0, 1, 8); }
+      w.fillStyle = 'rgba(0,0,0,0.25)';
+      for (let i = 1; i < 8; i += 2) { w.fillRect(0, i, 8, 1); }
     }
-    FOLDS.sort((a, b) => a.y - b.y);
+    ctx.save();
+    bedShape(ctx);
+    ctx.clip();
+    ctx.globalAlpha = 0.07;
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.fillStyle = ctx.createPattern(weave, 'repeat');
+    ctx.fillRect(-20, 600, W + 40, 420);
+    ctx.restore();
+  }
+
+  function creasePath(ctx, c, lift = 0) {
+    const mx = (c.x0 + c.x1) / 2 - (c.y1 - c.y0) * c.bend;
+    const my = (c.y0 + c.y1) / 2 + (c.x1 - c.x0) * c.bend * 0.45 - lift;
+    ctx.beginPath();
+    ctx.moveTo(c.x0, c.y0 - lift);
+    ctx.quadraticCurveTo(mx, my, c.x1, c.y1 - lift);
   }
 
   function bedShape(ctx) {
@@ -578,37 +622,56 @@
   function paintBed(ctx) {
     ctx.save();
     bedShape(ctx);
-    ctx.fillStyle = lin(ctx, 0, 650, 0, 1000, [[0, '#5a4a40'], [0.4, '#40322a'], [1, '#231a14']]);
+    // an off-white duvet in a dim room: cool grey, not sand
+    ctx.fillStyle = lin(ctx, 0, 650, 0, 1000, [[0, '#8a847d'], [0.45, '#6a6560'], [1, '#3a3532']]);
     ctx.fill();
     bedShape(ctx);
     ctx.clip();
-    // creases: each one a soft ridge, pale on top, a deep shadow tucked under it
-    FOLDS.forEach((f) => {
+    // the billows: each one rounded, lighter on the side facing the window
+    LUMPS.forEach((l) => {
       ctx.save();
-      ctx.translate(f.x, f.y);
-      ctx.rotate(f.rot);
-      const ridge = () => {
-        ctx.beginPath();
-        ctx.moveTo(-f.rx, 0);
-        ctx.quadraticCurveTo(0, -f.ry * (1.6 + f.bend), f.rx, 0);
-        ctx.quadraticCurveTo(0, f.ry * 0.5, -f.rx, 0);
-        ctx.closePath();
-      };
-      soft(ctx, f.ry * 0.8, 'rgba(8, 4, 2, 0.7)', () => { ctx.save(); ctx.translate(0, f.ry * 0.7); ridge(); ctx.fill(); ctx.restore(); });
-      ridge();
-      ctx.fillStyle = lin(ctx, 0, -f.ry * 1.4, 0, f.ry * 0.4, [[0, 'rgba(150, 128, 110, 0.8)'], [0.6, 'rgba(96, 80, 68, 0.6)'], [1, 'rgba(40, 28, 20, 0.3)']]);
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rot);
+      soft(ctx, l.ry * 1.2, 'rgba(10, 8, 8, 0.28)', () => { ctx.beginPath(); ctx.ellipse(l.rx * 0.08, l.ry * 0.55, l.rx * 0.8, l.ry * 0.55, 0, 0, 7); ctx.fill(); });
+      const g = ctx.createRadialGradient(-l.rx * 0.22, -l.ry * 0.45, l.ry * 0.1, 0, 0, l.rx);
+      g.addColorStop(0, 'rgba(214, 206, 196, 0.95)');
+      g.addColorStop(0.3, 'rgba(176, 168, 160, 0.8)');
+      g.addColorStop(0.62, 'rgba(126, 120, 114, 0.4)');
+      g.addColorStop(1, 'rgba(90, 84, 80, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, l.rx, l.ry, 0, 0, 7);
       ctx.fill();
       ctx.restore();
     });
-    // pillows at the head of the bed, on the right
+    // creases: a shadowed valley, with a thin lit lip beside it
+    CREASES.forEach((c) => {
+      ctx.lineCap = 'round';
+      ctx.lineWidth = c.width;
+      soft(ctx, c.width * 1.1, 'rgba(24, 20, 18, 0.45)', () => { creasePath(ctx, c); ctx.stroke(); });
+      ctx.lineWidth = c.width * 0.6;
+      soft(ctx, c.width * 0.9, 'rgba(220, 212, 200, 0.12)', () => { creasePath(ctx, c, c.width * 0.35); ctx.stroke(); });
+    });
+    // the duvet cover's seam, running across and following the billows
+    ctx.setLineDash([7, 6]);
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = 'rgba(40, 34, 30, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(-20, 846);
+    ctx.bezierCurveTo(300, 812, 520, 872, 760, 836);
+    ctx.bezierCurveTo(1000, 800, 1240, 858, 1620, 812);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // pillows at the head of the bed, on the right: plump, pale
     [[1300, 668, 150, 46], [1470, 660, 150, 52]].forEach(([px, py, pw, ph]) => {
-      ctx.fillStyle = rad(ctx, px - 20, py - 20, 10, pw, [[0, '#6e5e50'], [1, '#3a2e26']]);
+      soft(ctx, 14, 'rgba(10, 8, 8, 0.5)', () => { ctx.beginPath(); ctx.ellipse(px + 6, py + 14, pw, ph, -0.05, 0, 7); ctx.fill(); });
+      ctx.fillStyle = rad(ctx, px - 40, py - 22, 10, pw * 1.1, [[0, '#cfc8be'], [0.6, '#96908a'], [1, '#55504c']]);
       ctx.beginPath();
       ctx.ellipse(px, py, pw, ph, -0.05, 0, 7);
       ctx.fill();
     });
     ctx.restore();
-    grain(ctx, 0.18, () => bedShape(ctx));
+    fabric(ctx);
 
     // the laptop, open on the bed
     ctx.save();
@@ -660,26 +723,30 @@
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
 
-    // R — the low sun rakes across the tops of the folds
+    // R — the low sun: broad light on the tops of the billows facing it,
+    // and a thin gold edge on the creases that catch it
     ctx.save();
     bedShape(ctx);
     ctx.clip();
-    FOLDS.forEach((f) => {
-      if (!f.lit) return;
-      const toward = Math.max(0, 1 - Math.abs(f.x - SUN[0]) / 900);
+    LUMPS.forEach((l) => {
+      const toward = Math.max(0, 1 - Math.abs(l.x - SUN[0]) / 950) * (l.y < 860 ? 1 : 0.75);
       if (toward <= 0.05) return;
       ctx.save();
-      ctx.translate(f.x, f.y);
-      ctx.rotate(f.rot);
-      // a thin line of gold along the top of the crease
-      ctx.lineWidth = Math.max(1.5, f.ry * 0.28);
-      soft(ctx, 2 + f.ry * 0.25, `rgba(255,0,0,${(0.5 + toward * 0.5).toFixed(2)})`, () => {
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rot);
+      soft(ctx, l.ry * 0.35, `rgba(255,0,0,${(0.35 + toward * 0.55).toFixed(2)})`, () => {
         ctx.beginPath();
-        ctx.moveTo(-f.rx * 0.85, -f.ry * 0.1);
-        ctx.quadraticCurveTo(0, -f.ry * (1.45 + f.bend), f.rx * 0.85, -f.ry * 0.1);
-        ctx.stroke();
+        ctx.ellipse(-l.rx * 0.08, -l.ry * 0.5, l.rx * 0.62, l.ry * 0.28, 0, 0, 7);
+        ctx.fill();
       });
       ctx.restore();
+    });
+    CREASES.forEach((c) => {
+      if (!c.lit) return;
+      const toward = Math.max(0, 1 - Math.abs((c.x0 + c.x1) / 2 - SUN[0]) / 900);
+      if (toward <= 0.1) return;
+      ctx.lineWidth = c.width * 0.5;
+      soft(ctx, c.width * 0.9, `rgba(255,0,0,${(0.12 + toward * 0.22).toFixed(2)})`, () => { creasePath(ctx, c, c.width * 0.35); ctx.stroke(); });
     });
     soft(ctx, 18, 'rgba(255,0,0,0.8)', () => { ctx.beginPath(); ctx.ellipse(870, 694, 260, 16, 0, 0, 7); ctx.fill(); });
     ctx.restore();
