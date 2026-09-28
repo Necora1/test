@@ -216,6 +216,7 @@
   let focus = 0;
   let focusTarget = 0;
   let lucid = 0;
+  let shown = false;
   let lucidTarget = 0;
   let mouse = { x: 0.5, y: 0.45, tx: 0.5, ty: 0.45, amt: 0, tamt: 0 };
   const ripples = new Float32Array(12);
@@ -311,7 +312,7 @@
     lucid += (lucidTarget - lucid) * (1 - Math.exp(-dt / 1.2));
 
     palette.tick(dt);
-    if (gl) draw();
+    if (gl && shown) draw();
     for (const fn of listeners) fn(clock, reduced() ? 0 : dt, now);
 
     // a struggling device gets a smaller canvas (it's soft anyway)
@@ -362,6 +363,8 @@
     },
 
     setFocus(v) { focusTarget = v; },
-    setLucid(v) { lucidTarget = v; }
+    setLucid(v) { lucidTarget = v; },
+    // only drawn while you're out of the window (the rest of the time it's the room)
+    setVisible(v) { shown = v; }
   };
 })();

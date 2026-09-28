@@ -29,7 +29,8 @@
 
   const rand = (a, b) => a + Math.random() * (b - a);
   const rgba = (c, a) => `rgba(${(c[0] * 255) | 0}, ${(c[1] * 255) | 0}, ${(c[2] * 255) | 0}, ${a})`;
-  const home = () => document.body.dataset.view === 'home';
+  // stars (shooting ones, and wishes) are out of the window only
+  const home = () => document.body.classList.contains('is-outside');
   const reduced = () => Void.motion.reduced;
 
   function resize() {

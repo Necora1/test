@@ -71,15 +71,17 @@ js/
 dream/
   index.html          the dream version (its about letter lives here)
   dream.css           everything it looks like
-  rooms.css           the newer rooms, each room's own world, lucid/void/drift
+  rooms.css           games, guitar, cards, wishes, lucid, void
   js/palette.js       which song each room is tuned to; colours that glide
-  js/sky.js           the sky and sea (one WebGL shader) + the frame loop
+  js/sky.js           the night sea out of the window + the frame loop
   js/life.js          jellyfish, dust, rain streaks
   js/rain.js          rain sounds, generated in the browser
-  js/scene.js         the floating things, parallax, ripples
+  js/scene.js         the room's hotspots, title card, captions
   js/views.js         the rooms (#about, #gallery, #interests, #favoomfs, #send,
                       #games, #guitar, #oracle, #wishes)
-  js/bedroom.js       about: the 3D bedroom (three.js, an ES module)
+  memory.css          the room as home: hotspots, captions, title card
+  js/memory/paint.js  the room, painted in code, in layers
+  js/memory/engine.js lights it, film look, the camera's travels
   js/sound.js         the little synth: chimes, plucked strings, a reverb room
   js/fx.js            sparks, comets, catchable shooting stars, wish stars
   js/arcade.js        the games room; js/games/*.js are the four games
@@ -87,7 +89,6 @@ dream/
   js/oracle.js        the tarot reading
   js/wishes.js        the wish jar (kept in the visitor's browser only)
   js/extras.js        lucid mode, keys, typed words, drifting, the clock
-  vendor/three.module.min.js   three.js r160 (MIT, see vendor/three.LICENSE)
   js/pictures.js      polaroids you can pick up, and the viewer
   js/tapes.js         cassettes and the walkman
   js/letters.js       a sent letter folding into an envelope and flying off
@@ -189,19 +190,28 @@ font, kept only as a fallback; check its licence before using it more widely.
 
 ### In the dream
 
-- **About is a 3D room:** late sun through the window, dust in the beam.
-  Drag to look around; click the window (day/night), the lamp, the guitar,
-  the camera, the record player, the covers on the wall, the letter, the plant.
-- **Games:** star catcher, cover memory, blurry covers, lanterns. Best scores
-  are kept in the browser.
-- **Guitar:** drag across the strings, pick chords (1–8), A S D F G H pluck,
-  "let it play" strums a progression by itself.
-- **Fortune:** a three-card reading from a made-up 22-card deck.
-- **Wishes:** each wish becomes a star in the home sky.
-- **Keys:** `?` lists them. `1`–`9` rooms, `L` lucid (the sky becomes a
-  kaleidoscope), `R` rain, `M` mute. Type `void` or `wish`. Click a shooting
-  star to catch it. The title's letters ring when touched. Leave it alone for
-  a minute and the dream drifts apart.
-- **Songs:** `Void.favorites` in `js/config.js`. A song can use `album:` instead
-  of a track id when only its record is on Spotify (it then plays the record).
+The dream starts in renn's room, late in the afternoon, and there is no menu:
+the things in the room are the way around. Click the guitar and the camera
+drifts to it while the light changes, and the guitar room surfaces over it.
 
+- **The room** is painted in code (`dream/js/memory/paint.js`: walls, window,
+  desk, bed, guitar, polaroids, tapes, corkboard, a plant, curtains) and lit
+  live on the GPU (`dream/js/memory/engine.js`): sun through the window with
+  leaf shadows drifting across it, beams with dust turning in them (the dust
+  moves away from the mouse), the lamp, the laptop screen, fairy lights,
+  night and rain in the window. Then a film pass: bloom, red halation, zoom
+  blur while travelling, soft-focus edges, light leaks, grain, a faded grade.
+- **Where things go:** note → about · tapes → songs · laptop → games (at
+  dusk) · letter → write to me (lamp on) · guitar → guitar · polaroids →
+  pictures · cards on the bed → fortune (3am) · corkboard → friends ·
+  window → out of it, into the night sea, to make a wish · lamp → on/off.
+  The camera spot, light and caption for each are `PRESETS` in engine.js;
+  the clickable areas are `HOTSPOTS` in paint.js (board units, 1600 × 1000).
+- **Games:** star catcher, cover memory, blurry covers, lanterns.
+- **Guitar:** drag across the strings; chords 1–8; A S D F G H pluck.
+  "midwest tuning" retunes it to FACGCE, and "let it play" fingerpicks.
+- **Keys:** `?` lists them. `1`–`9` go somewhere, `0` steps back, `L`
+  lucid (the room folds into a kaleidoscope), `R` rain on the window, `M`
+  mute. Type `void` or `wish`. Stay still for a minute and the memory fades.
+- **Songs:** `Void.favorites` in `js/config.js`. A song can use `album:`
+  instead of a track id when only its record is on Spotify.

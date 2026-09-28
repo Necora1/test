@@ -15,10 +15,12 @@
   <link rel="preload" href="../assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="dream.css">
   <link rel="stylesheet" href="rooms.css">
+  <link rel="stylesheet" href="memory.css">
 
   <script>document.documentElement.classList.add('js');</script>
 </head>
 <body class="is-asleep" data-view="home">
+  <canvas id="memory" class="memory-canvas" aria-hidden="true"></canvas>
   <canvas id="sky" class="sky" aria-hidden="true"></canvas>
   <canvas id="life" class="life" aria-hidden="true"></canvas>
   <div class="grain" aria-hidden="true"></div>
@@ -45,115 +47,27 @@
 
   <!-- ======================= THE SCENE ======================= -->
   <main class="scene" id="scene">
-    <div class="scene-title">
+    <div class="title-card" id="titleCard">
       <h1 class="dream-title"><span class="t-name">renn</span><span class="t-rest">'s void</span></h1>
-      <p class="dream-sub">dream version</p>
-      <p class="dream-clock" id="dreamClock"></p>
+      <p class="dream-sub">a memory of my room</p>
     </div>
 
-    <nav class="objects" aria-label="Rooms">
-      <a class="obj obj-note" href="#about" data-view="about" style="--x: 15%; --y: 31%; --depth: 0.6; --rot: -6deg; --bob: 7s">
-        <span class="note" aria-hidden="true">
-          <span class="note-tape"></span>
-          <span class="note-text">hi, it's renn</span>
-          <span class="note-fold"></span>
-        </span>
-        <span class="obj-label">about me</span>
-      </a>
+    <nav class="hotspots" id="hotspots" aria-label="Things in my room"></nav>
+    <p class="hot-label" id="hotLabel" aria-hidden="true"></p>
 
-      <a class="obj obj-polaroids" href="#gallery" data-view="gallery" style="--x: 84%; --y: 30%; --depth: 0.9; --rot: 5deg; --bob: 8s">
-        <span class="pola-stack" aria-hidden="true">
-          <span class="pola"><span class="pola-img"></span></span>
-          <span class="pola"><span class="pola-img"></span></span>
-          <span class="pola"><span class="pola-img"></span></span>
-        </span>
-        <span class="obj-label">pictures</span>
-      </a>
-
-      <a class="obj obj-tape" href="#interests" data-view="interests" style="--x: 31%; --y: 74%; --depth: 1.1; --rot: -7deg; --bob: 6.5s">
-        <span class="tape tape-mini" aria-hidden="true">
-          <span class="tape-shell">
-            <span class="tape-label"><span class="tape-words"><span class="tape-title">on repeat</span><span class="tape-artist">53 songs</span></span></span>
-            <span class="tape-window"><i class="reel"></i><span class="tape-ribbon"></span><i class="reel"></i></span>
-          </span>
-        </span>
-        <span class="obj-label">songs</span>
-      </a>
-
-      <a class="obj obj-strip" href="#favoomfs" data-view="favoomfs" style="--x: 9%; --y: 67%; --depth: 0.7; --rot: 8deg; --bob: 7.5s">
-        <span class="strip" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="obj-label">friends</span>
-      </a>
-
-      <a class="obj obj-envelope" href="#send" data-view="send" style="--x: 70%; --y: 75%; --depth: 1.2; --rot: 6deg; --bob: 6s">
-        <span class="envelope" aria-hidden="true">
-          <span class="env-back"></span>
-          <span class="env-letter"></span>
-          <span class="env-front"></span>
-          <span class="env-flap"></span>
-          <span class="env-seal">r</span>
-        </span>
-        <span class="obj-label">write to me</span>
-      </a>
-
-      <a class="obj obj-guitar" href="#guitar" data-view="guitar" style="--x: 35%; --y: 17%; --depth: 0.8; --rot: -14deg; --bob: 8.5s">
-        <span class="mini-guitar" aria-hidden="true">
-          <svg viewBox="0 0 120 150">
-            <defs>
-              <linearGradient id="gtrWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1c27d"/><stop offset="1" stop-color="#b86b34"/></linearGradient>
-            </defs>
-            <rect x="54" y="4" width="12" height="62" rx="3" fill="#5b3a24"/>
-            <rect x="51" y="0" width="18" height="16" rx="4" fill="#3a2517"/>
-            <path d="M60 58c-16 0-24 10-22 22 1 7-8 10-8 24 0 20 14 34 30 34s30-14 30-34c0-14-9-17-8-24 2-12-6-22-22-22Z" fill="url(#gtrWood)" stroke="#6b3d1e" stroke-width="2"/>
-            <circle cx="60" cy="96" r="10" fill="#2a1a10"/>
-            <circle cx="60" cy="96" r="13" fill="none" stroke="#6b3d1e" stroke-dasharray="2 3"/>
-            <rect x="48" y="118" width="24" height="5" rx="2" fill="#3a2517"/>
-            <g stroke="#fff6e0" stroke-width="0.8" opacity="0.8"><path d="M57 6v114M59 6v114M61 6v114M63 6v114"/></g>
-          </svg>
-        </span>
-        <span class="obj-label">guitar</span>
-      </a>
-
-      <a class="obj obj-oracle" href="#oracle" data-view="oracle" style="--x: 64%; --y: 15%; --depth: 0.7; --rot: 9deg; --bob: 9s">
-        <span class="mini-tarot" aria-hidden="true"><span class="mt-card"><i></i></span></span>
-        <span class="obj-label">fortune</span>
-      </a>
-
-      <a class="obj obj-games" href="#games" data-view="games" style="--x: 92%; --y: 56%; --depth: 1; --rot: -8deg; --bob: 7.2s">
-        <span class="handheld" aria-hidden="true">
-          <span class="hh-screen"><i class="hh-star"></i><i class="hh-boat"></i></span>
-          <span class="hh-pad"></span>
-          <span class="hh-ab"><i></i><i></i></span>
-        </span>
-        <span class="obj-label">games</span>
-      </a>
-
-      <a class="obj obj-jar" href="#wishes" data-view="wishes" style="--x: 88%; --y: 84%; --depth: 1.15; --rot: 4deg; --bob: 6.8s">
-        <span class="jar" aria-hidden="true">
-          <span class="jar-lid"></span>
-          <span class="jar-glass"><i></i><i></i><i></i><i></i><i></i></span>
-        </span>
-        <span class="obj-label">wishes</span>
-      </a>
-    </nav>
-
-    <button type="button" class="tuned tuned-home" data-tune="home"><span class="tuned-lead">the sky is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
-    <p class="scene-hint" id="sceneHint">click the things floating around · the sky moves with you</p>
+    <button type="button" class="tuned tuned-home" data-tune="home"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+    <p class="memory-caption"><span class="cap-place">my room, the light at 5:47 pm.</span> <span class="dream-clock" id="dreamClock"></span></p>
+    <p class="scene-hint" id="sceneHint">everything in here goes somewhere. click on things.</p>
   </main>
+
+  <p class="travel-caption" id="travelCaption" aria-hidden="true"></p>
 
   <!-- ======================= ABOUT ======================= -->
   <section class="view view-about" id="view-about" data-view="about" hidden aria-labelledby="aboutHead">
-    <div class="bedroom" id="bedroom" aria-hidden="true">
-      <canvas class="bedroom-canvas" id="bedroomCanvas"></canvas>
-      <p class="bedroom-tag" id="bedroomTag"></p>
-    </div>
-    <div class="room-bg bg-about" aria-hidden="true"><i class="sunbeam"></i><i class="sunbeam b2"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="aboutHead" tabindex="-1">about me</h2>
       <button type="button" class="tuned" data-tune="about"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
-      <p class="view-lede bedroom-lede">my room, late afternoon. drag to look around, click things. the letter is on the desk ↓</p>
-      <div class="bedroom-spacer" aria-hidden="true"></div>
 
       <article class="letter">
         <span class="washi washi-1" aria-hidden="true"></span>
@@ -178,9 +92,8 @@
 
   <!-- ======================= PICTURES ======================= -->
   <section class="view view-gallery" id="view-gallery" data-view="gallery" hidden aria-labelledby="picsHead">
-    <div class="room-bg bg-gallery" aria-hidden="true"><i class="safelight"></i><i class="line l1"></i><i class="line l2"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="picsHead" tabindex="-1">pictures</h2>
       <button type="button" class="tuned" data-tune="gallery"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
       <p class="view-lede">pictures i make. click one to look closer. with a mouse you can pick them up and move them around.</p>
@@ -192,9 +105,8 @@
 
   <!-- ======================= SONGS ======================= -->
   <section class="view view-interests" id="view-interests" data-view="interests" hidden aria-labelledby="songsHead">
-    <div class="room-bg bg-interests" aria-hidden="true"><i class="neon">on repeat</i><i class="shelf-glow"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="songsHead" tabindex="-1">on repeat</h2>
       <p class="view-lede">my favorite songs. put a tape in and the whole dream takes its colours.</p>
       <div class="tape-shelf" id="tapeShelf"></div>
@@ -204,9 +116,8 @@
 
   <!-- ======================= FRIENDS ======================= -->
   <section class="view view-favoomfs" id="view-favoomfs" data-view="favoomfs" hidden aria-labelledby="friendsHead">
-    <div class="room-bg bg-favoomfs" aria-hidden="true"><i class="fairy"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="friendsHead" tabindex="-1">friends</h2>
       <button type="button" class="tuned" data-tune="favoomfs"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
       <div class="board">
@@ -223,9 +134,8 @@
 
   <!-- ======================= WRITE TO ME ======================= -->
   <section class="view view-send" id="view-send" data-view="send" hidden aria-labelledby="sendHead">
-    <div class="room-bg bg-send" aria-hidden="true"><i class="candle"><b></b></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="sendHead" tabindex="-1">write to me</h2>
       <button type="button" class="tuned" data-tune="send"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
       <p class="view-lede">it's anonymous. write something, or draw something.</p>
@@ -323,9 +233,8 @@
 
   <!-- ======================= GAMES ======================= -->
   <section class="view view-games" id="view-games" data-view="games" hidden aria-labelledby="gamesHead">
-    <div class="room-bg bg-games" aria-hidden="true"><i class="sun"></i><i class="grid"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="gamesHead" tabindex="-1">games</h2>
       <button type="button" class="tuned" data-tune="games"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
       <p class="view-lede">four little games that got into the dream. pick a cartridge.</p>
@@ -340,9 +249,8 @@
 
   <!-- ======================= GUITAR ======================= -->
   <section class="view view-guitar" id="view-guitar" data-view="guitar" hidden aria-labelledby="guitarHead">
-    <div class="room-bg bg-guitar" aria-hidden="true"><i class="spot"></i><i class="haze"></i><i class="amp"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="guitarHead" tabindex="-1">guitar</h2>
       <button type="button" class="tuned" data-tune="guitar"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
       <p class="view-lede">i play guitar, so here's one. drag across the strings to strum, click one to pluck it.</p>
@@ -352,6 +260,7 @@
         <div class="guitar-bar">
           <button type="button" class="pill-btn" id="gtrDown">strum ↓</button>
           <button type="button" class="pill-btn" id="gtrUp">strum ↑</button>
+          <button type="button" class="pill-btn" id="gtrTuning" aria-pressed="false">midwest tuning (FACGCE)</button>
           <button type="button" class="pill-btn" id="gtrRoom" aria-pressed="true">big room reverb</button>
           <button type="button" class="send-btn" id="gtrAuto" aria-pressed="false"><span class="btn-label">let it play</span></button>
         </div>
@@ -362,9 +271,8 @@
 
   <!-- ======================= FORTUNE ======================= -->
   <section class="view view-oracle" id="view-oracle" data-view="oracle" hidden aria-labelledby="oracleHead">
-    <div class="room-bg bg-oracle" aria-hidden="true"><i class="drape d1"></i><i class="drape d2"></i><i class="orb"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="oracleHead" tabindex="-1">fortune</h2>
       <button type="button" class="tuned" data-tune="oracle"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
       <p class="view-lede">the dream reads cards. think of a question, then shuffle.</p>
@@ -376,9 +284,8 @@
 
   <!-- ======================= WISHES ======================= -->
   <section class="view view-wishes" id="view-wishes" data-view="wishes" hidden aria-labelledby="wishesHead">
-    <div class="room-bg bg-wishes" aria-hidden="true"><i class="city"></i><i class="windows"></i></div>
     <div class="view-inner">
-      <button type="button" class="view-close hand-link" data-close-view>&larr; back to the sky</button>
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
       <h2 class="view-title" id="wishesHead" tabindex="-1">wishes</h2>
       <button type="button" class="tuned" data-tune="wishes"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
       <p class="view-lede">write a wish and let it go. it turns into a star over the sea.</p>
@@ -457,15 +364,17 @@
       <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
       <h2 class="modal-title" id="keysTitle">secret keys</h2>
       <dl class="keys-list">
-        <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>jump to a room (<kbd>0</kbd> the sky)</dd>
-        <dt><kbd>L</kbd></dt><dd>lucid mode: the sky folds into a kaleidoscope</dd>
-        <dt><kbd>R</kbd></dt><dd>rain</dd>
+        <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>go somewhere in the room (<kbd>0</kbd> step back)</dd>
+        <dt><kbd>L</kbd></dt><dd>lucid: the room folds into a kaleidoscope</dd>
+        <dt><kbd>R</kbd></dt><dd>rain on the window</dd>
         <dt><kbd>M</kbd></dt><dd>mute the dream's own sounds</dd>
         <dt><kbd>Esc</kbd></dt><dd>back to the sky</dd>
         <dt>type <b>void</b></dt><dd>…see what happens</dd>
         <dt>type <b>wish</b></dt><dd>the wish jar</dd>
-        <dt>shooting stars</dt><dd>click one to catch it</dd>
-        <dt>the title</dt><dd>touch the letters, they ring</dd>
+        <dt>the window</dt><dd>go out of it at night; catch a shooting star</dd>
+        <dt>the lamp</dt><dd>click it</dd>
+        <dt>the title</dt><dd>touch the letters while it's there, they ring</dd>
+        <dt>stay still</dt><dd>for a minute, and the memory fades</dd>
       </dl>
     </div>
   </dialog>
@@ -485,8 +394,10 @@
   <script src="../js/drawing.js" defer></script>
   <!-- the dream -->
   <script src="js/palette.js" defer></script>
+  <script src="js/memory/paint.js" defer></script>
   <script src="js/sound.js" defer></script>
   <script src="js/sky.js" defer></script>
+  <script src="js/memory/engine.js" defer></script>
   <script src="js/life.js" defer></script>
   <script src="js/rain.js" defer></script>
   <script src="js/views.js" defer></script>
@@ -505,6 +416,5 @@
   <script src="js/games/lanterns.js" defer></script>
   <script src="js/extras.js" defer></script>
   <script src="js/main.js" defer></script>
-  <script type="module" src="js/bedroom.js"></script>
 </body>
 </html>

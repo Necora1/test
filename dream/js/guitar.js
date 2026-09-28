@@ -1,7 +1,8 @@
 /* ==========================================================
    guitar.js — a guitar you can actually play
    Drag across the strings to strum (either way), click a string
-   to pluck it, pick a chord. Keys: 1–8 chords, A S D F G H the
+   to pluck it, pick a chord. "midwest tuning" retunes it to
+   FACGCE, and "let it play" then fingerpicks instead of strumming. Keys: 1–8 chords, A S D F G H the
    strings (low to high), space strums. "let it play" strums a
    slow progression by itself. The strings are Karplus–Strong
    (sound.js), the reverb is the dream's room.
@@ -11,8 +12,8 @@
   const { $, $$ } = Void;
   const colors = Void.dream.palette.current;
 
-  const OPEN = [82.41, 110.0, 146.83, 196.0, 246.94, 329.63]; // E A D G B e
-  const CHORDS = [
+  const STD_OPEN = [82.41, 110.0, 146.83, 196.0, 246.94, 329.63]; // E A D G B e
+  const STD_CHORDS = [
     ['Em', [0, 2, 2, 0, 0, 0]],
     ['C', [-1, 3, 2, 0, 1, 0]],
     ['G', [3, 2, 0, 0, 0, 3]],
@@ -23,7 +24,33 @@
     ['Em9', [0, 2, 0, 0, 0, 2]]
   ];
   // a slow, sad, pretty loop: chord index, beats
-  const SONG = [[5, 4], [7, 4], [2, 4], [3, 4], [5, 4], [6, 4], [4, 4], [0, 4]];
+  const STD_SONG = [[5, 4], [7, 4], [2, 4], [3, 4], [5, 4], [6, 4], [4, 4], [0, 4]];
+
+  // FACGCE: the open tuning half of midwest emo is written in. Everything
+  // rings; one finger (or none) makes a chord
+  const MW_OPEN = [87.31, 110.0, 130.81, 196.0, 261.63, 329.63];
+  const MW_CHORDS = [
+    ['Fmaj9', [0, 0, 0, 0, 0, 0]],
+    ['C/G', [2, 2, 2, 0, 0, 0]],
+    ['Am7', [4, 3, 0, 0, 0, 0]],
+    ['B♭maj9', [5, 5, 5, 0, 0, 0]],
+    ['C', [7, 7, 7, 0, 0, 0]],
+    ['Dm11', [9, 8, 9, 0, 0, 0]],
+    ['Em', [11, 10, 11, 0, 0, 0]],
+    ['F', [12, 12, 12, 0, 0, 0]]
+  ];
+  const MW_SONG = [[0, 4], [3, 4], [5, 4], [2, 4], [0, 4], [3, 4], [6, 4], [4, 4]];
+  // fingerpicked eighths: bass, then twinkling up and down the top strings
+  const TWINKLE = [0, 3, 5, 4, 1, 3, 5, 4];
+
+  const TUNINGS = {
+    standard: { open: STD_OPEN, chords: STD_CHORDS, song: STD_SONG, style: 'strum', bpm: 76 },
+    midwest: { open: MW_OPEN, chords: MW_CHORDS, song: MW_SONG, style: 'twinkle', bpm: 138 }
+  };
+  let T = TUNINGS.standard;
+  let OPEN = T.open;
+  let CHORDS = T.chords;
+  let SONG = T.song;
   const PATTERN = [['d', 0], ['d', 1], ['u', 1.5], ['u', 2.5], ['d', 3], ['u', 3.5]];
   const KEYS = ['a', 's', 'd', 'f', 'g', 'h'];
 
@@ -88,17 +115,25 @@
     nowChord.textContent = CHORDS[chord][0];
   }
 
+  // high shapes are drawn from their lowest fret, with "5fr" beside them
+  const shapeOffset = (frets) => {
+    const played = frets.filter((f) => f > 0);
+    const max = played.length ? Math.max(...played) : 0;
+    return max > 4 ? Math.min(...played) - 1 : 0;
+  };
+
   function chordButton([name, frets], i) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'chord';
     b.setAttribute('aria-pressed', String(i === chord));
     b.setAttribute('aria-label', `${name} chord (key ${i + 1})`);
+    const off = shapeOffset(frets);
     const grid = frets.map((f, s) => {
       const top = f < 0 ? '<i class="c-x">×</i>' : f === 0 ? '<i class="c-o">○</i>' : '<i></i>';
-      const dot = f > 0 ? `<b style="--s:${s};--f:${Math.min(f, 4)}"></b>` : '';
+      const dot = f > 0 ? `<b style="--s:${s};--f:${Math.min(f - off, 4)}"></b>` : '';
       return top.replace('<i', `<i style="--s:${s}"`) + dot;
-    }).join('');
+    }).join('') + (off ? `<em class="c-fr">${off + 1}fr</em>` : '');
     b.innerHTML = `<span class="chord-name">${name}</span><span class="chord-grid" aria-hidden="true">${grid}</span><kbd>${i + 1}</kbd>`;
     b.addEventListener('click', () => { setChord(i); strum('d', { bright: 0.45 }); });
     return b;
@@ -107,16 +142,23 @@
   /* ---------- playing by itself ---------- */
   function startAuto() {
     Void.dream.sound.wake();
-    const beat = 60 / 76;
+    const beat = 60 / T.bpm;
     let bar = 0;
     const playBar = () => {
       const [c, beats] = SONG[bar % SONG.length];
       setChord(c);
-      PATTERN.forEach(([dir, at]) => {
-        if (at >= beats) return;
-        const t = setTimeout(() => strum(dir, { bright: dir === 'd' ? 0.5 : 0.35, vol: dir === 'd' ? 0.36 : 0.24 }), at * beat * 1000);
-        auto.timers.push(t);
-      });
+      if (T.style === 'twinkle') {
+        TWINKLE.forEach((string, n) => {
+          const t = setTimeout(() => pluck(string, { bright: n % 4 === 0 ? 0.45 : 0.7, vol: n % 4 === 0 ? 0.4 : 0.3 }), n * (beat / 2) * 1000);
+          auto.timers.push(t);
+        });
+      } else {
+        PATTERN.forEach(([dir, at]) => {
+          if (at >= beats) return;
+          const t = setTimeout(() => strum(dir, { bright: dir === 'd' ? 0.5 : 0.35, vol: dir === 'd' ? 0.36 : 0.24 }), at * beat * 1000);
+          auto.timers.push(t);
+        });
+      }
       bar++;
       auto.timers.push(setTimeout(playBar, beats * beat * 1000));
     };
@@ -173,9 +215,10 @@
       ctx.fillRect(x, H * 0.14, 2, H * 0.72);
     }
     // where the chord's fingers are
+    const off = shapeOffset(CHORDS[chord][1]);
     CHORDS[chord][1].forEach((fret, s) => {
       if (fret <= 0) return;
-      const x = W * 0.06 + (fret - 0.5) * W * 0.07;
+      const x = W * 0.06 + (fret - off - 0.5) * W * 0.07;
       ctx.fillStyle = rgba(colors.accent, 0.9);
       ctx.beginPath();
       ctx.arc(x, stringY(s), 7, 0, Math.PI * 2);
@@ -254,6 +297,24 @@
     init() {
       chordBox.append(...CHORDS.map(chordButton));
       setChord(0);
+
+      const tuneBtn = $('#gtrTuning');
+      tuneBtn.addEventListener('click', () => {
+        const midwest = tuneBtn.getAttribute('aria-pressed') !== 'true';
+        const playing = !!auto;
+        stopAuto();
+        T = midwest ? TUNINGS.midwest : TUNINGS.standard;
+        OPEN = T.open;
+        CHORDS = T.chords;
+        SONG = T.song;
+        tuneBtn.setAttribute('aria-pressed', String(midwest));
+        chordBox.replaceChildren(...CHORDS.map(chordButton));
+        setChord(0);
+        Void.dream.sound.wake();
+        // let the open strings ring out, so you hear the new tuning
+        [0, 1, 2, 3, 4, 5].forEach((st, k) => pluck(st, { when: k * 0.09, bright: 0.6, vol: 0.34 }));
+        if (playing) startAuto();
+      });
 
       canvas.addEventListener('pointerdown', (e) => {
         Void.dream.sound.wake();

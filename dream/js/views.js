@@ -1,9 +1,11 @@
 /* ==========================================================
    views.js — the rooms of the dream
-   The scene is the home; each object in it opens a room over
-   the sky (#about, #gallery, #interests, #favoomfs, #send, the
-   same addresses as the classic version). A room grows out of
-   the object you clicked and sinks back into it when closed.
+   Home is renn's room; each thing in it opens a room (#about,
+   #gallery, #interests, #favoomfs, #send — the same addresses
+   as the classic version — and #games, #guitar, #oracle,
+   #wishes). The camera travels there first (memory/engine.js),
+   then the room surfaces over it; closing fades it, then the
+   camera drifts back out.
    ========================================================== */
 (() => {
   const Void = window.Void;
@@ -18,55 +20,57 @@
     return ROOMS.includes(id) ? id : 'home';
   };
 
-  function originOf(id, el) {
-    const obj = $(`.obj[data-view="${id}"]`);
-    const r = obj && obj.offsetParent ? obj.getBoundingClientRect() : null;
-    el.style.setProperty('--ox', r ? `${r.left + r.width / 2}px` : '50vw');
-    el.style.setProperty('--oy', r ? `${r.top + r.height / 2}px` : '60vh');
-  }
+  let token = 0;
 
   function show(id, { instant = false } = {}) {
     if (id === current) return;
     const prev = current;
     current = id;
+    const mine = ++token;
     document.body.dataset.view = id;
     Void.dream.palette.setView(id);
     Void.dream.sky.setFocus(id === 'home' ? 0 : 1);
+    const quick = instant || Void.motion.reduced;
 
-    // the room we're leaving
+    // the room we're leaving fades first, then the camera moves
     if (prev !== 'home') {
       const old = $(`#view-${prev}`);
       if (old) {
-        originOf(prev, old);
-        old.classList.remove('is-opening');
-        if (instant || Void.motion.reduced) old.hidden = true;
+        old.classList.remove('is-opening', 'is-waiting');
+        if (quick) old.hidden = true;
         else {
           old.classList.add('is-closing');
           clearTimeout(closing);
-          closing = setTimeout(() => { old.hidden = true; old.classList.remove('is-closing'); }, 420);
+          closing = setTimeout(() => { old.hidden = true; old.classList.remove('is-closing'); }, 450);
         }
       }
     }
 
+    const arrive = Void.dream.memory ? Void.dream.memory.goTo(id, { instant: quick }) : Promise.resolve();
+
     if (id === 'home') {
       scene.inert = false;
-      const obj = $(`.obj[data-view="${prev}"]`);
-      if (obj && !instant) obj.focus({ preventScroll: true });
+      const spot = $(`.hotspot[data-view="${prev}"]`);
+      arrive.then(() => { if (mine === token && spot && !instant) spot.focus({ preventScroll: true }); });
     } else {
       const room = $(`#view-${id}`);
-      originOf(id, room);
-      room.classList.remove('is-closing');
+      room.classList.remove('is-closing', 'is-opening');
       room.hidden = false;
       room.scrollTop = 0;
-      if (!instant && !Void.motion.reduced) {
-        room.classList.remove('is-opening');
-        void room.offsetWidth;
-        room.classList.add('is-opening');
-      }
       scene.inert = true;
-      const head = room.querySelector('.view-title');
-      if (head) head.focus({ preventScroll: true });
-      Void.emit('page:shown', id);
+      // the room surfaces once the camera is nearly there
+      if (!quick) room.classList.add('is-waiting');
+      arrive.then(() => {
+        if (mine !== token) return;
+        room.classList.remove('is-waiting');
+        if (!quick) {
+          void room.offsetWidth;
+          room.classList.add('is-opening');
+        }
+        const head = room.querySelector('.view-title');
+        if (head) head.focus({ preventScroll: true });
+        Void.emit('page:shown', id);
+      });
     }
     Void.emit('view', { id, prev });
   }

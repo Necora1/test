@@ -122,7 +122,14 @@
     ctx.restore();
   }
 
+  let idle = false;
   function frame(t, dt) {
+    // only out of the window, over the night sea
+    if (!document.body.classList.contains('is-outside')) {
+      if (!idle) { ctx.clearRect(0, 0, W, H); idle = true; }
+      return;
+    }
+    idle = false;
     ctx.clearRect(0, 0, W, H);
 
     // dust drifting down

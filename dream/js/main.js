@@ -37,6 +37,7 @@
   const rainBtn = $('#rainBtn');
   rainBtn.addEventListener('click', () => {
     const on = Void.dream.rain.toggle();
+    Void.dream.memory.setRain(!!on);
     rainBtn.setAttribute('aria-pressed', String(!!on));
   });
 

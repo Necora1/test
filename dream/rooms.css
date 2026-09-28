@@ -2,7 +2,7 @@
    rooms.css — everything the dream grew in its second night:
    the new things floating in the sky, a world of its own behind
    every room, the games, the guitar, the cards, the wish jar,
-   the 3D bedroom, and the strange modes (lucid, drifting, void).
+   the strange modes (lucid, void). memory.css is the room itself.
    Loaded after dream.css and built on its tokens.
    ========================================================== */
 
@@ -270,341 +270,6 @@
   from { translate: 0 0; opacity: 0.4; }
   to   { translate: 6px -10px; opacity: 1; }
 }
-
-/* ==========================================================
-   A WORLD BEHIND EVERY ROOM
-   ========================================================== */
-.room-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.room-bg i { position: absolute; display: block; }
-.view { isolation: isolate; }
-
-/* about: late sun through a window (behind the 3D room, and alone without it) */
-.bg-about {
-  background:
-    radial-gradient(ellipse at 78% 10%, rgb(255 214 150 / 0.55), transparent 55%),
-    linear-gradient(180deg, #3a2419, #1e130f 70%);
-}
-
-.sunbeam {
-  top: -20%;
-  right: 8%;
-  width: 34vw;
-  height: 150%;
-  background: linear-gradient(180deg, rgb(255 222 160 / 0.4), rgb(255 222 160 / 0));
-  rotate: 28deg;
-  filter: blur(18px);
-  animation: beam 9s ease-in-out infinite alternate;
-}
-
-.sunbeam.b2 { right: 30%; width: 14vw; opacity: 0.6; animation-delay: -4s; }
-
-@keyframes beam { to { opacity: 0.55; translate: -3vw 0; } }
-
-.has-3d .bg-about { display: none; }
-
-/* pictures: a darkroom under a red safelight, prints hung on lines */
-.bg-gallery {
-  background:
-    radial-gradient(ellipse at 50% -10%, rgb(255 40 30 / 0.45), transparent 60%),
-    radial-gradient(ellipse at 50% 120%, rgb(120 10 10 / 0.5), transparent 60%),
-    #140606;
-}
-
-.safelight {
-  left: 50%;
-  top: -60px;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  translate: -50% 0;
-  background: radial-gradient(circle, #ff5a45 0 30%, rgb(255 60 40 / 0.4) 50%, transparent 70%);
-  animation: hum 4s ease-in-out infinite alternate;
-}
-
-@keyframes hum { to { opacity: 0.8; scale: 1.08; } }
-
-.bg-gallery .line {
-  left: -5%;
-  right: -5%;
-  height: 60px;
-  border-bottom: 1.5px solid rgb(255 200 180 / 0.25);
-  border-radius: 0 0 50% 50%;
-}
-
-.bg-gallery .l1 { top: 22%; }
-.bg-gallery .l2 { top: 58%; }
-.view-gallery .polaroid-photo img { filter: sepia(0.15) saturate(1.05); }
-.view-gallery .view-title { color: #ffd9d0; text-shadow: 0 0 30px rgb(255 60 40 / 0.7); }
-
-/* songs: a record shop after closing, neon still on */
-.bg-interests {
-  background:
-    repeating-linear-gradient(0deg, rgb(0 0 0 / 0) 0 180px, rgb(40 22 12 / 0.9) 180px 196px),
-    linear-gradient(90deg, #1a0f0a, #2a1810 50%, #1a0f0a);
-}
-
-.bg-interests .neon {
-  right: 6%;
-  top: 14%;
-  font: italic 400 clamp(2rem, 6vw, 4.5rem)/1 var(--serif);
-  font-style: italic;
-  color: #ffd1f5;
-  text-shadow: 0 0 6px #ff6bd6, 0 0 20px #ff3cc8, 0 0 60px #ff3cc8;
-  rotate: -6deg;
-  opacity: 0.35;
-  animation: neon 6s steps(1) infinite;
-}
-
-@keyframes neon {
-  0%, 100% { opacity: 0.35; }
-  71% { opacity: 0.08; }
-  73% { opacity: 0.35; }
-  75% { opacity: 0.12; }
-}
-
-.shelf-glow {
-  inset: 0;
-  background: radial-gradient(ellipse at 20% 40%, rgb(255 170 80 / 0.18), transparent 50%);
-}
-
-/* friends: a corkboard wall with fairy lights */
-.bg-favoomfs {
-  background:
-    radial-gradient(circle at 20% 30%, rgb(0 0 0 / 0.12) 0 1px, transparent 2px) 0 0 / 9px 9px,
-    radial-gradient(circle at 70% 60%, rgb(255 255 255 / 0.06) 0 1px, transparent 2px) 0 0 / 7px 7px,
-    linear-gradient(180deg, #6b4a2e, #4e3420);
-}
-
-.fairy {
-  left: 0;
-  right: 0;
-  top: 8%;
-  height: 80px;
-  background: radial-gradient(circle, #fff3c4 0 3px, rgb(255 230 160 / 0.5) 5px, transparent 9px) 0 0 / 60px 40px repeat-x;
-  -webkit-mask: linear-gradient(#000, #000);
-  animation: twinkle 2.4s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 6px #ffd98a);
-}
-
-@keyframes twinkle { to { opacity: 0.55; } }
-
-/* write to me: a desk at night, one candle */
-.bg-send {
-  background:
-    radial-gradient(ellipse at 18% 88%, rgb(255 170 80 / 0.4), transparent 45%),
-    linear-gradient(180deg, #0f0b12, #1c1410 70%, #2a1c12);
-}
-
-.candle {
-  left: 7%;
-  bottom: 6%;
-  width: 26px;
-  height: 90px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #efe4cf, #fff8ea 40%, #d8ccb4);
-}
-
-.candle b {
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  width: 14px;
-  height: 30px;
-  border-radius: 50% 50% 45% 45% / 70% 70% 30% 30%;
-  translate: -50% 2px;
-  background: radial-gradient(ellipse at 50% 80%, #fff 0 20%, #ffd36b 45%, #ff8a2a 75%, transparent 76%);
-  box-shadow: 0 0 40px 18px rgb(255 170 70 / 0.35);
-  transform-origin: 50% 100%;
-  animation: flame 0.18s ease-in-out infinite alternate;
-}
-
-@keyframes flame {
-  from { transform: rotate(-3deg) scaleY(1); }
-  to   { transform: rotate(3deg) scaleY(1.08); }
-}
-
-/* games: a synthwave arcade horizon */
-.bg-games {
-  background: linear-gradient(180deg, #0d0221 0%, #261447 45%, #ff3864 62%, #0d0221 62.2%);
-}
-
-.bg-games .sun {
-  left: 50%;
-  top: 30%;
-  width: 34vmin;
-  height: 34vmin;
-  border-radius: 50%;
-  translate: -50% 0;
-  background: linear-gradient(180deg, #ffd319, #ff901f 50%, #ff2975);
-  -webkit-mask: repeating-linear-gradient(180deg, #000 0 14px, transparent 14px 18px);
-  mask: repeating-linear-gradient(180deg, #000 0 14px, transparent 14px 18px);
-  box-shadow: 0 0 80px #ff2975;
-}
-
-.bg-games .grid {
-  left: -50%;
-  right: -50%;
-  top: 62%;
-  bottom: -40%;
-  background:
-    linear-gradient(rgb(255 41 117 / 0.8) 2px, transparent 2px) 0 0 / 100% 48px,
-    linear-gradient(90deg, rgb(255 41 117 / 0.8) 2px, transparent 2px) 0 0 / 60px 100%;
-  transform: perspective(300px) rotateX(62deg);
-  transform-origin: 50% 0;
-  animation: grid-run 1.2s linear infinite;
-}
-
-@keyframes grid-run { to { background-position: 0 48px, 0 0; } }
-
-/* guitar: a small stage, one spotlight, haze */
-.bg-guitar {
-  background: radial-gradient(ellipse at 50% 100%, #2a1a14, #0a0706 70%);
-}
-
-.bg-guitar .spot {
-  left: 50%;
-  top: -10%;
-  width: 70vw;
-  height: 130%;
-  translate: -50% 0;
-  background: conic-gradient(from 165deg at 50% 0, transparent 0deg, rgb(255 236 200 / 0.22) 12deg 18deg, transparent 30deg);
-  filter: blur(6px);
-  animation: spot 7s ease-in-out infinite alternate;
-  transform-origin: 50% 0;
-}
-
-@keyframes spot { from { rotate: -6deg; } to { rotate: 6deg; } }
-
-.bg-guitar .haze {
-  inset: 40% -10% -10%;
-  background: radial-gradient(ellipse at 30% 60%, rgb(255 255 255 / 0.07), transparent 50%), radial-gradient(ellipse at 70% 40%, rgb(255 255 255 / 0.06), transparent 50%);
-  animation: haze 14s ease-in-out infinite alternate;
-}
-
-@keyframes haze { to { translate: 6% -4%; } }
-
-.bg-guitar .amp {
-  right: 5%;
-  bottom: 4%;
-  width: 150px;
-  height: 120px;
-  border-radius: 6px;
-  background:
-    radial-gradient(circle, #1a1410 0 1.5px, transparent 2px) 0 0 / 8px 8px,
-    linear-gradient(#2d2520, #1a1410);
-  box-shadow: inset 0 0 0 6px #3b2f28, 0 0 0 2px #0b0806;
-  opacity: 0.8;
-}
-
-/* fortune: a velvet tent with a glowing crystal ball */
-.bg-oracle {
-  background:
-    radial-gradient(circle at 50% 30%, rgb(160 90 255 / 0.25), transparent 50%),
-    repeating-linear-gradient(90deg, #2a0f3a 0 60px, #220b30 60px 120px);
-}
-
-.drape {
-  top: -10%;
-  bottom: -10%;
-  width: 30vw;
-  background: repeating-linear-gradient(90deg, #4a1b5e 0 30px, #3a1249 30px 50px, #551f6a 50px 70px);
-  box-shadow: 0 0 60px rgb(0 0 0 / 0.7);
-  animation: drape 8s ease-in-out infinite alternate;
-}
-
-.drape.d1 { left: -14vw; border-radius: 0 0 60% 0; transform-origin: 0 0; }
-.drape.d2 { right: -14vw; border-radius: 0 0 0 60%; transform-origin: 100% 0; animation-delay: -4s; }
-
-@keyframes drape { to { rotate: 1.5deg; } }
-
-.orb {
-  left: 50%;
-  bottom: -12vmin;
-  width: 40vmin;
-  height: 40vmin;
-  border-radius: 50%;
-  translate: -50% 0;
-  background: radial-gradient(circle at 35% 30%, #fff 0 4%, #d9b8ff 12%, #7a3fd1 45%, #2a0f4a 75%);
-  box-shadow: 0 0 120px 30px rgb(170 110 255 / 0.45);
-  animation: orb 5s ease-in-out infinite alternate;
-  opacity: 0.8;
-}
-
-@keyframes orb { to { box-shadow: 0 0 160px 50px rgb(255 140 230 / 0.45); filter: hue-rotate(30deg); } }
-
-/* wishes: a rooftop at night, over a sleeping city */
-.bg-wishes {
-  background:
-    radial-gradient(circle, #fff 0 1px, transparent 1.5px) 0 0 / 97px 83px,
-    radial-gradient(circle, rgb(255 255 255 / 0.6) 0 1px, transparent 1.5px) 30px 40px / 61px 71px,
-    linear-gradient(180deg, #050816, #121a3a 70%, #2a2350);
-}
-
-.bg-wishes .city {
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 26vh;
-  background: #070912;
-  clip-path: polygon(0 60%, 6% 60%, 6% 30%, 12% 30%, 12% 50%, 18% 50%, 18% 12%, 22% 12%, 22% 45%, 30% 45%, 30% 25%, 36% 25%, 36% 55%, 44% 55%, 44% 20%, 47% 20%, 47% 8%, 50% 8%, 50% 20%, 53% 20%, 53% 48%, 60% 48%, 60% 30%, 68% 30%, 68% 58%, 74% 58%, 74% 18%, 80% 18%, 80% 40%, 88% 40%, 88% 28%, 94% 28%, 94% 55%, 100% 55%, 100% 100%, 0 100%);
-}
-
-.bg-wishes .windows {
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 20vh;
-  background: radial-gradient(circle, rgb(255 214 140 / 0.85) 0 2px, transparent 3px) 0 0 / 37px 29px;
-  -webkit-mask: linear-gradient(transparent, #000 30%);
-  mask: linear-gradient(transparent, #000 30%);
-  opacity: 0.5;
-  animation: twinkle 5s steps(3) infinite alternate;
-}
-
-/* ==========================================================
-   ABOUT: THE 3D BEDROOM
-   ========================================================== */
-.bedroom {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 1.2s ease;
-}
-
-.bedroom.is-ready { opacity: 1; }
-.bedroom-canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
-
-.bedroom-tag {
-  position: fixed;
-  z-index: 30;
-  padding: 4px 11px 6px;
-  border-radius: 999px;
-  font: 700 1.2rem/1 var(--hand);
-  color: var(--ink);
-  background: rgb(255 249 240 / 0.92);
-  box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
-  translate: 14px -130%;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.bedroom-tag:empty { display: none; }
-.bedroom-lede, .bedroom-spacer { display: none; }
-
-.has-3d .view-inner { pointer-events: none; }
-.has-3d .view-inner > * { pointer-events: auto; }
-.has-3d .bedroom-lede { display: block; }
-.has-3d .bedroom-spacer { display: block; height: 52vh; pointer-events: none; }
-.has-3d .view-title { text-shadow: 0 2px 20px rgb(40 20 10 / 0.8), 0 0 40px rgb(255 200 140 / 0.5); }
-.has-3d .bedroom-lede { padding: 4px 12px; border-radius: 12px; background: rgb(30 18 12 / 0.45); }
 
 /* ==========================================================
    GAMES
@@ -996,6 +661,15 @@
   background: #7a3f6a;
 }
 
+.c-fr {
+  position: absolute;
+  left: -13px;
+  top: 2px;
+  font: 600 8px/1 system-ui, sans-serif;
+  font-style: normal;
+  color: #7a3f6a;
+}
+
 .chord kbd {
   position: absolute;
   top: 4px;
@@ -1298,42 +972,7 @@ html.is-lucid .life { filter: hue-rotate(120deg) saturate(1.6); }
   to   { transform: translateY(-0.18em) rotate(8deg) scale(1.12); }
 }
 
-/* drifting off: left alone, the dream floats apart */
-html.is-drifting .obj {
-  translate: calc(-50% + (var(--x-num, 0.5) - 0.5) * 30vw) calc(-50% - 12vh);
-  opacity: 0.35;
-  filter: blur(3px);
-  transition: translate 12s ease-in-out, opacity 10s ease, filter 10s ease;
-}
-
-html.is-drifting .scene-title { filter: blur(4px); opacity: 0.4; transition: filter 10s ease, opacity 10s ease; }
-
-html.is-drifting .scene::after {
-  content: 'you drifted off. move to come back.';
-  position: fixed;
-  left: 50%;
-  top: 62%;
-  translate: -50% 0;
-  font: 600 1.6rem/1 var(--hand);
-  color: rgb(255 249 240 / 0.8);
-  text-shadow: 0 0 20px rgb(var(--glow));
-  animation: ink 3s ease 2s both;
-}
-
 /* "void": everything falls into the middle, then back out */
-html.is-voiding .objects .obj,
-html.is-voiding .scene-title,
-html.is-voiding .tuned-home {
-  animation: void-pull 2s cubic-bezier(0.7, 0, 0.3, 1) both;
-}
-
-@keyframes void-pull {
-  0%   { transform: none; filter: none; }
-  45%  { transform: translate(var(--vx, 0), var(--vy, 0)) scale(0.02) rotate(540deg); filter: blur(6px) brightness(3); }
-  55%  { transform: translate(var(--vx, 0), var(--vy, 0)) scale(0.02) rotate(560deg); filter: blur(6px) brightness(3); }
-  100% { transform: none; filter: none; }
-}
-
 html.is-voiding body::after {
   content: '';
   position: fixed;
@@ -1385,7 +1024,6 @@ html.is-voiding body::after {
 }
 
 .reduce-motion .fx { display: none; }
-.reduce-motion .bg-games .grid { animation: none; }
 
 .view-games .view-lede,
 .view-games .view-title { position: relative; }

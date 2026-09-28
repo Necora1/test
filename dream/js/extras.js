@@ -42,6 +42,7 @@
     lucid = on;
     html.classList.toggle('is-lucid', on);
     Void.dream.sky.setLucid(on ? 1 : 0);
+    Void.dream.memory.setLucid(on);
     lucidBtn.setAttribute('aria-pressed', String(on));
     if (on) {
       Void.dream.sound.wake();
@@ -85,7 +86,7 @@
     const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
     const h = now.getHours();
     const mood = h < 5 ? 'you should be asleep' : h < 11 ? 'good morning, dreamer' : h < 17 ? 'a daydream, then' : h < 22 ? 'good evening' : 'late again';
-    el.textContent = `${time} where you are · the real moon is ${moonPhase(now)} · ${mood}`;
+    el.textContent = `(for you it's ${time}, and the real moon is ${moonPhase(now)}. ${mood}.)`;
   }
 
   /* ---------- drifting off ---------- */
@@ -113,12 +114,7 @@
     if (collapsing || Void.motion.reduced) return;
     if (Void.dream.views.current() !== 'home') Void.dream.views.home();
     collapsing = true;
-    // each thing gets pulled towards the middle of the sky
-    $$('.objects .obj, .scene-title, .tuned-home').forEach((el) => {
-      const r = el.getBoundingClientRect();
-      el.style.setProperty('--vx', `${innerWidth / 2 - (r.left + r.width / 2)}px`);
-      el.style.setProperty('--vy', `${innerHeight * 0.42 - (r.top + r.height / 2)}px`);
-    });
+    Void.dream.memory.pulseVoid();
     html.classList.add('is-voiding');
     Void.dream.sound.thud({ vol: 0.45 });
     Void.dream.sky.ripple(innerWidth / 2, innerHeight * 0.42, 2);
@@ -178,7 +174,6 @@
         const calm = Void.dream.views.current() === 'home' && !Void.modal.isOpen() && !Void.motion.reduced;
         if (!drifting && calm && idle >= DRIFT_AFTER) {
           drifting = true;
-          $$('.objects .obj').forEach((el) => el.style.setProperty('--x-num', String((parseFloat(el.style.getPropertyValue('--x')) || 50) / 100)));
           html.classList.add('is-drifting');
         }
       }, 5000);
