@@ -26,6 +26,10 @@
   const leaf = $('#doorLeaf');
   const leafCanvas = leaf?.querySelector('canvas');
   const clock = $('#doorClock');
+  const bitsCanvas = el?.querySelector('.door-bits');
+  const hint = el?.querySelector('.door-hint');
+  const touch = !matchMedia('(hover: hover)').matches;
+  const KNOCK_HINT = touch ? 'tap the door to knock' : 'click the door to knock';
 
   let geo = null;
   let state = 'closed';           // closed · knocking · opening · inside
@@ -346,6 +350,100 @@
     el.classList.add('is-painted');
   }
 
+  /* ---------- the void: the hallway as it's stored, in zeros and ones ---------- */
+  // everything out here has been zeroed; the only ones left are the light
+  // coming from under renn's door. Then it resolves into the picture.
+  let bitsRun = 0;
+  let hurryBits = () => {};
+  function playBits({ zeroed = false } = {}) {
+    if (!bitsCanvas || !geo) return;
+    if (Void.motion.reduced) { bitsCanvas.hidden = true; return; }
+    const run = ++bitsRun;
+    const { vw, vh } = geo;
+    const cw = vw < 700 ? 9 : 12;
+    const ch = Math.round(cw * 1.55);
+    const cols = Math.ceil(vw / cw);
+    const rows = Math.ceil(vh / ch);
+    // the painted hall and door, one pixel per cell
+    const sample = document.createElement('canvas');
+    sample.width = cols;
+    sample.height = rows;
+    const sx = sample.getContext('2d');
+    sx.fillStyle = '#000';
+    sx.fillRect(0, 0, cols, rows);
+    sx.drawImage(hall, 0, 0, cols, rows);
+    sx.drawImage(leafCanvas, geo.x0 / cw, geo.y0 / ch, geo.dw / cw, geo.dh / ch);
+    const data = sx.getImageData(0, 0, cols, rows).data;
+    const cells = [];
+    const vs = [];
+    for (let i = 0; i < cols * rows; i++) {
+      const r = data[i * 4];
+      const g = data[i * 4 + 1];
+      const b = data[i * 4 + 2];
+      const v = Math.pow((0.3 * r + 0.59 * g + 0.11 * b) / 255, 0.55);
+      const m = Math.max(r, g, b, 1);
+      vs.push(v);
+      cells.push({ v, tint: [r / m, g / m, b / m], a: Math.random(), d: Math.random() });
+    }
+    const cut = Math.max(0.3, vs.slice().sort((a, b) => a - b)[Math.floor(vs.length * 0.94)]);
+    cells.forEach((c) => { c.one = !zeroed && c.v >= cut; });
+
+    const ctx = canvasFor(bitsCanvas, vw, vh);
+    bitsCanvas.hidden = false;
+    ctx.font = `${Math.round(cw * 1.28)}px ui-monospace, Menlo, 'Courier New', monospace`;
+    ctx.textBaseline = 'top';
+    if (hint) hint.textContent = zeroed ? 'it all went to zero. knock, and it comes back.' : 'everything out here is 0.';
+    // its own clock, advanced a frame at a time, so a slow first frame can't skip it
+    const DIS = 1600;
+    let t = 0;
+    let prev = null;
+    let resolveAt = zeroed ? 3600 : 2800;
+    hurryBits = () => { resolveAt = Math.min(resolveAt, t); };
+    const glyph = (x, y, c, one) => {
+      ctx.fillStyle = '#050506';
+      ctx.fillRect(x * cw, y * ch, cw, ch);
+      const al = one ? 0.4 + c.v * 0.6 : 0.06 + c.v * 0.34;
+      const [tr, tg, tb] = c.tint;
+      ctx.fillStyle = one
+        ? `rgba(${(190 + 65 * tr) | 0}, ${(150 + 80 * tg) | 0}, ${(110 + 100 * tb) | 0}, ${al})`
+        : `rgba(150, 155, 165, ${al})`;
+      ctx.fillText(one ? '1' : '0', x * cw + cw * 0.14, y * ch + ch * 0.1);
+    };
+    let blank = false;
+    // only the cells that change are drawn: being written, flickering, dissolving
+    const step = (now) => {
+      if (run !== bitsRun) return;
+      if (prev !== null) t += Math.min(250, now - prev);
+      prev = now;
+      if (!blank) {
+        ctx.fillStyle = '#050506';
+        ctx.fillRect(0, 0, vw, vh);
+        bitsCanvas.style.background = 'transparent';
+        blank = true;
+      }
+      const since = t - resolveAt;
+      let left = 0;
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const c = cells[y * cols + x];
+          if (c.gone) continue;
+          if (since > c.d * DIS) { ctx.clearRect(x * cw, y * ch, cw, ch); c.gone = true; continue; }
+          left++;
+          if (!c.shown) {
+            if (t >= c.a * 1100) { glyph(x, y, c, c.one); c.shown = true; }
+          } else if (!zeroed && c.v > cut * 0.7 && Math.random() < 0.04) {
+            // the last ones flicker
+            glyph(x, y, c, c.one ? Math.random() > 0.3 : Math.random() < 0.15);
+          }
+        }
+      }
+      if (since > 0 && hint && !zeroed && hint.textContent !== KNOCK_HINT && state === 'closed') hint.textContent = KNOCK_HINT;
+      if (left) requestAnimationFrame(step);
+      else bitsCanvas.hidden = true;
+    };
+    requestAnimationFrame(step);
+  }
+
   /* ---------- the clock outside ---------- */
   function tick() {
     const t = hms(secondsToday());
@@ -360,6 +458,7 @@
   async function knock() {
     if (state !== 'closed') return;
     state = 'knocking';
+    hurryBits();
     const snd = Void.dream.sound;
     const quick = Void.motion.reduced;
     el.classList.add('is-knocking');
@@ -385,8 +484,10 @@
     const from = secondsToday();
     const snd = Void.dream.sound;
     clearInterval(clockTimer);
+    Void.dream.zero?.restore();
     // don't open onto an unpainted room
     for (let i = 0; i < 100 && !html.classList.contains('memory-ready'); i++) await wait(100);
+    Void.dream.memory.setVisible(true);
     if (quick) {
       el.classList.add('is-gone');
     } else {
@@ -414,25 +515,55 @@
   }
 
   /* ---------- and out again ---------- */
-  function leave() {
+  function leave({ zeroed = false } = {}) {
     if (state !== 'inside' || !el) return;
+    setup(() => { if (zeroed) playBits({ zeroed: true }); });
     if (location.hash && location.hash !== '#home') location.hash = 'home';
     try { sessionStorage.removeItem(KEY); } catch { /* fine */ }
     html.classList.add('at-door');
     el.hidden = false;
     el.classList.remove('is-knocking', 'is-answered', 'is-gone');
-    el.classList.add('is-open', 'is-through');
-    void el.offsetWidth;
-    el.classList.remove('is-through');
-    Void.dream.sound.swell({ dur: 1.6, vol: 0.08 });
-    setTimeout(() => {
-      el.classList.remove('is-open');
-      Void.dream.sound.knock({ vol: 0.5, when: 1.1 });
-    }, 900);
     state = 'closed';
     tick();
+    clearInterval(clockTimer);
     clockTimer = setInterval(tick, 1000);
+    if (zeroed) {
+      // no walking out: everything just goes to zero, and you're outside
+      el.classList.remove('is-open', 'is-through');
+      if (bitsCanvas) { bitsCanvas.hidden = false; bitsCanvas.style.background = '#050506'; }
+    } else {
+      if (hint) hint.textContent = KNOCK_HINT;
+      el.classList.add('is-open', 'is-through');
+      void el.offsetWidth;
+      el.classList.remove('is-through');
+      Void.dream.sound.swell({ dur: 1.6, vol: 0.08 });
+      setTimeout(() => {
+        el.classList.remove('is-open');
+        Void.dream.sound.knock({ vol: 0.5, when: 1.1 });
+      }, 900);
+    }
     setTimeout(() => leaf.focus({ preventScroll: true }), 1400);
+    setTimeout(() => { if (state === 'closed') Void.dream.memory.setVisible(false); }, zeroed ? 600 : 2600);
+  }
+
+  // the hallway, painted, and listening for knocks: once
+  let isSetUp = false;
+  function setup(onPainted) {
+    if (isSetUp) { onPainted?.(); return; }
+    isSetUp = true;
+    Promise.all([document.fonts.load('600 20px Caveat'), document.fonts.load('italic 400 30px Fraunces')]).catch(() => {}).then(() => { paint(); onPainted?.(); });
+    let rt = 0;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (!el.hidden) paint(); }, 150); });
+    if (hint) hint.textContent = KNOCK_HINT;
+    leaf.addEventListener('click', knock);
+    document.addEventListener('keydown', (e) => {
+      if (el.hidden || state !== 'closed') return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); knock(); }
+    }, true);
+    // a link to a room, followed while standing outside: just go in
+    window.addEventListener('hashchange', () => {
+      if (state === 'closed' && location.hash && location.hash !== '#home') enter(true);
+    });
   }
 
   Void.dream = Void.dream || {};
@@ -448,20 +579,10 @@
       if (been || deep || /[?&]nodoor\b/.test(location.search)) { skip(); return; }
       tick();
       clockTimer = setInterval(tick, 1000);
-      const draw = () => paint();
-      Promise.all([document.fonts.load('600 20px Caveat'), document.fonts.load('italic 400 30px Fraunces')]).catch(() => {}).then(draw);
-      let rt = 0;
-      window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (!el.hidden) draw(); }, 150); });
-      if (!matchMedia('(hover: hover)').matches) { const h = el.querySelector('.door-hint'); if (h) h.textContent = 'tap the door to knock'; }
-      leaf.addEventListener('click', knock);
-      document.addEventListener('keydown', (e) => {
-        if (el.hidden || state !== 'closed') return;
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); knock(); }
-      }, true);
-      // a link to a room, followed while standing outside: just go in
-      window.addEventListener('hashchange', () => {
-        if (state === 'closed' && location.hash && location.hash !== '#home') enter(true);
-      });
+      setup(() => playBits());
+      // nobody can see the room yet: don't spend the frames drawing it
+      Void.dream.memory.setVisible(false);
+      leaf.focus({ preventScroll: true });
       leaf.focus({ preventScroll: true });
     }
   };

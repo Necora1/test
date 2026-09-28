@@ -116,6 +116,7 @@
     if (Void.dream.views.current() !== 'home') Void.dream.views.home();
     collapsing = true;
     Void.dream.memory.pulseVoid();
+    Void.dream.zero.restore();
     // the tape goes back to zero with it
     Void.dream.scene.rewind({ from: (performance.now() / 1000) % 36000, ms: 1400, title: false });
     html.classList.add('is-voiding');

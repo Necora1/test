@@ -85,6 +85,7 @@
   // the camera and the light, as they are right now
   const cur = { ...PRESETS.home };
   let view4 = [0.5, 0.5, 1, 1];
+  let decay = 0;                     // bits zeroed, set by zero.js
   let from = { ...cur };
   let to = { ...cur };
   let move = null;          // { t, dur, resolve, arrived }
@@ -320,6 +321,20 @@
     uniform float uDreamy; uniform float uVignette; uniform float uGrade; uniform float uRainLens;
     uniform float uLeaks;
     uniform sampler2D uGuides; uniform vec4 uViewP; uniform float uGuideAmt;   // perspective guides, on top of everything
+    uniform float uDecay;                        // bits zeroed so far, 0 … 8 (zero.js)
+
+    // an ordered (Bayer) dither threshold, 0 … 1
+    float bayer2(vec2 a) { a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+    float bayer4(vec2 a) { return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+    // the picture with its lowest n bits set to zero (n may be fractional)
+    vec3 zeroBits(vec3 c, float n, float d) {
+      float k = floor(n);
+      float la = exp2(8.0 - k) - 1.0;
+      float lb = exp2(7.0 - k) - 1.0;
+      vec3 qa = floor(clamp(c, 0.0, 1.0) * la + d) / max(la, 1.0);
+      vec3 qb = lb < 0.5 ? vec3(0.0) : floor(clamp(c, 0.0, 1.0) * lb + d) / lb;
+      return mix(qa, qb, smoothstep(0.55, 1.0, n - k));
+    }
 
     vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
     float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
@@ -544,6 +559,34 @@
         float hx = hash(vec2(floor(uTime * 0.5), 1.0));
         col *= 1.0 - smoothstep(0.003, 0.0, abs(uv.x - hx - 0.05 * sin(uv.y * 5.0))) * 0.6;
       }
+      // the world being zeroed: the low bits go first, then whole blocks of the picture
+      if (uDecay > 0.001) {
+        vec2 px = vUv * uRes;
+        float dpx = max(1.0, floor(uRes.y / 420.0));
+        col = zeroBits(col, uDecay, bayer4(px / dpx));
+        float drop = smoothstep(2.5, 8.0, uDecay);
+        drop *= drop;
+        vec2 bs = vec2(floor(uRes.y / 26.0));
+        vec2 bid = floor(px / bs);
+        float h = hash(bid * 1.37 + 0.5);
+        float gone = step(h, drop * 1.02);
+        // blocks about to go stutter first
+        float near = (step(h, drop * 1.02 + 0.035) - gone) * step(0.002, drop);
+        float tick = floor(uTime * 9.0);
+        if (near > 0.5 && hash(bid + tick) > 0.6) col = hash(bid + tick + 3.0) > 0.5 ? col * 0.25 : vec3(dot(col, vec3(0.333))) * 1.2;
+        // what's left in a zeroed block: a dim 0, now and then a 1 that hasn't gone yet
+        vec2 g = bs / vec2(2.0, 1.5);
+        vec2 f = fract(px / g) - 0.5;
+        vec2 gid = floor(px / g);
+        float one = step(0.985 - drop * 0.02, hash(gid + floor(uTime * 0.7)));
+        float ring = smoothstep(0.07, 0.0, abs(length(f * vec2(1.9, 1.0)) - 0.3));
+        float bar = smoothstep(0.07, 0.0, abs(f.x)) * step(abs(f.y), 0.32);
+        float glyph = mix(ring, bar, one);
+        col = mix(col, vec3(0.1, 0.11, 0.12) * glyph * (0.6 + 0.4 * one), gone);
+        // and now and then a line tears
+        float tear = step(0.992, hash(vec2(floor(px.y / 5.0), tick))) * step(3.0, uDecay);
+        col = mix(col, col.brg, tear * 0.7);
+      }
       if (uGuideAmt > 0.0) {
         vec2 gb = uViewP.xy + vec2(vUv.x - 0.5, 0.5 - vUv.y) * uViewP.zw;
         vec4 gd = texture2D(uGuides, gb);
@@ -621,7 +664,7 @@
     progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uMouseB', 'uGlass', 'uSunB', 'uDustAmt', 'uBirds', 'uWinB']);
     progs.bright = program(BRIGHT, ['uTex', 'uTexel', 'uThreshold']);
     progs.blur = program(BLUR, ['uTex', 'uDir']);
-    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uAvg', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare', 'uSunVis', 'uExposure', 'uHdr', 'uBloomAmt', 'uRays', 'uAnamorphic', 'uDirt', 'uGrain', 'uCA', 'uDreamy', 'uVignette', 'uGrade', 'uRainLens', 'uLeaks', 'uGuides', 'uViewP', 'uGuideAmt']);
+    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uAvg', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare', 'uSunVis', 'uExposure', 'uHdr', 'uBloomAmt', 'uRays', 'uAnamorphic', 'uDirt', 'uGrain', 'uCA', 'uDreamy', 'uVignette', 'uGrade', 'uRainLens', 'uLeaks', 'uGuides', 'uViewP', 'uGuideAmt', 'uDecay']);
 
     tex.alb = texture(layers.albedo);
     tex.blur = texture(layers.blur);
@@ -882,6 +925,7 @@
     bindTex(4, tex.guides, P.loc.uGuides);
     gl.uniform4f(P.loc.uViewP, view4[0], view4[1], view4[2], view4[3]);
     gl.uniform1f(P.loc.uGuideAmt, settings.guides ? 1 : 0);
+    gl.uniform1f(P.loc.uDecay, decay);
     draw(null, RW, RH);
     if (snap) { const done = snap; snap = null; canvas.toBlob(done, 'image/png'); }
   }
@@ -953,6 +997,7 @@
     setRain(on) { rainT = on ? 1 : 0; },
     setLucid(on) { lucidT = on ? 1 : 0; },
     pulseVoid() { if (!reduced()) voidT = 0; },
+    setDecay(v) { decay = Math.max(0, Math.min(8, v)); },
     toggleLamp() { lampToggle = lampToggle ? 0 : 1; return !!lampToggle; },
     setVisible(v) { visible = v; canvas.classList.toggle('is-hidden', !v); },
 

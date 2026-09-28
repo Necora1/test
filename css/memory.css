@@ -571,3 +571,16 @@ html.is-shutter::before {
 
 /* no rounded corners anywhere: square edges only */
 *, *::before, *::after { border-radius: 0 !important; }
+
+/* the bits the room has left, next to the counter */
+.corner-home .bits-left {
+  margin-left: 6px;
+  font: 400 0.72em/1 ui-monospace, Menlo, 'Courier New', monospace;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
+}
+.corner-home .bits-left.is-flipping { animation: bits-flip 0.6s steps(3) 1; }
+@keyframes bits-flip {
+  0%, 66% { opacity: 1; color: #fff; }
+  33% { opacity: 0.2; }
+}

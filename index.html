@@ -31,7 +31,7 @@
 
   <!-- ======================= CORNERS ======================= -->
   <header class="corner">
-    <a class="corner-home" href="#home">zeroed my world <span class="tape-counter" id="tapeCounter" aria-hidden="true">0:00:00</span></a>
+    <a class="corner-home" href="#home">zeroed my world <span class="tape-counter" id="tapeCounter" aria-hidden="true">0:00:00</span> <span class="bits-left" id="bitsLeft" title="bits left before the room is zeroed">11111111</span></a>
     <nav class="corner-right" aria-label="Sound and version">
       <button type="button" class="hand-link" id="rainBtn" aria-pressed="false">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0"/><path d="M12 2v1"/></svg>
@@ -377,6 +377,7 @@
         <dt><kbd>Esc</kbd></dt><dd>back to the sky</dd>
         <dt>type <b>again</b></dt><dd>rewind the whole thing to zero</dd>
         <dt>type <b>leave</b></dt><dd>step back out into the hall</dd>
+        <dt>11111111</dt><dd>the bits the room has left. they go, one a minute</dd>
         <dt>type <b>wish</b></dt><dd>the wish jar</dd>
         <dt>the window</dt><dd>go out of it at night; catch a shooting star</dd>
         <dt>the lamp</dt><dd>click it</dd>
@@ -412,6 +413,7 @@
       <canvas class="door-spill" aria-hidden="true"></canvas>
       <button type="button" class="door-leaf" id="doorLeaf" aria-label="Knock on the door, and come in"><canvas aria-hidden="true"></canvas></button>
     </div>
+    <canvas class="door-bits" aria-hidden="true"></canvas>
     <div class="door-grain" aria-hidden="true"></div>
     <p class="door-outside" aria-hidden="true">outside <b id="doorClock">0:00:00</b></p>
     <p class="door-hint">click the door to knock</p>
@@ -451,6 +453,7 @@
   <script src="js/games/quiz.js" defer></script>
   <script src="js/games/lanterns.js" defer></script>
   <script src="js/door.js" defer></script>
+  <script src="js/zero.js" defer></script>
   <script src="js/extras.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

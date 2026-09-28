@@ -143,3 +143,16 @@ html:not(.at-door) .door-scene { display: none; }
 .reduce-motion .door-grain { animation: none; }
 .reduce-motion .door-scene,
 .reduce-motion .door-leaf { transition-duration: 0.3s; }
+
+/* the void: the hallway in zeros and ones, before it resolves */
+.door-bits {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: #050506;
+}
+.door-bits[hidden] { display: none; }
+.reduce-motion .door-bits { display: none; }

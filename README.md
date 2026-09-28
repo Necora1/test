@@ -2,7 +2,10 @@
 
 renn's website: one room, one afternoon, rewound to 0:00:00 and played back.
 
-It starts outside renn's door, at night, dark like a phone photo: a plain
+It starts in the void. Everything out here has already been zeroed: the
+screen is a field of 0s, and the only 1s left are renn's door and the light
+under it, the last place that still holds any data. Then the zeros resolve
+into the picture: outside renn's door, at night, dark like a phone photo: a plain
 door at the end of a narrow hall, a strip of masking tape on it that says
 "zeroed my world", and a line of warm light under it. In the corner the
 real time runs: the outside world's clock. Knock (click the door, or
@@ -58,7 +61,8 @@ js/
   memory/paint.js     the room, painted in code, in layers
   memory/engine.js    lights it on the GPU, the film look, the camera's travels
   memory/camera.js    the camera panel (looks, effects, time of day, photos)
-  door.js             outside renn's door: the hallway, the knock, the way in
+  door.js             the void, then outside renn's door: the hallway, the knock
+  zero.js             the room losing its bits while you stay
   scene.js            the room's hotspots, the tape intro, the counter, captions
   views.js            the tracks: the camera travels, then the room surfaces
   palette.js          which song each track is tuned to; colours that glide
@@ -113,6 +117,15 @@ server/
   800t, black & white, clean — and a slider for every effect, the time of day,
   "let time pass" (a whole day in four minutes), birds, resolution, and "take
   a photo" to save the frame as a PNG. Remembered per browser (`dream_camera`).
+- **The zeroing:** the room is the last thing with data in it, and while
+  you stay it loses that too, one bit a minute (after the first 45
+  seconds), lowest bit first. The corner shows what's left, 11111111 …
+  00000000. The colours coarsen and dither, then whole blocks of the
+  picture drop to 0, then words on the page start turning into zeros. When
+  the last bit goes you're back outside in the void; knock (or type
+  `again`) and it's restored. It never zeroes you out mid-letter.
+  `js/zero.js` runs it, the post pass in `js/memory/engine.js` draws it.
+  Try `?zero=fast` (a bit every 4 s) or `?bits=3` (hold at 3 bits left).
 - **The door:** `js/door.js` paints the hallway and the door in code and
   opens it. Type `leave` in the room to step back out into the hall (and
   knock again). Links straight to a room (`#guitar`…), coming back in the
