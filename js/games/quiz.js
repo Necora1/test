@@ -107,7 +107,7 @@
         }));
         img = new Image();
         img.onload = () => { lastStep = -1; startAt = performance.now(); answered = false; };
-        img.src = `../assets/covers/${song.cover}.jpg`;
+        img.src = `assets/covers/${song.cover}.jpg`;
         paint(64);
         bar.style.transform = 'scaleX(1)';
       }
@@ -167,7 +167,7 @@
       roundEl.textContent = `${ROUNDS} rounds`;
       img = new Image();
       img.onload = () => paint(32);
-      img.src = `../assets/covers/${songs[Math.floor(Math.random() * songs.length)].cover}.jpg`;
+      img.src = `assets/covers/${songs[Math.floor(Math.random() * songs.length)].cover}.jpg`;
       paint(64);
       const go = document.createElement('button');
       go.type = 'button';

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>renn's door · zeroed my world</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/panel.css">
+</head>
+<body>
+  <main class="door">
+    <p class="door-counter" aria-hidden="true">&#9632; STOP 0:00:00</p>
+    <h1>renn's door</h1>
+
+    <!-- signed out -->
+    <form class="card" id="loginForm" novalidate>
+      <p class="lede">only for renn. everyone else: <a href="./">back to the room</a>.</p>
+      <label for="loginUser">username</label>
+      <input id="loginUser" autocomplete="username" autocapitalize="off" spellcheck="false">
+      <label for="loginPass">password</label>
+      <input id="loginPass" type="password" autocomplete="current-password">
+      <p class="status" id="loginStatus" role="alert" hidden></p>
+      <button type="submit" id="loginSubmit"><span class="btn-label">sign in</span></button>
+    </form>
+
+    <!-- signed in -->
+    <section class="card" id="panel" hidden aria-labelledby="panelHead">
+      <h2 id="panelHead">hi, <span id="who"></span></h2>
+      <form id="createUserForm" novalidate>
+        <p class="lede">add someone who can sign in too.</p>
+        <label for="newUsername">username</label>
+        <input id="newUsername" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <label for="newPassword">password</label>
+        <input id="newPassword" type="password" autocomplete="new-password">
+        <p class="status" id="createUserStatus" role="status"></p>
+        <button type="submit"><span class="btn-label">add</span></button>
+      </form>
+      <ul class="people" id="userList"></ul>
+      <div class="row">
+        <a href="./">back to the room</a>
+        <button type="button" class="ghost" id="logoutBtn">sign out</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/config.js" defer></script>
+  <script src="js/core.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/panel.js" defer></script>
+</body>
+</html>

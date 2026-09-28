@@ -797,7 +797,7 @@
     S = scale;
     try { await Promise.all([document.fonts.load('600 20px Caveat'), document.fonts.load('italic 300 30px Fraunces')]); } catch { /* fine */ }
     const coverNames = ['veil', 'deep-love', 'memory', 'anthems', 'march-5', 'sun-and-moon', 'treehouse', 'milk', 'county', 'harvest', 'boy', 'odoriko', 'time', 'september'];
-    const covers = (await Promise.all(coverNames.map((n) => loadImg(`../assets/covers/${n}.jpg`)))).filter(Boolean);
+    const covers = (await Promise.all(coverNames.map((n) => loadImg(`assets/covers/${n}.jpg`)))).filter(Boolean);
 
     const albedo = layer(1);
     paintRoom(albedo.ctx, covers);

@@ -47,7 +47,7 @@
         b.style.setProperty('--i', String(i));
         b.style.setProperty('--shell', song.palette?.[3] || '#7fb');
         b.setAttribute('aria-label', 'A face-down card');
-        b.innerHTML = `<span class="mem-inner"><span class="mem-back" aria-hidden="true"><i></i></span><span class="mem-face"><img alt="" draggable="false" src="../assets/covers/${song.cover}.jpg"></span></span>`;
+        b.innerHTML = `<span class="mem-inner"><span class="mem-back" aria-hidden="true"><i></i></span><span class="mem-face"><img alt="" draggable="false" src="assets/covers/${song.cover}.jpg"></span></span>`;
         b.addEventListener('click', () => flip(b, song));
         return b;
       }

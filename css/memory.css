@@ -141,16 +141,37 @@ body:not([data-view="home"]) .scene {
 }
 
 .title-card .dream-title {
-  font-size: clamp(3.2rem, 10vw, 8.5rem);
+  font-size: clamp(3rem, 9vw, 7.6rem);
   color: #fff6e6;
   text-shadow: 0 0 30px rgb(255 200 140 / 0.8), 0 0 90px rgb(255 160 90 / 0.5), 0 2px 10px rgb(60 30 10 / 0.5);
-  animation: title-in 3s ease both 0.8s;
+  opacity: 0;
 }
+
+.title-card .t-rest { font-size: 0.62em; }
 
 .title-card .dream-sub {
   color: #ffe9c9;
-  animation: title-in 3s ease both 1.6s;
+  opacity: 0;
 }
+
+.title-card.is-playing .dream-title { animation: title-in 2.6s ease both 0.2s; }
+.title-card.is-playing .dream-sub { animation: title-in 2.6s ease both 1s; }
+
+/* the tape rewinding to zero */
+.rewind {
+  margin-bottom: 10px;
+  font: 400 clamp(1.4rem, 3.4vw, 2.4rem)/1 ui-monospace, 'Courier New', monospace;
+  letter-spacing: 0.08em;
+  color: #fff3de;
+  text-shadow: 2px 0 0 rgb(255 0 60 / 0.45), -2px 0 0 rgb(0 200 255 / 0.45), 0 0 18px rgb(255 190 120 / 0.8);
+  font-variant-numeric: tabular-nums;
+  transition: opacity 1.2s ease 1.6s, font-size 0.8s ease;
+}
+
+.title-card.is-rewinding .rewind { font-size: clamp(2.2rem, 6vw, 4.4rem); }
+.title-card.is-rewinding .rw-sign { animation: osd-blink 0.4s steps(1) infinite; }
+.title-card.is-playing .rewind { opacity: 0.55; }
+.rw-sign { font-size: 0.8em; }
 
 .title-card .t-name span.is-playable { pointer-events: auto; }
 .title-card.is-gone { opacity: 0; filter: blur(12px); }
@@ -173,6 +194,23 @@ body:not([data-view="home"]) .scene {
   text-shadow: 0 1px 6px rgb(30 15 5 / 0.8);
   pointer-events: none;
 }
+
+.corner-home .tape-counter {
+  margin-left: 8px;
+  font: 400 0.95rem/1 ui-monospace, 'Courier New', monospace;
+  letter-spacing: 0.06em;
+  color: #ffd49a;
+  text-shadow: 0 0 10px rgb(255 170 100 / 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.keys-owner {
+  margin-top: 16px;
+  font: 600 1.15rem/1 var(--hand);
+  text-align: center;
+}
+
+.keys-owner a { color: #7a3f6a; }
 
 .cap-place { font: 600 1.35rem/1 var(--hand); font-style: normal; color: #fff3de; }
 .dream-clock { display: block; margin-top: 4px; opacity: 0.75; font-size: 0.92rem; }

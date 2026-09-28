@@ -3,213 +3,160 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Renn | Void</title>
-  <meta name="description" content="Welcome to the Void.">
-  <meta name="theme-color" content="#030303">
-  <meta property="og:title" content="Renn | Void">
-  <meta property="og:description" content="Welcome to the Void.">
+  <title>zeroed my world</title>
+  <meta name="description" content="renn's room, one afternoon, rewound to 0:00:00 and played back.">
+  <meta name="theme-color" content="#1a110b">
+  <meta property="og:title" content="zeroed my world">
+  <meta property="og:description" content="one room, one afternoon, rewound to 0:00:00.">
   <meta property="og:type" content="website">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
-  <link rel="preload" href="assets/fonts/jacquard12.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/silkscreen-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/fraunces-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/dream.css">
+  <link rel="stylesheet" href="css/rooms.css">
+  <link rel="stylesheet" href="css/memory.css">
 
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/background.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/dock.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/pages.css">
-  <link rel="stylesheet" href="css/send.css">
-  <link rel="stylesheet" href="css/music.css">
-  <link rel="stylesheet" href="css/gallery.css">
-  <link rel="stylesheet" href="css/effects.css">
-
-  <script>
-    // whoever picked the dream version last time goes straight back to it
-    try {
-      if (/[?&]classic/.test(location.search)) localStorage.setItem('void_version', 'classic');
-      else if (localStorage.getItem('void_version') === 'dream') location.replace('dream/index.html' + location.hash);
-    } catch (e) { /* storage blocked: stay here */ }
-    document.documentElement.classList.add('js');
-  </script>
+  <script>document.documentElement.classList.add('js');</script>
 </head>
-<body class="is-booting" data-page="home">
+<body class="is-asleep" data-view="home">
+  <canvas id="memory" class="memory-canvas" aria-hidden="true"></canvas>
   <canvas id="sky" class="sky" aria-hidden="true"></canvas>
+  <canvas id="life" class="life" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
+  <canvas id="fx" class="fx" aria-hidden="true"></canvas>
+  <p class="wish-label" id="wishLabel" hidden></p>
 
-  <!-- ======================= BANNER ======================= -->
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="#home" aria-label="Renn's Void, home">
-        <span class="brand-name">RENN'S VOID</span>
-      </a>
-
-      <form class="searchbox" id="siteSearch" role="search">
-        <label class="slug" for="siteSearchInput">Search:</label>
-        <input id="siteSearchInput" type="search" name="q" placeholder="search&#8230;" autocomplete="off" spellcheck="false">
-        <button class="top-search-btn" type="submit">Search</button>
-      </form>
-
-      <nav class="top-links" aria-label="Quick links">
-        <a href="#about">About</a>
-        <a href="#gallery">Gallery</a>
-        <a href="dream/index.html" class="to-dream">dream ✧</a>
-        <button type="button" class="top-link-btn" id="topLoginBtn">LogIn</button>
-      </nav>
-    </div>
+  <!-- ======================= CORNERS ======================= -->
+  <header class="corner">
+    <a class="corner-home" href="#home">zeroed my world <span class="tape-counter" id="tapeCounter" aria-hidden="true">0:00:00</span></a>
+    <nav class="corner-right" aria-label="Sound and version">
+      <button type="button" class="hand-link" id="rainBtn" aria-pressed="false">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0"/><path d="M12 2v1"/></svg>
+        rain
+      </button>
+      <button type="button" class="hand-link" id="lucidBtn" aria-pressed="false" title="Lucid mode (L)">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+        lucid
+      </button>
+      <button type="button" class="hand-link" id="cameraBtn" aria-expanded="false" aria-controls="cameraPanel" title="Camera settings (C)">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m14.3 3.3-4.6 8M20.1 8.5h-9.2M18.5 17.5l-4.6-8M9.7 20.7l4.6-8M3.9 15.5h9.2M5.5 6.5l4.6 8"/></svg>
+        <span class="cam-word">camera</span>
+      </button>
+      <button type="button" class="hand-link keys-btn" id="keysBtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+    </nav>
   </header>
 
-  <div class="site">
-    <p class="tip" id="tipBar"><b>TIP:</b> everything you send here is anonymous. No account needed.</p>
+  <!-- ======================= THE SCENE ======================= -->
+  <main class="scene" id="scene">
+    <div class="title-card" id="titleCard">
+      <p class="rewind" aria-hidden="true"><span class="rw-sign">&#9664;&#9664;</span> <span id="rewindCount">4:17:32</span></p>
+      <h1 class="dream-title"><span class="t-name">zeroed</span> <span class="t-rest">my world</span></h1>
+      <p class="dream-sub">one room, one afternoon, rewound to 0:00:00</p>
+    </div>
 
-    <!-- ======================= PAGES ======================= -->
-    <main id="stage" class="stage">
+    <nav class="hotspots" id="hotspots" aria-label="Things in my room"></nav>
+    <p class="hot-label" id="hotLabel" aria-hidden="true"></p>
 
-    <section class="page page-home" id="page-home" data-page="home" aria-labelledby="homeTitle">
-      <h1 class="hero-title" id="homeTitle">THE VOID</h1>
-      <p class="lede">Welcome to the Void.</p>
-      <nav class="portals" id="portals" aria-label="Pages"></nav>
-    </section>
+    <button type="button" class="tuned tuned-home" data-tune="home"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+    <p class="memory-caption"><span class="cap-place">my room, the light at 5:47 pm.</span> <span class="dream-clock" id="dreamClock"></span></p>
+    <p class="scene-hint" id="sceneHint">everything in here goes somewhere. click on things.</p>
+  </main>
 
-    <section class="page page-about" id="page-about" data-page="about" aria-labelledby="aboutTitle" hidden>
-      <header class="page-head">
-        <h1 class="page-title" id="aboutTitle">ABOUT</h1>
-        <p class="lede">im renn! This is my website :3</p>
-      </header>
+  <p class="travel-caption" id="travelCaption" aria-hidden="true"></p>
 
-      <div class="about-grid">
-        <article class="panel-box about-blurb" aria-labelledby="aboutMeLabel">
-          <h2 class="box-label" id="aboutMeLabel">about me</h2>
-          <div class="box-body prose">
-            <p>hi, i'm renn. i take photos as a hobby (they end up in the <a href="#gallery">gallery</a>) and i play guitar.</p>
-            <p>music-wise it's mostly japanese shoegaze and alt rock (死んだ僕の彼女, きのこ帝国, SEAPOOL, Plastic Tree) and a lot of indie like Alex G, Vundabar, Car Seat Headrest and Carissa's Wierd. my favorite songs are on the <a href="#interests">interests</a> page, and you can play them there.</p>
-            <p>this site is my own little corner of the internet. look around, and if you want to tell me something, <a href="#send">send it here</a>. it's anonymous.</p>
-          </div>
-        </article>
+  <!-- ======================= ABOUT ======================= -->
+  <section class="view view-about" id="view-about" data-view="about" hidden aria-labelledby="aboutHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="aboutHead" tabindex="-1">about me</h2>
+      <button type="button" class="tuned" data-tune="about"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
 
-        <div class="about-side">
-          <section class="panel-box" aria-labelledby="detailsLabel">
-            <h2 class="box-label" id="detailsLabel">renn's details</h2>
-            <dl class="details">
-              <div><dt>hobbies</dt><dd>photography, guitar</dd></div>
-              <div><dt>music</dt><dd>shoegaze, j-rock, indie</dd></div>
-              <div><dt>photos</dt><dd><a href="#gallery">in the gallery</a></dd></div>
-            </dl>
-          </section>
+      <article class="letter">
+        <span class="washi washi-1" aria-hidden="true"></span>
+        <span class="washi washi-2" aria-hidden="true"></span>
+        <div class="letter-body">
+          <p>hi, i'm renn.</p>
+          <p>i take photos as a hobby, and i play guitar.</p>
+          <p>most of what i listen to is japanese shoegaze and alt rock (死んだ僕の彼女, きのこ帝国, SEAPOOL, Plastic Tree) and a lot of indie like Alex G, Vundabar, Car Seat Headrest and Carissa's Wierd.</p>
+          <p>this is my room. i rewound everything back to one afternoon in here and let it play: the pictures are on the wall, the tapes are on the shelf, the guitar is out of tune, and if you want to tell me something, there's a letter on the nightstand.</p>
+          <p class="signature">&mdash; renn</p>
+        </div>
+      </article>
 
-          <section class="panel-box" aria-labelledby="contactLabel">
-            <h2 class="box-label" id="contactLabel">contacting renn</h2>
-            <ul class="contact-grid">
-              <li>
-                <a href="#send">
-                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  send a message
-                </a>
-              </li>
-              <li>
-                <a href="https://x.com/zeroedmymind" target="_blank" rel="noopener me">
-                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16"/><path d="M20 4 4 20"/></svg>
-                  @zeroedmymind
-                </a>
-              </li>
-              <li>
-                <a href="https://www.instagram.com/zeroedmypulse/" target="_blank" rel="noopener me">
-                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg>
-                  @zeroedmypulse
-                </a>
-              </li>
-              <li>
-                <a href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener me">
-                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V17h14v-1.8a2 2 0 0 0-1.1-1.8l-1.8-.9a2 2 0 0 1-1.1-1.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
-                  xqygen
-                </a>
-              </li>
-            </ul>
-          </section>
+      <ul class="stickies">
+        <li><a class="sticky s1" href="https://x.com/zeroedmymind" target="_blank" rel="noopener me"><span>twitter</span>@zeroedmymind</a></li>
+        <li><a class="sticky s2" href="https://www.instagram.com/zeroedmypulse/" target="_blank" rel="noopener me"><span>instagram</span>@zeroedmypulse</a></li>
+        <li><a class="sticky s3" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener me"><span>pinterest</span>xqygen</a></li>
+        <li><a class="sticky s4" href="#send"><span>or just</span>write to me</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ======================= PICTURES ======================= -->
+  <section class="view view-gallery" id="view-gallery" data-view="gallery" hidden aria-labelledby="picsHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="picsHead" tabindex="-1">pictures</h2>
+      <button type="button" class="tuned" data-tune="gallery"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">pictures i make. click one to look closer. with a mouse you can pick them up and move them around.</p>
+      <div class="polaroids" id="polaroids"></div>
+      <div class="pic-status" id="picStatus" role="status" hidden></div>
+      <a class="hand-link pic-more" id="picMore" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener" hidden>more on pinterest &nearr;</a>
+    </div>
+  </section>
+
+  <!-- ======================= SONGS ======================= -->
+  <section class="view view-interests" id="view-interests" data-view="interests" hidden aria-labelledby="songsHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="songsHead" tabindex="-1">on repeat</h2>
+      <p class="view-lede">my favorite songs. put a tape in and the whole room takes its colours.</p>
+      <div class="tape-shelf" id="tapeShelf"></div>
+      <p class="view-foot">plays through spotify: whole songs if you're logged in to spotify in this browser, 30-second previews if you're not.</p>
+    </div>
+  </section>
+
+  <!-- ======================= FRIENDS ======================= -->
+  <section class="view view-favoomfs" id="view-favoomfs" data-view="favoomfs" hidden aria-labelledby="friendsHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="friendsHead" tabindex="-1">friends</h2>
+      <button type="button" class="tuned" data-tune="favoomfs"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <div class="board">
+        <p class="board-note">saving these spots for my favorite people</p>
+        <div class="frames" aria-hidden="true">
+          <span class="frame" style="--r: -4deg"><i>?</i></span>
+          <span class="frame" style="--r: 3deg"><i>?</i></span>
+          <span class="frame" style="--r: -2deg"><i>?</i></span>
+          <span class="frame" style="--r: 5deg"><i>?</i></span>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="page page-gallery" id="page-gallery" data-page="gallery" aria-labelledby="galleryTitle" hidden>
-      <header class="page-head">
-        <h1 class="page-title" id="galleryTitle">GALLERY</h1>
-        <p class="lede">Here's the collection of pictures I make</p>
-      </header>
-      <div class="gallery-frame">
-        <!-- js/gallery.js fills this from Pinterest the first time the page opens -->
-        <div class="pin-grid" id="pinGrid"></div>
-        <div class="gallery-status" id="galleryStatus" role="status" hidden></div>
-      </div>
-      <a class="btn gallery-more" id="galleryMore" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener" hidden>
-        more on pinterest
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
-      </a>
-    </section>
-
-    <section class="page page-interests" id="page-interests" data-page="interests" aria-labelledby="interestsTitle" hidden>
-      <header class="page-head">
-        <h1 class="page-title" id="interestsTitle">INTERESTS</h1>
-        <p class="lede">Media, hobbies, etc</p>
-      </header>
-
-      <section class="player" aria-labelledby="songsLabel">
-        <h2 class="box-label" id="songsLabel">favorite songs</h2>
-        <div class="player-screen">
-          <!-- js/songs.js swaps this for the Spotify player -->
-          <div class="player-embed" id="spotifyEmbed"></div>
-          <p class="player-note" id="playerNote">pick a song</p>
-        </div>
-        <ol class="song-list" id="songList"></ol>
-        <p class="player-foot">Plays through Spotify: whole songs if you're logged in to Spotify in this browser, 30-second previews if you're not.</p>
-      </section>
-    </section>
-
-    <section class="page" id="page-favoomfs" data-page="favoomfs" aria-labelledby="favoomfsTitle" hidden>
-      <header class="page-head">
-        <h1 class="page-title" id="favoomfsTitle">FAVOOMFS</h1>
-        <p class="lede">my favorite oomfs</p>
-      </header>
-      <div class="wip">W.I.P</div>
-      <!--
-        When you're ready, replace the W.I.P box with cards like this:
-        <div class="oomf-grid">
-          <a class="oomf" href="https://link-to-their-page" target="_blank" rel="noopener">
-            <img class="oomf-avatar" src="images/oomfs/name.png" alt="">
-            <span class="oomf-name">name</span>
-            <span class="oomf-note">a line about them</span>
-          </a>
-        </div>
-      -->
-    </section>
-
-    <section class="page page-send" id="page-send" data-page="send" aria-labelledby="sendTitle" hidden>
-      <header class="page-head">
-        <h1 class="page-title" id="sendTitle">SEND ME SOMETHING</h1>
-        <p class="lede">You can either write or draw</p>
-      </header>
+  <!-- ======================= WRITE TO ME ======================= -->
+  <section class="view view-send" id="view-send" data-view="send" hidden aria-labelledby="sendHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="sendHead" tabindex="-1">write to me</h2>
+      <button type="button" class="tuned" data-tune="send"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">it's anonymous. write something, or draw something.</p>
 
       <div class="segmented" id="sendTabs" role="tablist" aria-label="What to send" data-active="write">
         <span class="segmented-thumb" aria-hidden="true"></span>
-        <button type="button" role="tab" id="tabWrite" data-tab="write" aria-selected="true" aria-controls="panelWrite">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-          write
-        </button>
-        <button type="button" role="tab" id="tabDraw" data-tab="draw" aria-selected="false" aria-controls="panelDraw" tabindex="-1">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg>
-          draw
-        </button>
+        <button type="button" role="tab" id="tabWrite" data-tab="write" aria-selected="true" aria-controls="panelWrite">write</button>
+        <button type="button" role="tab" id="tabDraw" data-tab="draw" aria-selected="false" aria-controls="panelDraw" tabindex="-1">draw</button>
       </div>
 
       <!-- write -->
       <div class="send-panel" id="panelWrite" role="tabpanel" aria-labelledby="tabWrite">
         <div class="message-card">
           <label class="sr-only" for="messageText">Your message</label>
-          <textarea id="messageText" rows="4" maxlength="2000" placeholder="Type here"></textarea>
+          <textarea id="messageText" rows="6" maxlength="2000" placeholder="dear renn,"></textarea>
           <div class="message-bar">
-            <button type="button" class="attach-btn" id="openMusicBtn">
-              <svg class="icon-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.84.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.621.539.3.719 1.02.419 1.56-.239.54-.959.72-1.559.3z"/></svg>
-              <span>add a song</span>
-            </button>
+            <button type="button" class="attach-btn" id="openMusicBtn">+ add a song</button>
             <div class="song-chip" id="songChip" hidden>
               <button type="button" class="song-chip-main" id="songChipChange" aria-label="Change song">
                 <img class="song-chip-cover" id="songChipCover" alt="">
@@ -218,20 +165,18 @@
                   <span class="song-chip-artist" id="songChipArtist"></span>
                 </span>
               </button>
-              <button type="button" class="song-chip-remove" id="songChipRemove" aria-label="Remove song">
-                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-              </button>
+              <button type="button" class="song-chip-remove" id="songChipRemove" aria-label="Remove song">&times;</button>
             </div>
             <span class="char-count" id="charCount" aria-live="off">0 / 2000</span>
           </div>
         </div>
-        <button type="button" class="send-btn" id="sendMessageBtn"><span class="btn-label">SEND ANONYMOUSLY ✍️🤫</span></button>
+        <button type="button" class="send-btn" id="sendMessageBtn"><span class="btn-label">fold it up &amp; send</span></button>
         <p class="form-status" id="messageStatus" role="status" aria-live="polite"></p>
       </div>
 
       <!-- draw -->
       <div class="send-panel" id="panelDraw" role="tabpanel" aria-labelledby="tabDraw" hidden>
-        <div class="draw-card">
+        <div class="draw-card sketchbook">
           <div class="draw-toolbar" role="toolbar" aria-label="Drawing tools">
             <div class="tool-group">
               <button type="button" class="tool-btn is-active" id="penBtn" aria-pressed="true" title="Pen">
@@ -252,13 +197,13 @@
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
                 <span class="sr-only">Redo</span>
               </button>
-              <button type="button" class="tool-btn" id="clearBtn" title="Clear canvas" disabled>
+              <button type="button" class="tool-btn" id="clearBtn" title="Clear the page" disabled>
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 <span class="sr-only">Clear</span>
               </button>
-              <button type="button" class="tool-btn bg-btn" id="bgToggleBtn" aria-pressed="false" title="White background">
-                <span class="bg-glyph" aria-hidden="true">BG</span>
-                <span class="sr-only">White background</span>
+              <button type="button" class="tool-btn bg-btn" id="bgToggleBtn" aria-pressed="false" title="Paper or night">
+                <span class="bg-glyph" aria-hidden="true"></span>
+                <span class="sr-only">Switch between a light and a dark page</span>
               </button>
             </div>
             <div class="tool-group size-group">
@@ -267,7 +212,7 @@
             </div>
             <div class="tool-group swatch-group" role="group" aria-label="Colour">
               <button type="button" class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="White"></button>
-              <button type="button" class="swatch" data-color="#000000" style="--c:#000000" aria-label="Black"></button>
+              <button type="button" class="swatch" data-color="#000000" style="--c:#2b2233" aria-label="Ink"></button>
               <button type="button" class="swatch" data-color="#ff5c8a" style="--c:#ff5c8a" aria-label="Pink"></button>
               <button type="button" class="swatch" data-color="#ffd166" style="--c:#ffd166" aria-label="Yellow"></button>
               <button type="button" class="swatch" data-color="#6dffa8" style="--c:#6dffa8" aria-label="Green"></button>
@@ -283,271 +228,216 @@
             <div class="brush-cursor" id="brushCursor" aria-hidden="true"></div>
           </div>
         </div>
-        <button type="button" class="send-btn" id="sendDrawingBtn"><span class="btn-label">SEND ANONYMOUSLY 🎨🤫</span></button>
+        <button type="button" class="send-btn" id="sendDrawingBtn"><span class="btn-label">send the drawing</span></button>
         <p class="form-status" id="drawingStatus" role="status" aria-live="polite"></p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="page page-admin" id="page-admin" data-page="admin" aria-labelledby="adminTitle" hidden>
-      <header class="page-head">
-        <h1 class="page-title" id="adminTitle">CONTROL PANEL</h1>
-      </header>
-      <div class="panel-card">
-        <h2 class="card-label">Create entity</h2>
-        <form class="admin-form" id="createUserForm" novalidate>
-          <label class="sr-only" for="newUsername">New username</label>
-          <input class="field" type="text" id="newUsername" placeholder="Username" autocomplete="off" autocapitalize="off" spellcheck="false">
-          <label class="sr-only" for="newPassword">New password</label>
-          <input class="field" type="password" id="newPassword" placeholder="Password" autocomplete="new-password">
-          <button class="btn btn-danger" type="submit">ADD ENTITY</button>
-        </form>
-        <p class="form-status" id="createUserStatus" role="status" aria-live="polite"></p>
-      </div>
-      <div class="panel-card">
-        <h2 class="card-label">Active entities</h2>
-        <ul class="entity-list" id="userList">
-          <li class="entity"><span>renn</span><span class="entity-role">OWNER</span></li>
-        </ul>
-      </div>
-    </section>
-    </main>
 
-    <!-- ======================= FOOTER ======================= -->
-    <footer class="footer">
-      <div class="footer-inner">
-        <nav class="footer-links" aria-label="Footer">
-          <a href="#home">Home</a>
-          <a href="#about">About</a>
-          <a href="#gallery">Gallery</a>
-          <a href="#interests">Interests</a>
-          <a href="#send">Send me something</a>
-        </nav>
-        <p class="footer-note">&copy; <span id="footYear">2026</span> renn &#183; <span class="version-tag" id="versionTag">v0.12.0-beta</span></p>
-        <span class="footer-marquee" aria-hidden="true"><span>&#9733; HOME &#9733; ABOUT &#9733; GALLERY &#9733; INTERESTS &#9733; SEND ME SOMETHING &#9733;</span></span>
+  <!-- ======================= GAMES ======================= -->
+  <section class="view view-games" id="view-games" data-view="games" hidden aria-labelledby="gamesHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="gamesHead" tabindex="-1">games</h2>
+      <button type="button" class="tuned" data-tune="games"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">four little games on my laptop. pick a cartridge.</p>
+      <div class="carts" id="carts" role="tablist" aria-label="Games"></div>
+      <div class="arcade" id="arcadeScreen" role="tabpanel">
+        <div class="arcade-bar"><span class="arcade-score" id="arcadeScore"></span><span class="arcade-best" id="arcadeBest"></span></div>
+        <div class="arcade-stage" id="arcadeStage"></div>
+        <p class="arcade-how" id="arcadeHow"></p>
       </div>
-    </footer>
-  </div>
+    </div>
+  </section>
 
-  <!-- ======================= DOCK ======================= -->
-  <div class="dock" id="dock" data-state="icon">
-    <nav class="dock-panel" id="dockPanel" aria-label="Main" inert>
-      <div class="dock-head">
-        <span class="dock-eyebrow">you are here</span>
-        <span class="dock-where" id="dockWhere">home</span>
-      </div>
-      <ul class="dock-links" id="dockLinks"></ul>
-      <div class="dock-foot">
-        <button type="button" class="util-btn" id="settingsBtn">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></svg>
-          settings
-        </button>
-        <div class="dock-auth">
-          <button type="button" class="util-btn is-strong" id="loginBtn">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
-            login
-          </button>
-          <a class="util-btn" id="panelBtn" href="#admin" data-page-link="admin" hidden>
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            panel
-          </a>
-          <button type="button" class="util-btn" id="profileBtn" hidden>
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
-            profile
-          </button>
-          <button type="button" class="util-btn" id="logoutBtn" hidden>
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-            logout
-          </button>
+  <!-- ======================= GUITAR ======================= -->
+  <section class="view view-guitar" id="view-guitar" data-view="guitar" hidden aria-labelledby="guitarHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="guitarHead" tabindex="-1">guitar</h2>
+      <button type="button" class="tuned" data-tune="guitar"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">i play guitar, so here's one. drag across the strings to strum, click one to pluck it.</p>
+      <div class="guitar-rig">
+        <div class="chords" id="chords" role="group" aria-label="Chords"></div>
+        <div class="neck"><canvas id="guitarCanvas" class="guitar-canvas" aria-label="Guitar strings: drag across them to strum"></canvas><span class="now-chord" id="gtrChord" aria-live="polite"></span></div>
+        <div class="guitar-bar">
+          <button type="button" class="pill-btn" id="gtrDown">strum ↓</button>
+          <button type="button" class="pill-btn" id="gtrUp">strum ↑</button>
+          <button type="button" class="pill-btn" id="gtrTuning" aria-pressed="false">midwest tuning (FACGCE)</button>
+          <button type="button" class="pill-btn" id="gtrRoom" aria-pressed="true">big room reverb</button>
+          <button type="button" class="send-btn" id="gtrAuto" aria-pressed="false"><span class="btn-label">let it play</span></button>
         </div>
+        <p class="view-foot">keys: 1–8 chords · A S D F G H strings · space strums (shift+space up)</p>
       </div>
-    </nav>
+    </div>
+  </section>
 
-    <div class="dock-bar" id="dockBar">
-      <button type="button" class="dock-toggle" id="dockToggle" aria-expanded="false" aria-controls="dockPanel" aria-label="Open menu">
-        <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="dock-label" aria-hidden="true"><span id="dockLabelText">HOME</span></span>
+  <!-- ======================= FORTUNE ======================= -->
+  <section class="view view-oracle" id="view-oracle" data-view="oracle" hidden aria-labelledby="oracleHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="oracleHead" tabindex="-1">fortune</h2>
+      <button type="button" class="tuned" data-tune="oracle"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">the cards on my bed. think of a question, then shuffle.</p>
+      <div class="oracle-table" id="oracleTable"></div>
+      <button type="button" class="send-btn" id="oracleShuffle"><span class="btn-label">shuffle &amp; draw</span></button>
+      <div class="reading" id="oracleReading" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ======================= WISHES ======================= -->
+  <section class="view view-wishes" id="view-wishes" data-view="wishes" hidden aria-labelledby="wishesHead">
+    <div class="view-inner">
+      <button type="button" class="view-close hand-link" data-close-view>&larr; back to my room</button>
+      <h2 class="view-title" id="wishesHead" tabindex="-1">wishes</h2>
+      <button type="button" class="tuned" data-tune="wishes"><span class="tuned-lead">this room is tuned to</span> <span class="tuned-song"></span> <span class="tuned-play" aria-hidden="true">&#9656;</span></button>
+      <p class="view-lede">write a wish and let it go. it turns into a star over the sea.</p>
+      <form class="wish-form" id="wishForm">
+        <label class="sr-only" for="wishText">Your wish</label>
+        <input type="text" id="wishText" maxlength="90" placeholder="i wish…" autocomplete="off">
+        <button type="submit" class="send-btn"><span class="btn-label">let it go</span></button>
+      </form>
+      <div class="sky-map">
+        <svg class="constellation" id="constellation" viewBox="0 0 1000 360" role="group" aria-label="Your wishes"></svg>
+        <p class="wish-empty" id="wishEmpty">no wishes yet. the sky is waiting.</p>
+      </div>
+      <p class="wish-said" id="wishSaid" aria-live="polite"></p>
+      <p class="view-foot"><span id="wishCount"></span> wishes stay in this browser. nobody else can read them, not even renn.</p>
+      <button type="button" class="hand-link" id="wishClear" hidden>let them all go</button>
+    </div>
+  </section>
+
+  <!-- ======================= WALKMAN ======================= -->
+  <aside class="walkman" id="walkman" hidden aria-label="Music player">
+    <div class="wm-top">
+      <span class="wm-now">now playing</span>
+      <span class="wm-title" id="wmTitle">pick a tape</span>
+      <button type="button" class="wm-btn" id="wmPrev" aria-label="Previous song">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20 9 12l10-8z"/><path d="M5 19V5"/></svg>
+      </button>
+      <button type="button" class="wm-btn wm-play" id="wmPlay" aria-label="Play">
+        <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>
+        <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14"/><path d="M16 5v14"/></svg>
+      </button>
+      <button type="button" class="wm-btn" id="wmNext" aria-label="Next song">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 4 10 8-10 8z"/><path d="M19 5v14"/></svg>
+      </button>
+      <button type="button" class="wm-btn wm-tuck" id="wmTuck" aria-expanded="true" aria-label="Tuck the player away">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
     </div>
-  </div>
+    <div class="wm-deck">
+      <span class="wm-window" aria-hidden="true"><i class="reel"></i><i class="reel"></i></span>
+      <div class="wm-screen"><div class="wm-slot" id="walkmanSlot"></div></div>
+    </div>
+  </aside>
 
   <!-- ======================= DIALOGS ======================= -->
-  <dialog class="modal" id="loginModal" aria-labelledby="loginTitle">
-    <div class="modal-card">
-      <button type="button" class="modal-x" data-close aria-label="Close">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-      <h2 class="modal-title" id="loginTitle">AUTHENTICATE</h2>
-      <form class="modal-form" id="loginForm" novalidate>
-        <label class="sr-only" for="loginUser">Username</label>
-        <input class="field" id="loginUser" name="username" type="text" placeholder="Username" autocomplete="username" autocapitalize="off" spellcheck="false">
-        <label class="sr-only" for="loginPass">Password</label>
-        <input class="field" id="loginPass" name="password" type="password" placeholder="Password" autocomplete="current-password">
-        <button class="btn btn-primary btn-block" type="submit" id="loginSubmit"><span class="btn-label">ENTER</span></button>
-        <p class="form-error" id="loginError" role="alert" hidden></p>
-      </form>
-    </div>
-  </dialog>
-
-  <dialog class="modal" id="logoutModal" aria-labelledby="logoutTitle">
-    <div class="modal-card is-center">
-      <h2 class="modal-title" id="logoutTitle">LOGOUT</h2>
-      <p class="modal-text">Are you sure you want to exit the void?</p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" data-close>CANCEL</button>
-        <button type="button" class="btn btn-danger" id="confirmLogoutBtn">LOG OUT</button>
-      </div>
-    </div>
-  </dialog>
-
-  <dialog class="modal" id="profileModal" aria-labelledby="profileName">
-    <div class="modal-card is-center">
-      <button type="button" class="modal-x" data-close aria-label="Close">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-      <div class="avatar" id="profileAvatar" aria-hidden="true">R</div>
-      <h2 class="modal-title" id="profileName">renn</h2>
-      <p class="modal-text profile-role" id="profileRole">entity</p>
-      <div class="modal-actions">
-        <a class="btn btn-ghost" href="#admin" data-close>OPEN PANEL</a>
-        <button type="button" class="btn btn-danger" id="profileLogoutBtn">LOG OUT</button>
-      </div>
-    </div>
-  </dialog>
-
-  <dialog class="modal" id="settingsModal" aria-labelledby="settingsTitle">
-    <div class="modal-card">
-      <button type="button" class="modal-x" data-close aria-label="Close">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-      <h2 class="modal-title" id="settingsTitle">SETTINGS</h2>
-      <div class="settings">
-        <label class="setting" for="setReduceMotion">
-          <span class="setting-text">
-            <span class="setting-name">Reduce motion</span>
-            <span class="setting-hint">Turns off the warp, the shake and the drifting stars.</span>
-          </span>
-          <input type="checkbox" class="switch" id="setReduceMotion">
-        </label>
-        <label class="setting" for="setIntro">
-          <span class="setting-text">
-            <span class="setting-name">Warp intro</span>
-            <span class="setting-hint">Play the star warp when the site opens.</span>
-          </span>
-          <input type="checkbox" class="switch" id="setIntro">
-        </label>
-        <label class="setting" for="setLite">
-          <span class="setting-text">
-            <span class="setting-name">Lite background</span>
-            <span class="setting-hint">Fewer stars and a calmer sky. Easier on battery.</span>
-          </span>
-          <input type="checkbox" class="switch" id="setLite">
-        </label>
-        <label class="setting" for="setSparkles">
-          <span class="setting-text">
-            <span class="setting-name">Cursor sparkles</span>
-            <span class="setting-hint">Little pixel stars that trail the mouse.</span>
-          </span>
-          <input type="checkbox" class="switch" id="setSparkles">
-        </label>
-        <label class="setting" for="setCrt">
-          <span class="setting-text">
-            <span class="setting-name">CRT screen</span>
-            <span class="setting-hint">Scanlines, a rolling bar and a little flicker, like an old monitor.</span>
-          </span>
-          <input type="checkbox" class="switch" id="setCrt">
-        </label>
-        <label class="setting" for="setFabric">
-          <span class="setting-text">
-            <span class="setting-name">Background fabric</span>
-            <span class="setting-hint">The woven metal layer over the sky and stars.</span>
-          </span>
-          <input type="checkbox" class="switch" id="setFabric">
-        </label>
-      </div>
-    </div>
-  </dialog>
-
   <dialog class="modal" id="musicModal" aria-labelledby="musicTitle">
     <div class="modal-card is-wide">
-      <button type="button" class="modal-x" data-close aria-label="Close">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-      <h2 class="modal-title" id="musicTitle">ADD A SONG</h2>
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+      <h2 class="modal-title" id="musicTitle">add a song</h2>
       <div class="search-field">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <label class="sr-only" for="songSearch">Search for a song</label>
-        <input type="search" id="songSearch" placeholder="Search for a song..." autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+        <input type="search" id="songSearch" placeholder="search for a song…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
       </div>
       <div class="search-results" id="searchResults" aria-live="polite"></div>
       <p class="search-source" id="searchSource"></p>
     </div>
   </dialog>
 
-  <dialog class="modal" id="pinViewer" aria-label="Picture viewer">
+  <dialog class="modal" id="picViewer" aria-label="Picture viewer">
     <div class="modal-card is-viewer">
-      <button type="button" class="modal-x" data-close aria-label="Close">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
       <div class="viewer-stage">
-        <button type="button" class="viewer-nav is-prev" id="viewerPrev" aria-label="Previous picture">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <figure class="viewer-frame" id="viewerFrame">
-          <img id="viewerImg" alt="">
-        </figure>
-        <button type="button" class="viewer-nav is-next" id="viewerNext" aria-label="Next picture">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
+        <button type="button" class="viewer-nav is-prev" id="picPrev" aria-label="Previous picture">&lsaquo;</button>
+        <figure class="viewer-frame" id="picViewerFrame"><img id="picViewerImg" alt=""></figure>
+        <button type="button" class="viewer-nav is-next" id="picNext" aria-label="Next picture">&rsaquo;</button>
       </div>
       <div class="viewer-bar">
-        <p class="viewer-text" id="viewerText"></p>
-        <span class="viewer-count" id="viewerCount"></span>
-        <a class="viewer-link" id="viewerLink" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener">open on pinterest</a>
+        <p class="viewer-text" id="picViewerText"></p>
+        <span class="viewer-count" id="picViewerCount"></span>
+        <a class="viewer-link" id="picViewerLink" href="https://www.pinterest.com/xqygen/" target="_blank" rel="noopener">open on pinterest</a>
       </div>
     </div>
   </dialog>
 
-  <!-- a song from the interests page keeps playing on other pages -->
-  <div class="mini-player" id="miniPlayer" hidden>
-    <span class="song-eq" aria-hidden="true"><i></i><i></i><i></i></span>
-    <a class="mini-text" href="#interests">
-      <span class="mini-title" id="miniTitle"></span>
-      <span class="mini-artist" id="miniArtist"></span>
-    </a>
-    <button type="button" class="mini-btn" id="miniToggle" aria-label="Pause">
-      <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14"/><path d="M16 5v14"/></svg>
-      <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>
-    </button>
+  <dialog class="modal" id="keysModal" aria-labelledby="keysTitle">
+    <div class="modal-card">
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+      <h2 class="modal-title" id="keysTitle">secret keys</h2>
+      <dl class="keys-list">
+        <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>go somewhere in the room (<kbd>0</kbd> step back)</dd>
+        <dt><kbd>L</kbd></dt><dd>lucid: the room folds into a kaleidoscope</dd>
+        <dt><kbd>R</kbd></dt><dd>rain on the window</dd>
+        <dt><kbd>C</kbd></dt><dd>the camera: looks, hdr, god rays, film, time of day, take a photo</dd>
+        <dt><kbd>M</kbd></dt><dd>mute the room's own sounds</dd>
+        <dt><kbd>Esc</kbd></dt><dd>back to the sky</dd>
+        <dt>type <b>again</b></dt><dd>rewind the whole thing to zero</dd>
+        <dt>type <b>wish</b></dt><dd>the wish jar</dd>
+        <dt>the window</dt><dd>go out of it at night; catch a shooting star</dd>
+        <dt>the lamp</dt><dd>click it</dd>
+        <dt>the title</dt><dd>touch the letters while it's there, they ring</dd>
+        <dt>stay still</dt><dd>for a minute, and the memory fades</dd>
+      </dl>
+      <p class="keys-owner"><a href="panel.html">renn's door (sign in)</a></p>
+    </div>
+  </dialog>
+
+  <aside class="cam-panel" id="cameraPanel" aria-label="Camera settings">
+    <div class="cam-head">
+      <h2 class="cam-title">camera</h2>
+      <button type="button" class="cam-close" aria-label="Close the camera settings">&times;</button>
+    </div>
+    <p class="cam-lede">how the memory looks. it all changes as you move things.</p>
+    <div class="cam-body"></div>
+  </aside>
+
+  <div class="vhs-osd" id="vhsOsd" aria-hidden="true">
+    <span class="osd-play">PLAY &#9654;</span>
+    <span class="osd-count">0:00:00</span>
+    <span class="osd-sp">SP</span>
+    <span class="osd-date">OCT. 14 2009<br><span class="osd-time">5:47:12 PM</span></span>
   </div>
 
-  <!-- ======================= OVERLAYS ======================= -->
-  <div class="crt-roll" aria-hidden="true"></div>
-  <canvas id="warp" class="warp" aria-hidden="true"></canvas>
-  <div class="warp-glow" id="warpGlow" aria-hidden="true"></div>
-  <!-- liquid distortion used by js/effects.js (titles "melt" into place) -->
-  <svg class="fx-defs" width="0" height="0" aria-hidden="true" focusable="false">
-    <filter id="liquid" x="-10%" y="-30%" width="120%" height="160%" color-interpolation-filters="sRGB">
-      <feTurbulence id="liquidNoise" type="fractalNoise" baseFrequency="0.012 0.06" numOctaves="2" seed="7" result="noise"/>
-      <feDisplacementMap id="liquidMap" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  </svg>
+  <p class="dream-toast" id="dreamToast" role="status" aria-live="polite" hidden></p>
 
+  <div class="eyelids" aria-hidden="true"><i></i><i></i></div>
+
+  <!-- the basics: settings, the message relay, spotify, pinterest, song search, the letter and the sketchbook -->
   <script src="js/config.js" defer></script>
   <script src="js/core.js" defer></script>
   <script src="js/api.js" defer></script>
   <script src="js/pinterest.js" defer></script>
   <script src="js/spotify.js" defer></script>
-  <script src="js/background.js" defer></script>
-  <script src="js/navigation.js" defer></script>
-  <script src="js/auth.js" defer></script>
   <script src="js/music.js" defer></script>
   <script src="js/messages.js" defer></script>
   <script src="js/drawing.js" defer></script>
-  <script src="js/gallery.js" defer></script>
-  <script src="js/songs.js" defer></script>
-  <script src="js/banner.js" defer></script>
-  <script src="js/effects.js" defer></script>
-  <script src="js/secrets.js" defer></script>
+  <!-- the room -->
+  <script src="js/palette.js" defer></script>
+  <script src="js/memory/paint.js" defer></script>
+  <script src="js/sound.js" defer></script>
+  <script src="js/sky.js" defer></script>
+  <script src="js/memory/engine.js" defer></script>
+  <script src="js/memory/camera.js" defer></script>
+  <script src="js/life.js" defer></script>
+  <script src="js/rain.js" defer></script>
+  <script src="js/views.js" defer></script>
+  <script src="js/pictures.js" defer></script>
+  <script src="js/tapes.js" defer></script>
+  <script src="js/letters.js" defer></script>
+  <script src="js/scene.js" defer></script>
+  <script src="js/fx.js" defer></script>
+  <script src="js/wishes.js" defer></script>
+  <script src="js/oracle.js" defer></script>
+  <script src="js/guitar.js" defer></script>
+  <script src="js/arcade.js" defer></script>
+  <script src="js/games/catcher.js" defer></script>
+  <script src="js/games/memory.js" defer></script>
+  <script src="js/games/quiz.js" defer></script>
+  <script src="js/games/lanterns.js" defer></script>
+  <script src="js/extras.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>
 </html>

@@ -41,7 +41,7 @@
         <span class="tape-window"><i class="reel"></i><span class="tape-ribbon"></span><i class="reel"></i></span>
       </span>`;
     const cover = tape.querySelector('.tape-cover');
-    if (song.cover) cover.src = `../assets/covers/${song.cover}.jpg`;
+    if (song.cover) cover.src = `assets/covers/${song.cover}.jpg`;
     else cover.remove();
     tape.querySelector('.tape-title').textContent = song.title;
     tape.querySelector('.tape-artist').textContent = song.artist;

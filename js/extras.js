@@ -1,12 +1,12 @@
 /* ==========================================================
-   extras.js — the stranger corners of the dream
+   extras.js — the stranger corners of the room
    · lucid mode: the sky folds into a kaleidoscope (L, or the
      button in the corner, or type "lucid")
    · the title is an instrument: touch the letters
    · the real time where you are, and the real moon's phase
-   · leave it alone for a while and the dream drifts off
+   · leave it alone for a while and the memory fades
    · keys: 1–9 rooms, R rain, M mute, ? all the keys
-   · words: type "wish" or "void" anywhere (no l, r or m in them,
+   · words: type "wish" or "again" anywhere (no l, r, m or c in them,
      so they never trip the one-letter keys)
    · toast(text): a little handwritten note at the bottom
    ========================================================== */
@@ -105,16 +105,18 @@
   let typed = '';
   const WORDS = {
     wish: () => { location.hash = 'wishes'; },
-    void: collapse
+    again: collapse
   };
 
-  // "void": everything falls into the middle of the sky and back out
+  // "again": the whole room is wound back to zero, and plays again
   let collapsing = false;
   function collapse() {
     if (collapsing || Void.motion.reduced) return;
     if (Void.dream.views.current() !== 'home') Void.dream.views.home();
     collapsing = true;
     Void.dream.memory.pulseVoid();
+    // the tape goes back to zero with it
+    Void.dream.scene.rewind({ from: (performance.now() / 1000) % 36000, ms: 1400, title: false });
     html.classList.add('is-voiding');
     Void.dream.sound.thud({ vol: 0.45 });
     Void.dream.sky.ripple(innerWidth / 2, innerHeight * 0.42, 2);
@@ -151,7 +153,7 @@
       $('#rainBtn').click();
     } else if ((k === 'm' || k === 'M') && !inGame) {
       const muted = Void.dream.sound.toggleMute();
-      toast(muted ? 'the dream is quiet now (m to undo)' : 'sound is back');
+      toast(muted ? 'the room is quiet now (m to undo)' : 'sound is back');
     } else if (k === '?') {
       Void.modal.open('keysModal');
     }

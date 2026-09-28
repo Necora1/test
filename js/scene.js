@@ -1,5 +1,9 @@
 /* ==========================================================
    scene.js — home is renn's room (memory/engine.js paints it)
+   · it opens like a tape: the counter rewinds from somewhere far
+     to 0:00:00, then the title plays, then the room
+   · the counter in the corner then runs for as long as you stay
+   · every room is a track on the tape (side a, track 01…)
    · the things in the room are the way around: an invisible
      button sits on each one, following the camera
    · pointing at something warms it and names it, in handwriting
@@ -30,7 +34,7 @@
     const name = $('.t-name');
     if (!name) return;
     const text = name.textContent;
-    name.closest('h1')?.setAttribute('aria-label', "renn's void");
+    name.closest('h1')?.setAttribute('aria-label', 'zeroed my world');
     name.textContent = '';
     [...text].forEach((ch, i) => {
       const s = document.createElement('span');
@@ -115,6 +119,49 @@
     window.addEventListener('pointercancel', () => { drag = null; });
   }
 
+  /* ---------- the tape ---------- */
+  const TRACKS = ['about', 'interests', 'gallery', 'guitar', 'games', 'favoomfs', 'send', 'oracle', 'wishes'];
+  const hms = (secs) => {
+    const t = Math.max(0, Math.floor(secs));
+    return `${Math.floor(t / 3600)}:${String(Math.floor(t / 60) % 60).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+  };
+  let playingFrom = performance.now();
+  let rewinding = false;
+
+  // the counter spins back from somewhere far to zero, then it plays
+  function rewind({ from = 3600 * 4 + 60 * 17 + 32, ms = 2200, title: showTitle = true } = {}) {
+    const count = $('#rewindCount');
+    const corner = $('#tapeCounter');
+    const sign = document.querySelector('.rw-sign');
+    rewinding = true;
+    if (showTitle && title) { title.classList.remove('is-gone', 'is-playing'); title.classList.add('is-rewinding'); }
+    if (sign) sign.textContent = '\u25C0\u25C0';
+    const t0 = performance.now();
+    const quick = Void.motion.reduced;
+    const step = (now) => {
+      const k = quick ? 1 : Math.min(1, (now - t0) / ms);
+      const left = from * Math.pow(1 - k, 2.2);     // fast at first, easing into zero
+      if (count) count.textContent = hms(left);
+      if (corner) corner.textContent = hms(left);
+      if (k < 1) { requestAnimationFrame(step); return; }
+      rewinding = false;
+      playingFrom = performance.now();
+      if (sign) sign.textContent = '\u25B6';
+      if (showTitle && title) {
+        title.classList.remove('is-rewinding');
+        title.classList.add('is-playing');
+        setTimeout(() => title.classList.add('is-gone'), 4200);
+      }
+    };
+    requestAnimationFrame(step);
+  }
+
+  function tickCounter() {
+    if (rewinding) return;
+    const corner = $('#tapeCounter');
+    if (corner) corner.textContent = hms((performance.now() - playingFrom) / 1000);
+  }
+
   // a line of handwriting on the way somewhere
   function caption(text) {
     clearTimeout(travelTimer);
@@ -127,6 +174,7 @@
   }
 
   Void.dream.scene = {
+    rewind,
     async init() {
       splitTitle();
       const layers = await Void.dream.memory.init();
@@ -134,12 +182,15 @@
       if (!finePointer && hint) hint.textContent = 'drag sideways to look around. tap on things.';
       wirePan();
       Void.dream.onFrame(frame);
-      setTimeout(() => title?.classList.add('is-gone'), 5200);
+      // once the eyes are open, the tape winds back to zero and plays
+      setTimeout(() => rewind({ ms: 2800 }), Void.motion.reduced ? 0 : 1300);
+      setInterval(tickCounter, 500);
 
       Void.on('view', ({ id, prev }) => {
         point(null);
         const preset = Void.dream.memory.PRESETS[id];
-        caption(id !== 'home' ? preset?.caption : prev !== 'home' ? 'back in my room' : '');
+        const n = TRACKS.indexOf(id) + 1;
+        caption(id !== 'home' ? `side a, track ${String(n).padStart(2, '0')} \u2014 ${preset?.caption || ''}` : prev !== 'home' ? 'back in my room' : '');
         // out the window: the night sea, the jellyfish, the stars. The sea is
         // switched on once the camera is at the window, and the room stops
         // drawing once the sea has covered it
