@@ -3,7 +3,8 @@
    A panel that slides in from the right (the aperture button in
    the corner, or C): looks (eye candy, memory, super 8, vhs,
    cinestill 800t, black & white, clean), every effect on a
-   slider, the time of day, "let time pass", birds, resolution,
+   slider, the time of day, "let time pass", birds, perspective
+   guides (the lines the room was drawn on), resolution,
    and a button that takes a photo of the room (saved as a PNG).
    Everything applies live and is remembered in this browser.
    In the VHS look a tape counter sits in the corners.
@@ -81,7 +82,7 @@
 
     const toggles = document.createElement('div');
     toggles.className = 'cam-toggles';
-    [['timePasses', 'let time pass'], ['birds', 'birds outside']].forEach(([key, label]) => {
+    [['timePasses', 'let time pass'], ['birds', 'birds outside'], ['guides', 'perspective guides']].forEach(([key, label]) => {
       const t = document.createElement('label');
       t.className = 'cam-toggle';
       t.innerHTML = '<input type="checkbox"><span class="cam-switch" aria-hidden="true"></span><span></span>';

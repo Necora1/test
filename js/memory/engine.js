@@ -58,7 +58,7 @@
     mono: { grade: 5, exposure: 0, hdr: 0.8, bloom: 0.9, rays: 1, flare: 0.8, anamorphic: 0.1, dirt: 0.5, dust: 1.2, grain: 1.4, ca: 0, dreamy: 0.6, vignette: 1.2, leaks: 0, adapt: 0.7 },
     clean: { grade: 0, exposure: 0, hdr: 0.2, bloom: 0.6, rays: 0.5, flare: 0.5, anamorphic: 0, dirt: 0, dust: 0.6, grain: 0.2, ca: 0, dreamy: 0, vignette: 0.4, leaks: 0, adapt: 0.4 }
   };
-  const DEFAULTS = { v: 3, look: 'candy', ...LOOKS.candy, birds: 1, time: 0, timePasses: false, sway: 1, quality: 1 };
+  const DEFAULTS = { v: 4, look: 'candy', ...LOOKS.candy, birds: 1, time: 0, timePasses: false, sway: 1, quality: 1, guides: false };
   const SETTINGS_KEY = 'dream_camera';
   const saved = Void.store.get(SETTINGS_KEY, {}) || {};
   const settings = { ...DEFAULTS, ...(saved.v === DEFAULTS.v ? saved : {}) };
@@ -84,6 +84,7 @@
 
   // the camera and the light, as they are right now
   const cur = { ...PRESETS.home };
+  let view4 = [0.5, 0.5, 1, 1];
   let from = { ...cur };
   let to = { ...cur };
   let move = null;          // { t, dur, resolve, arrived }
@@ -314,6 +315,7 @@
     uniform float uAnamorphic; uniform float uDirt; uniform float uGrain; uniform float uCA;
     uniform float uDreamy; uniform float uVignette; uniform float uGrade; uniform float uRainLens;
     uniform float uLeaks;
+    uniform sampler2D uGuides; uniform vec4 uViewP; uniform float uGuideAmt;   // perspective guides, on top of everything
 
     vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
     float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
@@ -538,6 +540,12 @@
         float hx = hash(vec2(floor(uTime * 0.5), 1.0));
         col *= 1.0 - smoothstep(0.003, 0.0, abs(uv.x - hx - 0.05 * sin(uv.y * 5.0))) * 0.6;
       }
+      if (uGuideAmt > 0.0) {
+        vec2 gb = uViewP.xy + vec2(vUv.x - 0.5, 0.5 - vUv.y) * uViewP.zw;
+        vec4 gd = texture2D(uGuides, gb);
+        float inside = step(0.0, gb.x) * step(gb.x, 1.0) * step(0.0, gb.y) * step(gb.y, 1.0);
+        col = mix(col, gd.rgb, gd.a * uGuideAmt * inside);
+      }
       gl_FragColor = vec4(col, 1.0);
     }`;
 
@@ -609,7 +617,7 @@
     progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uMouseB', 'uGlass', 'uSunB', 'uDustAmt', 'uBirds']);
     progs.bright = program(BRIGHT, ['uTex', 'uTexel', 'uThreshold']);
     progs.blur = program(BLUR, ['uTex', 'uDir']);
-    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uAvg', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare', 'uSunVis', 'uExposure', 'uHdr', 'uBloomAmt', 'uRays', 'uAnamorphic', 'uDirt', 'uGrain', 'uCA', 'uDreamy', 'uVignette', 'uGrade', 'uRainLens', 'uLeaks']);
+    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uAvg', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare', 'uSunVis', 'uExposure', 'uHdr', 'uBloomAmt', 'uRays', 'uAnamorphic', 'uDirt', 'uGrain', 'uCA', 'uDreamy', 'uVignette', 'uGrade', 'uRainLens', 'uLeaks', 'uGuides', 'uViewP', 'uGuideAmt']);
 
     tex.alb = texture(layers.albedo);
     tex.blur = texture(layers.blur);
@@ -617,6 +625,7 @@
     tex.emit = texture(layers.emit);
     tex.fg = texture(layers.fg);
     tex.glass = texture(layers.glass);
+    tex.guides = texture(layers.guides);
   }
 
   function resize() {
@@ -757,6 +766,7 @@
     bindTex(3, tex.emit, S.loc.uEmit);
     bindTex(4, tex.fg, S.loc.uFg);
     gl.uniform4f(S.loc.uView, cx, cy, vw, vh);
+    view4 = [cx, cy, vw, vh];
     gl.uniform2f(S.loc.uFgShift, -mouse.x * 0.02 / cur.zoom, -mouse.y * 0.012 / cur.zoom);
     gl.uniform1f(S.loc.uAspect, aspect);
     gl.uniform1f(S.loc.uTime, clock);
@@ -863,6 +873,9 @@
     gl.uniform1f(P.loc.uGrade, settings.grade);
     gl.uniform1f(P.loc.uRainLens, rain);
     gl.uniform1f(P.loc.uLeaks, settings.leaks);
+    bindTex(4, tex.guides, P.loc.uGuides);
+    gl.uniform4f(P.loc.uViewP, view4[0], view4[1], view4[2], view4[3]);
+    gl.uniform1f(P.loc.uGuideAmt, settings.guides ? 1 : 0);
     draw(null, RW, RH);
     if (snap) { const done = snap; snap = null; canvas.toBlob(done, 'image/png'); }
   }
@@ -887,6 +900,11 @@
     async init() {
       const mobile = Math.min(screen.width, screen.height) < 700;
       layers = await Void.dream.memoryPaint.paint({ scale: mobile ? 1.1 : 1.5 });
+      // the camera looks at where things actually ended up in the painting
+      Object.entries(layers.focus || {}).forEach(([id, [x, y]]) => {
+        if (PRESETS[id] && id !== 'home') { PRESETS[id].x = x; PRESETS[id].y = y; }
+      });
+      if (/[?&]guides\b/.test(location.search)) settings.guides = true;
       aspect = window.innerWidth / window.innerHeight;
       try {
         setup();

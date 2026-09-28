@@ -78,9 +78,18 @@ server/
   shelf → about · the tapes on the shelf → songs · the guitar → guitar · the
   laptop on the bed → games (at night) · the letter on the nightstand → write
   to me (lamp on) · the cards on the bed → fortune (3am) · the lamp → on/off.
-  The camera spot, light and caption of each track are `PRESETS` in
-  `js/memory/engine.js`; the clickable areas are `HOTSPOTS` in
-  `js/memory/paint.js` (board units, 1600 × 1000).
+  The light and caption of each track are `PRESETS` in
+  `js/memory/engine.js`; the camera aims at wherever the thing ends up in
+  the painting.
+- **The perspective:** the room is drawn in one-point perspective, like a
+  photo from the doorway. Everything is placed in 3D (x, y on the back wall,
+  z towards you) and projected to one vanishing point, just under the sun
+  (`VP` in `js/memory/paint.js`). The bed, shelf, nightstand and crate are
+  real boxes, and the sunlight is traced through the window panes onto the
+  bed and the floor. The clickable areas are worked out from the same
+  projection. Turn on **perspective guides** in the camera panel (or open
+  the site with `?guides`) to see the horizon, the vanishing point, the
+  floor grid, and every edge running back to it.
 - **The look:** painted once in code, then lit every frame: the low sun in
   the window (it sinks as the day goes on), gold raking across the bed,
   god rays, dust turning in the light, a lens flare with ghosts, birds going
