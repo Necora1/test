@@ -48,6 +48,26 @@
   };
 
 
+  /* ---------- the camera's settings (the settings panel changes these) ---------- */
+  const LOOKS = {
+    candy: { grade: 1, exposure: -0.15, hdr: 0.85, bloom: 1.15, rays: 1.1, flare: 1.2, anamorphic: 0.6, dirt: 0.7, dust: 1.4, grain: 0.45, ca: 0.6, dreamy: 0.35, vignette: 0.8, leaks: 0.7, adapt: 1 },
+    memory: { grade: 0, exposure: 0, hdr: 0.3, bloom: 1, rays: 0.8, flare: 1, anamorphic: 0.15, dirt: 0.35, dust: 1, grain: 1, ca: 1, dreamy: 1, vignette: 1, leaks: 1, adapt: 0.6 },
+    super8: { grade: 2, exposure: 0.05, hdr: 0.2, bloom: 1.1, rays: 0.7, flare: 0.9, anamorphic: 0, dirt: 0.2, dust: 1, grain: 2, ca: 1.3, dreamy: 1.2, vignette: 1.5, leaks: 1.4, adapt: 0.3 },
+    vhs: { grade: 3, exposure: 0, hdr: 0, bloom: 0.8, rays: 0.5, flare: 0.6, anamorphic: 0, dirt: 0, dust: 0.8, grain: 0.8, ca: 2, dreamy: 0.5, vignette: 0.9, leaks: 0.3, adapt: 0.4 },
+    cinestill: { grade: 4, exposure: 0.1, hdr: 0.5, bloom: 1.4, rays: 1, flare: 1, anamorphic: 0.35, dirt: 0.4, dust: 1.1, grain: 0.9, ca: 0.8, dreamy: 0.6, vignette: 1, leaks: 0.6, adapt: 0.7 },
+    mono: { grade: 5, exposure: 0, hdr: 0.8, bloom: 0.9, rays: 1, flare: 0.8, anamorphic: 0.1, dirt: 0.5, dust: 1.2, grain: 1.4, ca: 0, dreamy: 0.6, vignette: 1.2, leaks: 0, adapt: 0.7 },
+    clean: { grade: 0, exposure: 0, hdr: 0.2, bloom: 0.6, rays: 0.5, flare: 0.5, anamorphic: 0, dirt: 0, dust: 0.6, grain: 0.2, ca: 0, dreamy: 0, vignette: 0.4, leaks: 0, adapt: 0.4 }
+  };
+  const DEFAULTS = { look: 'candy', ...LOOKS.candy, birds: 1, time: 0, timePasses: false, sway: 1, quality: 1 };
+  const SETTINGS_KEY = 'dream_camera';
+  const settings = { ...DEFAULTS, ...(Void.store.get(SETTINGS_KEY, {}) || {}) };
+  let readBuf = null;
+  let snap = null;          // a photo was asked for: taken right after the next frame
+  let frameNo = 0;
+  let exposureAuto = 1;
+  let exposureTarget = 1;
+  let passing = 0;          // "let time pass": where the day has got to
+
   let gl = null;
   let layers = null;
   let progs = {};
@@ -116,6 +136,7 @@
     uniform vec2 uFocus;
     uniform vec4 uHover;
     uniform vec2 uMouseB;
+    uniform float uDustAmt; uniform float uBirds;
 
     float dust(vec2 uv) {
       float d = 0.0;
@@ -193,7 +214,7 @@
       vec3 col = alb * amb;
       col += alb * light * (sunCol * 3.2 * sunAmt + moonCol * 0.55 * moonAmt) + light * sunCol * 0.3 * sunAmt;
       col += air * (sunCol * 0.3 * sunAmt + moonCol * 0.08 * moonAmt);
-      col += dust(uv) * (air * 2.6 + light * 0.5) * (sunCol * sunAmt + moonCol * moonAmt * 0.4) * 0.9;
+      col += uDustAmt * dust(uv) * (air * 2.6 + light * 0.5) * (sunCol * sunAmt + moonCol * moonAmt * 0.4) * 0.9;
 
       vec3 em = texture2D(uEmit, uv).rgb;
       vec3 lampCol = vec3(1.0, 0.64, 0.32);
@@ -208,13 +229,29 @@
       if (glass > 0.001) {
         vec3 outside = alb * mix(1.45, 1.0, smoothstep(0.0, 0.7, uTod)) * mix(vec3(1.0), vec3(0.62, 0.5, 0.62), smoothstep(0.2, 0.7, uTod));
         vec2 wp = uv * vec2(420.0, 260.0);
-        float star = step(0.985, hash(floor(wp))) * (0.5 + 0.5 * sin(uTime * 2.0 + hash(floor(wp) + 3.0) * 20.0));
+        float star = step(0.985, hash(floor(wp))) * smoothstep(0.32, 0.05, length(fract(wp) - 0.5)) * (0.5 + 0.5 * sin(uTime * 2.0 + hash(floor(wp) + 3.0) * 20.0));
         vec3 sky = mix(vec3(0.02, 0.03, 0.09), vec3(0.12, 0.1, 0.24), smoothstep(0.2, 0.62, uv.y)) + star * 0.8 + alb * 0.08;
         outside = mix(outside, sky, night);
         float lane = floor(uv.x * 380.0);
         float drop = step(0.9, hash(vec2(lane, floor(uv.y * 26.0 + uTime * (3.0 + hash(vec2(lane, 1.0)) * 5.0)))));
         outside += uRain * drop * vec3(0.5, 0.55, 0.6) * 0.3;
         outside = mix(outside, outside * vec3(0.72, 0.76, 0.86), uRain * 0.6);
+        // now and then a few birds cross the sky
+        if (uBirds > 0.001) {
+          float b = 0.0;
+          float cyc = uTime / 26.0;
+          float k = fract(cyc) * 4.0;
+          for (int i = 0; i < 5; i++) {
+            float fi = float(i);
+            vec2 bp = vec2(0.43 + (k - fi * 0.12) * 0.065, 0.3 + fi * 0.018 + sin(k * 3.0 + fi) * 0.012 + hash(vec2(floor(cyc), fi)) * 0.05);
+            vec2 q = (uv - bp) * vec2(1.6, 1.0) / 0.0055;
+            float flap = sin(uTime * 11.0 + fi * 2.0);
+            q.x = abs(q.x);
+            float dd = abs(q.y + q.x * (0.35 + 0.35 * flap) - q.x * q.x * 0.25);
+            b += smoothstep(0.35, 0.0, dd) * step(q.x, 1.1);
+          }
+          outside *= 1.0 - clamp(b, 0.0, 1.0) * 0.85 * uBirds;
+        }
         col = mix(col, outside, glass);
       }
       // the sun itself, going down behind the glass
@@ -266,15 +303,99 @@
     }`;
 
   const POST = COMMON + `
-    uniform sampler2D uScene; uniform sampler2D uBloom; uniform sampler2D uBloomWide;
+    uniform sampler2D uScene; uniform sampler2D uBloom; uniform sampler2D uBloomWide; uniform sampler2D uAvg;
     uniform vec2 uRes; uniform float uTime; uniform float uFlash; uniform float uZoomBlur;
     uniform float uLucid; uniform float uFade; uniform vec3 uLeak;
     uniform vec2 uSunS; uniform float uFlare;   // the sun on screen, and how much it flares
+    uniform float uSunVis;                       // how much sun there is to make rays with
+    // the camera settings
+    uniform float uExposure; uniform float uHdr; uniform float uBloomAmt; uniform float uRays;
+    uniform float uAnamorphic; uniform float uDirt; uniform float uGrain; uniform float uCA;
+    uniform float uDreamy; uniform float uVignette; uniform float uGrade; uniform float uRainLens;
+    uniform float uLeaks;
+
+    vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
+    float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+    // raindrops sitting on the lens
+    vec2 drops(vec2 uv, float t, out float rim) {
+      vec2 off = vec2(0.0);
+      rim = 0.0;
+      vec2 grid = vec2(18.0, 11.0);
+      for (int k = 0; k < 2; k++) {
+        vec2 g = uv * grid * (k == 0 ? 1.0 : 1.7);
+        vec2 id = floor(g);
+        vec2 f = fract(g) - 0.5;
+        float h = hash(id + float(k) * 7.1);
+        float life = fract(t * (0.05 + h * 0.08) + h);
+        vec2 c = (vec2(hash(id + 3.3), hash(id + 5.1)) - 0.5) * 0.6;
+        c.y += life * life * (h > 0.7 ? 0.8 : 0.0);          // some run down
+        float r = (0.12 + 0.2 * hash(id + 9.7)) * smoothstep(0.0, 0.1, life) * (1.0 - smoothstep(0.85, 1.0, life));
+        vec2 q = (f - c) * vec2(1.0, 1.25);
+        float d = length(q);
+        float inside = smoothstep(r, r * 0.8, d) * step(0.35, h);
+        off += q * inside * -0.6 / grid;
+        rim += smoothstep(r * 0.7, r, d) * inside;
+      }
+      return off;
+    }
+
+    vec3 grade(vec3 c, vec2 uv, float ft) {
+      if (uGrade < 0.5) {
+        // memory: a soft shoulder, faded blacks, warm highlights
+        c = c / (c + vec3(0.9)) * 1.75;
+        c = mix(vec3(0.05, 0.04, 0.065), vec3(1.0, 0.965, 0.9), c);
+        return pow(max(c, 0.0), vec3(0.98, 1.0, 1.04));
+      } else if (uGrade < 1.5) {
+        // eye candy: filmic, punchy, teal in the shadows and gold in the light
+        c = aces(c * 1.1);
+        float l = luma(c);
+        c = mix(c, c * vec3(0.86, 0.98, 1.12), (1.0 - smoothstep(0.0, 0.45, l)) * 0.55);
+        c = mix(c, c * vec3(1.1, 1.0, 0.86), smoothstep(0.45, 1.0, l) * 0.5);
+        float sat = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
+        c = mix(vec3(luma(c)), c, 1.0 + 0.45 * (1.0 - sat));
+        return max(c, 0.0);
+      } else if (uGrade < 2.5) {
+        // super 8: warm, faded, a little magenta in the blacks, flickering
+        c = c / (c + vec3(0.8)) * 1.7;
+        c = mix(vec3(0.09, 0.05, 0.07), vec3(1.0, 0.93, 0.78), c);
+        c *= 0.94 + 0.08 * hash(vec2(ft, 9.0));
+        return c;
+      } else if (uGrade < 3.5) {
+        // vhs: washed, cool, soft
+        c = c / (c + vec3(0.85)) * 1.7;
+        c = mix(vec3(luma(c)), c, 0.72) * vec3(0.95, 1.0, 1.06);
+        return mix(vec3(0.06, 0.06, 0.08), vec3(0.98), c);
+      } else if (uGrade < 4.5) {
+        // cinestill 800t: tungsten night film, red halos, teal shadows
+        c = aces(c * 1.15);
+        c = mix(c * vec3(0.78, 0.97, 1.1), c * vec3(1.05, 0.98, 0.92), smoothstep(0.1, 0.7, luma(c)));
+        return c;
+      }
+      // black & white, a little warm, contrasty
+      float l = luma(c / (c + vec3(0.8)) * 1.75);
+      l = smoothstep(0.02, 0.98, l);
+      return vec3(l) * vec3(1.03, 1.0, 0.95);
+    }
+
     void main() {
       vec2 uv = vUv;
-      // the film shivers in the gate, very slightly
-      float ft = floor(uTime * 12.0);
-      uv += (vec2(hash(vec2(ft, 1.0)), hash(vec2(ft, 2.0))) - 0.5) * 0.0012;
+      bool vhs = uGrade > 2.5 && uGrade < 3.5;
+      bool s8 = uGrade > 1.5 && uGrade < 2.5;
+      float fps = s8 ? 18.0 : 12.0;
+      float ft = floor(uTime * fps);
+      // the film shivers in the gate (a lot more on super 8)
+      uv += (vec2(hash(vec2(ft, 1.0)), hash(vec2(ft, 2.0))) - 0.5) * (s8 ? 0.005 : 0.0012);
+      if (vhs) {
+        uv.x += sin(uv.y * 240.0 + uTime * 9.0) * 0.0007;
+        float band = fract(uTime * 0.06);
+        float tb = smoothstep(0.035, 0.0, abs(uv.y - band));
+        uv.x += tb * (hash(vec2(floor(uv.y * 200.0), ft)) - 0.5) * 0.03;
+        if (uv.y < 0.025) uv.x += (hash(vec2(floor(uv.y * 400.0), ft)) - 0.5) * 0.04;
+      }
+
+      float rim = 0.0;
+      if (uRainLens > 0.001) uv += drops(uv, uTime, rim) * uRainLens;
 
       vec3 col;
       if (uZoomBlur > 0.002) {
@@ -289,25 +410,58 @@
       }
       vec2 d = uv - 0.5;
       float e = dot(d, d);
-      float ca = 0.012 * (1.0 - uZoomBlur * 0.7);
-      col.r = mix(col.r, texture2D(uScene, uv - d * e * ca).r, 0.8);
-      col.b = mix(col.b, texture2D(uScene, uv + d * e * ca).b, 0.8);
+      float ca = (vhs ? 0.03 : 0.012) * uCA * (1.0 - uZoomBlur * 0.7);
+      vec2 cadir = vhs ? vec2(0.12, 0.0) : d * e;
+      col.r = mix(col.r, texture2D(uScene, uv - cadir * ca).r, 0.85);
+      col.b = mix(col.b, texture2D(uScene, uv + cadir * ca).b, 0.85);
+
+      // pseudo HDR: pull detail out of the shadows and the light at once
+      vec3 avg = texture2D(uAvg, uv).rgb;
+      float la = luma(avg);
+      col *= mix(1.0, clamp(0.26 / (la + 0.05), 0.6, 1.7), uHdr * 0.3);     // local tone mapping
+      col += (col - avg) * uHdr * 0.55;                                     // clarity
+      col = max(col, 0.0);
+      col *= exp2(uExposure);
 
       vec3 bloom = texture2D(uBloom, uv).rgb;
       vec3 wide = texture2D(uBloomWide, uv).rgb;
-      col += bloom * 0.55 + wide * 0.45;
-      col += (bloom + wide) * vec3(1.0, 0.42, 0.22) * 0.2;          // halation
-      col = mix(col, col * 0.6 + wide * 1.2 + bloom * 0.3, smoothstep(0.1, 0.32, e) * 0.35); // soft edges
+      col += (bloom * 0.55 + wide * 0.45) * uBloomAmt;
+      col += (bloom + wide) * vec3(1.0, 0.42, 0.22) * (uGrade > 3.5 && uGrade < 4.5 ? 0.6 : 0.2) * uBloomAmt;   // halation
+      col = mix(col, col * 0.6 + wide * 1.2 + bloom * 0.3, smoothstep(0.1, 0.32, e) * 0.35 * uDreamy);           // soft edges
+
+      // anamorphic streaks: bright things smear sideways
+      if (uAnamorphic > 0.001) {
+        vec3 an = vec3(0.0);
+        for (int i = 1; i <= 8; i++) {
+          float o = float(i) * 0.022;
+          an += (texture2D(uBloom, uv + vec2(o, 0.0)).rgb + texture2D(uBloom, uv - vec2(o, 0.0)).rgb) * (1.0 - float(i) / 9.0);
+        }
+        col += vec3(0.55, 0.7, 1.0) * luma(an) * 0.12 * uAnamorphic;
+      }
+
+      // god rays: the light itself, streaming out from the sun between the bars
+      if (uRays > 0.001 && uSunVis > 0.001) {
+        vec2 dir = (uv - uSunS) / 40.0 * 0.85;
+        vec2 p = uv;
+        float decay = 1.0;
+        vec3 rays = vec3(0.0);
+        for (int i = 0; i < 40; i++) {
+          p -= dir;
+          rays += texture2D(uBloom, p).rgb * decay;
+          decay *= 0.955;
+        }
+        col += rays / 40.0 * vec3(1.0, 0.78, 0.5) * 1.7 * uRays * uSunVis;
+      }
 
       // the lens flare: a streak up through the sun, and ghosts across the frame
+      vec3 flare = vec3(0.0);
       if (uFlare > 0.001) {
         float asp = uRes.x / uRes.y;
         vec2 fs = (uv - uSunS) * vec2(asp, 1.0);
-        // mostly upwards, soft, like light smeared on the lens
         float up = fs.y > 0.0 ? 1.8 : 10.0;
         float streak = exp(-abs(fs.x) * 70.0) * exp(-abs(fs.y) * up) * 0.42;
         streak += exp(-abs(fs.y) * 160.0) * exp(-abs(fs.x) * 7.0) * 0.08;
-        vec3 flare = vec3(1.0, 0.72, 0.36) * streak;
+        flare = vec3(1.0, 0.72, 0.36) * streak;
         vec2 axis = vec2(0.5) - uSunS;
         vec2 g1 = (uv - (uSunS + axis * 0.55 + vec2(-0.08, -0.12))) * vec2(asp, 1.0);
         float gl1 = length(g1);
@@ -320,24 +474,41 @@
         flare += vec3(1.0, 0.62, 0.3) * smoothstep(0.1, 0.085, hex) * 0.16;
         vec2 g4 = (uv - (uSunS - axis * 0.25)) * vec2(asp, 1.0);
         flare += vec3(1.0, 0.8, 0.5) * smoothstep(0.03, 0.0, length(g4)) * 0.18;
-        col += flare * uFlare;
+        // a rainbow arc, very faint, opposite the sun
+        vec2 g5 = (uv - (uSunS + axis * 1.2)) * vec2(asp, 1.0);
+        float arc = smoothstep(0.02, 0.0, abs(length(g5) - 0.3));
+        flare += (0.5 + 0.5 * cos(6.2831 * (length(g5) * 12.0 + vec3(0.0, 0.33, 0.67)))) * arc * 0.06;
+        flare *= uFlare;
+        col += flare;
       }
+
+      // dirt and smudges on the lens, only visible where light hits them
+      if (uDirt > 0.001) {
+        float dirt = 0.0;
+        for (int i = 0; i < 3; i++) {
+          vec2 g = uv * vec2(5.0, 3.5) * (1.0 + float(i) * 1.7);
+          vec2 id = floor(g);
+          vec2 f = fract(g) - 0.5 - (vec2(hash(id + float(i)), hash(id + 4.0 + float(i))) - 0.5) * 0.6;
+          float r = 0.12 + 0.3 * hash(id + 2.0);
+          dirt += smoothstep(r, r * 0.3, length(f)) * (0.3 + 0.7 * hash(id + 8.0)) / (1.0 + float(i));
+        }
+        dirt += fbm(uv * 14.0) * 0.4;
+        float lightOn = luma(wide) * 3.0 + luma(flare) * 2.0;
+        col += vec3(1.0, 0.8, 0.6) * dirt * lightOn * 0.25 * uDirt;
+      }
+      col += rim * 0.25 * luma(wide) * uRainLens;
 
       // light leaks drifting through the corners
       vec2 lk = uv - vec2(1.02 + 0.06 * sin(uTime * 0.11), 0.95 + 0.05 * cos(uTime * 0.08));
-      col += uLeak * exp(-dot(lk, lk) * 5.0) * (0.22 + 0.08 * sin(uTime * 0.5));
+      col += uLeak * exp(-dot(lk, lk) * 5.0) * (0.22 + 0.08 * sin(uTime * 0.5)) * uLeaks;
       vec2 lk2 = uv - vec2(-0.08, 0.12 + 0.1 * sin(uTime * 0.07));
-      col += vec3(1.0, 0.55, 0.3) * exp(-dot(lk2, lk2) * 8.0) * 0.12;
+      col += vec3(1.0, 0.55, 0.3) * exp(-dot(lk2, lk2) * 8.0) * 0.12 * uLeaks;
 
-      // drifting off: the memory washes out
       float g = dot(col, vec3(0.3, 0.59, 0.11));
       col = mix(col, vec3(g) * vec3(1.05, 1.0, 0.92) + 0.08, uFade * 0.6);
-
       col = col * (1.0 + uFlash * 0.9) + uFlash * vec3(0.1, 0.07, 0.05);
-      // the grade: a soft shoulder, lifted and faded blacks, warm highlights
-      col = col / (col + vec3(0.9)) * 1.75;
-      col = mix(vec3(0.05, 0.04, 0.065), vec3(1.0, 0.965, 0.9), col);
-      col = pow(max(col, 0.0), vec3(0.98, 1.0, 1.04));
+
+      col = grade(col, uv, ft);
 
       if (uLucid > 0.001) {
         float r = length(d * vec2(uRes.x / uRes.y, 1.0));
@@ -345,13 +516,27 @@
         col = mix(col, col * rainbow * 1.55, uLucid * 0.7);
       }
 
-      col *= 1.0 - 1.1 * dot(d * vec2(0.9, 1.1), d * vec2(0.9, 1.1));
+      col *= 1.0 - 1.1 * uVignette * dot(d * vec2(0.9, 1.1), d * vec2(0.9, 1.1));
+      if (s8) {
+        // the rounded gate of a super 8 frame
+        vec2 q = abs(d) * 2.0;
+        float gate = smoothstep(1.0, 0.94, pow(pow(q.x, 6.0) + pow(q.y * 1.02, 6.0), 1.0 / 6.0));
+        col *= gate;
+      }
+      if (vhs) {
+        col *= 0.9 + 0.1 * sin(vUv.y * uRes.y * 1.6);
+        col += (hash(vec2(floor(vUv.y * uRes.y * 0.5), ft)) - 0.5) * 0.05;
+      }
       float gr = hash(uv * uRes + ft * 17.13) - 0.5;
-      col += gr * 0.07;
-      // a speck of dust on the film, now and then
+      col += gr * 0.07 * uGrain;
       vec2 sg = uv * vec2(90.0, 56.0);
-      float sp = step(0.9992, hash(floor(sg) + ft)) * smoothstep(0.22, 0.05, length(fract(sg) - 0.5));
-      col = mix(col, col * 0.55, sp * 0.7);
+      float sp = step(s8 ? 0.996 : 0.9992, hash(floor(sg) + ft)) * smoothstep(0.22, 0.05, length(fract(sg) - 0.5));
+      col = mix(col, col * 0.55, sp * 0.7 * min(1.0, uGrain));
+      if (s8 && hash(vec2(ft, 3.0)) > 0.93) {
+        // a hair caught in the gate, for a few frames
+        float hx = hash(vec2(floor(uTime * 0.5), 1.0));
+        col *= 1.0 - smoothstep(0.003, 0.0, abs(uv.x - hx - 0.05 * sin(uv.y * 5.0))) * 0.6;
+      }
       gl_FragColor = vec4(col, 1.0);
     }`;
 
@@ -420,10 +605,10 @@
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-    progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uMouseB', 'uGlass', 'uSunB']);
+    progs.scene = program(SCENE, ['uAlb', 'uBlur', 'uSun', 'uEmit', 'uFg', 'uView', 'uFgShift', 'uAspect', 'uTime', 'uTod', 'uLamp', 'uScreen', 'uLights', 'uRain', 'uDof', 'uDim', 'uLucid', 'uVoid', 'uFade', 'uFocus', 'uHover', 'uMouseB', 'uGlass', 'uSunB', 'uDustAmt', 'uBirds']);
     progs.bright = program(BRIGHT, ['uTex', 'uTexel', 'uThreshold']);
     progs.blur = program(BLUR, ['uTex', 'uDir']);
-    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare']);
+    progs.post = program(POST, ['uScene', 'uBloom', 'uBloomWide', 'uAvg', 'uRes', 'uTime', 'uFlash', 'uZoomBlur', 'uLucid', 'uFade', 'uLeak', 'uSunS', 'uFlare', 'uSunVis', 'uExposure', 'uHdr', 'uBloomAmt', 'uRays', 'uAnamorphic', 'uDirt', 'uGrain', 'uCA', 'uDreamy', 'uVignette', 'uGrade', 'uRainLens', 'uLeaks']);
 
     tex.alb = texture(layers.albedo);
     tex.blur = texture(layers.blur);
@@ -439,7 +624,7 @@
     aspect = cw / ch;
     if (!gl) return;
     const dpr = Math.min(1.5, window.devicePixelRatio || 1);
-    const budget = 1300000;
+    const budget = 1300000 * settings.quality * settings.quality;
     const s = Math.min(dpr, Math.sqrt(budget / (cw * ch)));
     RW = Math.max(64, Math.round(cw * s));
     RH = Math.max(64, Math.round(ch * s));
@@ -453,8 +638,11 @@
       b1: target(BW, BH),
       b2: target(BW, BH),
       w1: target(Math.max(8, BW >> 2), Math.max(8, BH >> 2)),
-      w2: target(Math.max(8, BW >> 2), Math.max(8, BH >> 2))
+      w2: target(Math.max(8, BW >> 2), Math.max(8, BH >> 2)),
+      a1: target(Math.max(8, BW >> 1), Math.max(8, BH >> 1)),
+      a2: target(Math.max(8, BW >> 1), Math.max(8, BH >> 1))
     };
+    readBuf = new Uint8Array(fbo.a2.w * fbo.a2.h * 4);
   }
 
   /* ---------- the camera ---------- */
@@ -465,7 +653,7 @@
 
   function viewRect() {
     const [bw, bh] = baseVis();
-    const breathe = reduced() ? 0 : Math.sin(clock * 0.07) * 0.012;
+    const breathe = reduced() ? 0 : Math.sin(clock * 0.07) * 0.012 * settings.sway;
     const zoom = cur.zoom * (1 + breathe * 0.5) * (1 + hover.a * 0.025) * (1 - fade * 0.06);
     const vw = bw / zoom;
     const vh = bh / zoom;
@@ -473,7 +661,7 @@
     let cy = cur.y / BOARD.H;
     if (view === 'home') cx += panX;
     // lean a little towards what you're pointing at, and with the mouse
-    cx += (hover.x - cx) * hover.a * 0.03 + mouse.x * 0.008 / cur.zoom + (reduced() ? 0 : Math.sin(clock * 0.05) * 0.004);
+    cx += (hover.x - cx) * hover.a * 0.03 + mouse.x * 0.008 / cur.zoom + (reduced() ? 0 : Math.sin(clock * 0.05) * 0.004 * settings.sway);
     cy += (hover.y - cy) * hover.a * 0.03 + mouse.y * 0.006 / cur.zoom;
     cx = Math.min(1 - vw / 2, Math.max(vw / 2, cx));
     cy = Math.min(1 - vh / 2, Math.max(vh / 2, cy));
@@ -495,7 +683,7 @@
     if (move?.resolve) move.resolve();
     from = { ...cur };
     to = { ...preset };
-    if (view === 'home') panX = 0;
+    if (view === 'home') { panX = 0; to.tod = homeTod(); }
     if (instant || reduced()) {
       KEYS.forEach((k) => { cur[k] = to[k]; });
       move = null;
@@ -505,6 +693,12 @@
     const dist = Math.hypot((to.x - from.x) / BOARD.W, (to.y - from.y) / BOARD.H) + Math.abs(Math.log(to.zoom / from.zoom)) * 0.5;
     const dur = Math.min(3.2, 1.5 + dist * 1.8);
     return new Promise((resolve) => { move = { t: 0, dur, resolve, arrived: false }; });
+  }
+
+  // the light at home: the setting, or the day slowly going by
+  function homeTod() {
+    if (!settings.timePasses) return settings.time;
+    return 0.5 - 0.5 * Math.cos(passing);
   }
 
   /* ---------- the loop ---------- */
@@ -530,6 +724,9 @@
       zoomBlur *= 0.8;
       flash *= 0.85;
     }
+
+    if (settings.timePasses) passing += step * (Math.PI * 2 / 240);   // a whole day in four minutes
+    if (view === 'home' && !move) cur.tod += (homeTod() - cur.tod) * Math.min(1, step * 0.8);
 
     mouse.x += (mouse.tx - mouse.x) * Math.min(1, step * 3);
     mouse.y += (mouse.ty - mouse.y) * Math.min(1, step * 3);
@@ -578,13 +775,15 @@
     const sunY = layers.sunAt[1] + Math.min(1, cur.tod) * 70;
     gl.uniform2f(S.loc.uSunB, layers.sunAt[0] / BOARD.W, sunY / BOARD.H);
     gl.uniform2f(S.loc.uMouseB, mouse.bx, mouse.by);
+    gl.uniform1f(S.loc.uDustAmt, settings.dust);
+    gl.uniform1f(S.loc.uBirds, settings.birds);
     draw(fbo.scene, RW, RH);
 
     // 2. bloom: what's bright, shrunk and blurred, then shrunk and blurred again, wider
     gl.useProgram(progs.bright.p);
     bindTex(0, fbo.scene.t, progs.bright.loc.uTex);
     gl.uniform2f(progs.bright.loc.uTexel, 1 / RW, 1 / RH);
-    gl.uniform1f(progs.bright.loc.uThreshold, 0.72 - lucid * 0.2);
+    gl.uniform1f(progs.bright.loc.uThreshold, 0.72 - lucid * 0.2 - (settings.grade === 1 ? 0.08 : 0));
     draw(fbo.b1, BW, BH);
     const B = progs.blur;
     gl.useProgram(B.p);
@@ -601,12 +800,35 @@
       draw(dst, ww, wh);
     });
 
+    // 2b. the whole frame, averaged, for the HDR look and the eye adapting to the light
+    gl.useProgram(progs.bright.p);
+    bindTex(0, fbo.scene.t, progs.bright.loc.uTex);
+    gl.uniform2f(progs.bright.loc.uTexel, 2 / RW, 2 / RH);
+    gl.uniform1f(progs.bright.loc.uThreshold, -1);
+    draw(fbo.a1, fbo.a1.w, fbo.a1.h);
+    gl.useProgram(B.p);
+    [[fbo.a1, fbo.a2, 2, 0], [fbo.a2, fbo.a1, 0, 2], [fbo.a1, fbo.a2, 4, 0], [fbo.a2, fbo.a1, 0, 4], [fbo.a1, fbo.a2, 2, 2]].forEach(([src, dst, dx, dy]) => {
+      bindTex(0, src.t, B.loc.uTex);
+      gl.uniform2f(B.loc.uDir, dx / src.w, dy / src.h);
+      draw(dst, dst.w, dst.h);
+    });
+    if (++frameNo % 12 === 0 && readBuf) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.a2.f);
+      gl.readPixels(0, 0, fbo.a2.w, fbo.a2.h, gl.RGBA, gl.UNSIGNED_BYTE, readBuf);
+      let sum = 0;
+      for (let i = 0; i < readBuf.length; i += 16) sum += (readBuf[i] * 0.2126 + readBuf[i + 1] * 0.7152 + readBuf[i + 2] * 0.0722) / 255;
+      const avgL = sum / (readBuf.length / 16);
+      exposureTarget = Math.min(1.35, Math.max(0.7, 0.13 / Math.max(0.02, avgL)));
+    }
+    exposureAuto += (exposureTarget - exposureAuto) * Math.min(1, step * 0.9);
+
     // 3. the memory of it
     const P = progs.post;
     gl.useProgram(P.p);
     bindTex(0, fbo.scene.t, P.loc.uScene);
     bindTex(1, fbo.b1.t, P.loc.uBloom);
     bindTex(2, fbo.w2.t, P.loc.uBloomWide);
+    bindTex(3, fbo.a2.t, P.loc.uAvg);
     gl.uniform2f(P.loc.uRes, RW, RH);
     gl.uniform1f(P.loc.uTime, clock);
     gl.uniform1f(P.loc.uFlash, flash);
@@ -623,8 +845,25 @@
     const onScreen = Math.max(0, Math.min(1, (0.62 - Math.max(Math.abs(su - 0.5), Math.abs(sv - 0.5))) / 0.12));
     const sunAmt = (1 - Math.min(1, cur.tod / 0.72)) * (1 - rain * 0.85);
     gl.uniform2f(P.loc.uSunS, su, sv);
-    gl.uniform1f(P.loc.uFlare, sunAmt * onScreen * (1 - cur.dim) * (1 - fade * 0.6));
+    const sunVis = sunAmt * onScreen * (1 - cur.dim) * (1 - fade * 0.6);
+    gl.uniform1f(P.loc.uFlare, sunVis * settings.flare);
+    gl.uniform1f(P.loc.uSunVis, sunVis);
+    const adapt = Math.log2(exposureAuto) * settings.adapt;
+    gl.uniform1f(P.loc.uExposure, settings.exposure + adapt);
+    gl.uniform1f(P.loc.uHdr, settings.hdr);
+    gl.uniform1f(P.loc.uBloomAmt, settings.bloom);
+    gl.uniform1f(P.loc.uRays, settings.rays);
+    gl.uniform1f(P.loc.uAnamorphic, settings.anamorphic);
+    gl.uniform1f(P.loc.uDirt, settings.dirt);
+    gl.uniform1f(P.loc.uGrain, settings.grain);
+    gl.uniform1f(P.loc.uCA, settings.ca);
+    gl.uniform1f(P.loc.uDreamy, settings.dreamy);
+    gl.uniform1f(P.loc.uVignette, settings.vignette);
+    gl.uniform1f(P.loc.uGrade, settings.grade);
+    gl.uniform1f(P.loc.uRainLens, rain);
+    gl.uniform1f(P.loc.uLeaks, settings.leaks);
     draw(null, RW, RH);
+    if (snap) { const done = snap; snap = null; canvas.toBlob(done, 'image/png'); }
   }
 
   /* ---------- without WebGL: the painting, moved by CSS ---------- */
@@ -690,6 +929,31 @@
     setLucid(on) { lucidT = on ? 1 : 0; },
     pulseVoid() { if (!reduced()) voidT = 0; },
     toggleLamp() { lampToggle = lampToggle ? 0 : 1; return !!lampToggle; },
-    setVisible(v) { visible = v; canvas.classList.toggle('is-hidden', !v); }
+    setVisible(v) { visible = v; canvas.classList.toggle('is-hidden', !v); },
+
+    // the settings panel
+    LOOKS,
+    settings,
+    set(key, value) {
+      settings[key] = value;
+      if (key === 'quality') resize();
+      if (key === 'timePasses' && value) passing = Math.acos(1 - 2 * Math.min(1, Math.max(0, settings.time)));
+      Void.store.set(SETTINGS_KEY, settings);
+      Void.emit('camera', settings);
+    },
+    look(name) {
+      if (!LOOKS[name]) return;
+      Object.assign(settings, LOOKS[name], { look: name });
+      Void.store.set(SETTINGS_KEY, settings);
+      Void.emit('camera', settings);
+    },
+    reset() {
+      Object.assign(settings, DEFAULTS);
+      resize();
+      Void.store.set(SETTINGS_KEY, settings);
+      Void.emit('camera', settings);
+    },
+    tod: () => cur.tod,
+    snapshot() { return new Promise((resolve) => { snap = resolve; if (!gl) resolve(null); }); }
   };
 })();

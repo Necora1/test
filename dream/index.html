@@ -40,6 +40,10 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
         lucid
       </button>
+      <button type="button" class="hand-link" id="cameraBtn" aria-expanded="false" aria-controls="cameraPanel" title="Camera settings (C)">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m14.3 3.3-4.6 8M20.1 8.5h-9.2M18.5 17.5l-4.6-8M9.7 20.7l4.6-8M3.9 15.5h9.2M5.5 6.5l4.6 8"/></svg>
+        <span class="cam-word">camera</span>
+      </button>
       <button type="button" class="hand-link keys-btn" id="keysBtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
       <a class="hand-link to-classic" href="../index.html">classic <span class="long">version</span></a>
     </nav>
@@ -367,6 +371,7 @@
         <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>go somewhere in the room (<kbd>0</kbd> step back)</dd>
         <dt><kbd>L</kbd></dt><dd>lucid: the room folds into a kaleidoscope</dd>
         <dt><kbd>R</kbd></dt><dd>rain on the window</dd>
+        <dt><kbd>C</kbd></dt><dd>the camera: looks, hdr, god rays, film, time of day, take a photo</dd>
         <dt><kbd>M</kbd></dt><dd>mute the dream's own sounds</dd>
         <dt><kbd>Esc</kbd></dt><dd>back to the sky</dd>
         <dt>type <b>void</b></dt><dd>…see what happens</dd>
@@ -378,6 +383,22 @@
       </dl>
     </div>
   </dialog>
+
+  <aside class="cam-panel" id="cameraPanel" aria-label="Camera settings">
+    <div class="cam-head">
+      <h2 class="cam-title">camera</h2>
+      <button type="button" class="cam-close" aria-label="Close the camera settings">&times;</button>
+    </div>
+    <p class="cam-lede">how the memory looks. it all changes as you move things.</p>
+    <div class="cam-body"></div>
+  </aside>
+
+  <div class="vhs-osd" id="vhsOsd" aria-hidden="true">
+    <span class="osd-play">PLAY &#9654;</span>
+    <span class="osd-count">0:00:00</span>
+    <span class="osd-sp">SP</span>
+    <span class="osd-date">OCT. 14 2009<br><span class="osd-time">5:47:12 PM</span></span>
+  </div>
 
   <p class="dream-toast" id="dreamToast" role="status" aria-live="polite" hidden></p>
 
@@ -398,6 +419,7 @@
   <script src="js/sound.js" defer></script>
   <script src="js/sky.js" defer></script>
   <script src="js/memory/engine.js" defer></script>
+  <script src="js/memory/camera.js" defer></script>
   <script src="js/life.js" defer></script>
   <script src="js/rain.js" defer></script>
   <script src="js/views.js" defer></script>

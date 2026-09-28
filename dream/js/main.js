@@ -31,6 +31,7 @@
   Void.dream.guitar.init();
   Void.dream.arcade.init();
   Void.dream.extras.init();
+  Void.dream.camera.init();
   Void.dream.views.init();
 
   // rain on the window

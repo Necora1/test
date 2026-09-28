@@ -82,6 +82,7 @@ dream/
   memory.css          the room as home: hotspots, captions, title card
   js/memory/paint.js  the room, painted in code, in layers
   js/memory/engine.js lights it, film look, the camera's travels
+  js/memory/camera.js the camera settings panel
   js/sound.js         the little synth: chimes, plucked strings, a reverb room
   js/fx.js            sparks, comets, catchable shooting stars, wish stars
   js/arcade.js        the games room; js/games/*.js are the four games
@@ -207,6 +208,16 @@ drifts to it while the light changes, and the guitar room surfaces over it.
   window → out of it, into the night sea, to make a wish · lamp → on/off.
   The camera spot, light and caption for each are `PRESETS` in engine.js;
   the clickable areas are `HOTSPOTS` in paint.js (board units, 1600 × 1000).
+- **The camera** (`C`, or the aperture in the corner; `dream/js/memory/camera.js`):
+  looks — eye candy (pseudo-HDR, the default), memory, super 8, vhs (with a
+  tape counter on screen), cinestill 800t, black & white, clean — and a
+  slider for everything: time of day, exposure, eyes adjusting, hdr / local
+  contrast, bloom, god rays, lens flare, anamorphic streaks, dirty lens,
+  colour fringing, grain, dreamy edges, vignette, light leaks, dust in the
+  light, camera drift, resolution. "let time pass" runs the day through
+  sunset into night and back; "take a photo" saves the frame as a PNG.
+  Settings are remembered in the browser (`dream_camera`); the looks are
+  `LOOKS` in engine.js.
 - **Games:** star catcher, cover memory, blurry covers, lanterns.
 - **Guitar:** drag across the strings; chords 1–8; A S D F G H pluck.
   "midwest tuning" retunes it to FACGCE, and "let it play" fingerpicks.
